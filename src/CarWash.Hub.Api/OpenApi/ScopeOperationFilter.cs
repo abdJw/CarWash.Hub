@@ -58,11 +58,14 @@ public sealed class ScopeOperationFilter : IOperationFilter
                 : $"{operation.Description}\n\n{line}";
 
             // Microsoft.OpenApi v2: a requirement is keyed by a scheme REFERENCE, resolved against
-            // the document's components at serialization time.
+            // its host document at serialization time. The document MUST be passed: a reference
+            // created without one cannot resolve and is written as an empty requirement ({}), which
+            // Swagger UI reads as "no key needed" - so Authorize never sends the header and every
+            // "Try it out" call gets a 401. cyberani_oms_api's filters pass null and have this bug.
             operation.Security ??= [];
             operation.Security.Add(new OpenApiSecurityRequirement
             {
-                [new OpenApiSecuritySchemeReference(scheme, null, null)] = [],
+                [new OpenApiSecuritySchemeReference(scheme, context.Document)] = [],
             });
         }
     }

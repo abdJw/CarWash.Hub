@@ -122,6 +122,25 @@ public sealed class HostConfigurationTests(DatabaseFixture database) : IAsyncLif
         document.ShouldNotContain("application/xml");
     }
 
+    [Theory]
+    [InlineData("/api/v1/machine-messages", "post", "ClientSecretKey")]
+    [InlineData("/api/v1/machine-messages/{id}", "get", "ClientReadKey")]
+    [InlineData("/api/v1/machines", "get", "ClientReadKey")]
+    [InlineData("/api/v1/machines/{machineId}/messages/latest", "get", "ClientReadKey")]
+    public async Task Each_operation_requires_its_key_so_swagger_authorize_sends_it(string path, string verb, string scheme)
+    {
+        // An unresolved scheme reference serializes as an empty requirement ([{}]), which Swagger UI
+        // reads as "no key needed" - Authorize then never sends the header. Assert the real shape.
+        using var client = database.SharedApi.CreateClient();
+        using var response = await client.GetAsync(new Uri("/swagger/v1/swagger.json", UriKind.Relative), Token);
+        using var document = System.Text.Json.JsonDocument.Parse(await response.Content.ReadAsStringAsync(Token));
+
+        var security = document.RootElement.GetProperty("paths").GetProperty(path).GetProperty(verb).GetProperty("security");
+
+        security.GetArrayLength().ShouldBe(1);
+        security[0].EnumerateObject().Select(requirement => requirement.Name).ShouldBe([scheme]);
+    }
+
     [Fact]
     public async Task An_unknown_route_reveals_nothing_without_a_key_and_is_404_with_one()
     {
