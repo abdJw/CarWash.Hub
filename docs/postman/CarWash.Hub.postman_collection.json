@@ -1,0 +1,250 @@
+{
+  "info": {
+    "_postman_id": "6c0b8f0e-3c1d-4f7e-9a2b-0d5e8c4a1f20",
+    "name": "CarWash Hub API",
+    "description": "Machine data ingestion. POST a JSON body { machineId, data } with the client-secret-key header; data can be any JSON (object, array or string). Set the collection variables baseUrl, clientSecretKey (the shared machine key) and clientReadKey (the read key). The defaults are the dev-only keys of a local Development run.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5180"
+    },
+    {
+      "key": "clientSecretKey",
+      "value": "dev-only-ingest-key-0123456789abcdef"
+    },
+    {
+      "key": "clientReadKey",
+      "value": "dev-only-read-key-0123456789abcdefgh"
+    },
+    {
+      "key": "machineId",
+      "value": "CW-RUH-0001"
+    },
+    {
+      "key": "messageId",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "Push (client-secret-key)",
+      "item": [
+        {
+          "name": "Object data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "client-secret-key",
+                "value": "{{clientSecretKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"machineId\": \"{{machineId}}\",\n  \"data\": { \"status\": \"Idle\", \"coins\": 12, \"temperatureC\": 41.5 }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/machine-messages"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('stored', () => pm.expect(pm.response.code).to.eql(201));",
+                  "const body = pm.response.json();",
+                  "if (body.data && body.data.messageId) { pm.collectionVariables.set('messageId', body.data.messageId); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Array data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "client-secret-key",
+                "value": "{{clientSecretKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"machineId\": \"{{machineId}}\",\n  \"data\": [ { \"t\": \"2026-10-26T10:00:00Z\", \"state\": \"Washing\" }, { \"t\": \"2026-10-26T10:05:00Z\", \"state\": \"Idle\" } ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/machine-messages"
+          }
+        },
+        {
+          "name": "String data (stored unescaped)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "client-secret-key",
+                "value": "{{clientSecretKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"machineId\": \"{{machineId}}\",\n  \"data\": \"{\\\"status\\\":\\\"Idle\\\",\\\"coins\\\":12}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/machine-messages"
+          }
+        },
+        {
+          "name": "Error - missing machineId (Arabic)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "client-secret-key",
+                "value": "{{clientSecretKey}}"
+              },
+              {
+                "key": "X-Lang",
+                "value": "ar"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": { \"status\": \"Idle\" }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/machine-messages"
+          }
+        },
+        {
+          "name": "Error - no client-secret-key",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"machineId\": \"{{machineId}}\",\n  \"data\": { \"status\": \"Idle\" }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/machine-messages"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Read (client-read-key)",
+      "item": [
+        {
+          "name": "Latest status of a machine",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "client-read-key",
+                "value": "{{clientReadKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/machines/{{machineId}}/messages/latest"
+          }
+        },
+        {
+          "name": "History of a machine",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "client-read-key",
+                "value": "{{clientReadKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/machines/{{machineId}}/messages?pageNumber=1&pageSize=20"
+          }
+        },
+        {
+          "name": "Machine",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "client-read-key",
+                "value": "{{clientReadKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/machines/{{machineId}}"
+          }
+        },
+        {
+          "name": "All machines (most recently seen first)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "client-read-key",
+                "value": "{{clientReadKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/machines?sortBy=lastSeenAt&sortDirection=Descending&pageSize=50"
+          }
+        },
+        {
+          "name": "Stored message by id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "client-read-key",
+                "value": "{{clientReadKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/machine-messages/{{messageId}}"
+          }
+        }
+      ]
+    }
+  ]
+}

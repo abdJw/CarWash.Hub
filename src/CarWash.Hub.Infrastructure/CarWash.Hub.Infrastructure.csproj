@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Layer: Infrastructure.
+
+    Client-key authentication, localization providers, the current-user accessor and the clock.
+
+    It uses the Microsoft.NET.Sdk (not .Web) but needs a handful of ASP.NET Core types -
+    AuthenticationHandler for the client keys, IHttpContextAccessor for CurrentUserService,
+    RequestCultureProvider for the X-Lang provider. FrameworkReference pulls those from the shared
+    framework without turning this into a web project, and without any package reference: every
+    type used here ships in Microsoft.AspNetCore.App.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\CarWash.Hub.Application\CarWash.Hub.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+</Project>

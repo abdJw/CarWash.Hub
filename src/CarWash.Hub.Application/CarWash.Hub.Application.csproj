@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Layer: Application.
+
+    Holds abstractions, DTOs, validators, service contracts, the ingestion logic and the .resx
+    resources. Only *abstraction* packages are permitted here - no EF Core, no ASP.NET Core
+    hosting, no Serilog. Everything below is an interface-only contract assembly or
+    FluentValidation.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\CarWash.Hub.Domain\CarWash.Hub.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- IServiceCollection, for the AddApplication() composition extension. -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+  </ItemGroup>
+
+</Project>

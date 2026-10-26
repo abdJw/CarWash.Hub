@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="Error_Unauthorized" xml:space="preserve"><value>A valid client key is required to access this resource.</value></data>
+  <data name="Error_Forbidden" xml:space="preserve"><value>You do not have permission to perform this action.</value></data>
+  <data name="Error_NotFound" xml:space="preserve"><value>{0} with identifier '{1}' was not found.</value></data>
+  <data name="Error_ValidationFailed" xml:space="preserve"><value>One or more validation errors occurred.</value></data>
+  <data name="Error_Conflict" xml:space="preserve"><value>The request conflicts with the current state of the resource.</value></data>
+  <data name="Error_Unexpected" xml:space="preserve"><value>An unexpected error occurred. Quote reference {0} when reporting this.</value></data>
+  <data name="Concurrency_Conflict" xml:space="preserve"><value>This record was changed by someone else. Reload it and try again.</value></data>
+  <data name="Error_DuplicateValue" xml:space="preserve"><value>A record with this value already exists.</value></data>
+  <data name="Error_TooManyRequests" xml:space="preserve"><value>Too many requests. Wait a moment and try again.</value></data>
+  <data name="Error_RequestTooLarge" xml:space="preserve"><value>The request body is too large.</value></data>
+  <data name="Error_BadRequest" xml:space="preserve"><value>The request could not be read.</value></data>
+
+  <data name="Auth_ClientSecretKeyMissing" xml:space="preserve"><value>The client-secret-key header is required.</value></data>
+  <data name="Auth_ClientSecretKeyInvalid" xml:space="preserve"><value>The client-secret-key is not valid.</value></data>
+  <data name="Auth_ClientReadKeyMissing" xml:space="preserve"><value>The client-read-key header is required.</value></data>
+  <data name="Auth_ClientReadKeyInvalid" xml:space="preserve"><value>The client-read-key is not valid.</value></data>
+
+  <data name="Validation_Required" xml:space="preserve"><value>{0} is required.</value></data>
+  <data name="Validation_MaxLength" xml:space="preserve"><value>{0} must not exceed {1} characters.</value></data>
+  <data name="Validation_MalformedRequest" xml:space="preserve"><value>The request could not be read. Check that every parameter has the expected type.</value></data>
+  <data name="Validation_DateRange" xml:space="preserve"><value>{0} must not be later than {1}.</value></data>
+
+  <data name="Field_MachineId" xml:space="preserve"><value>Machine id</value></data>
+  <data name="Field_Data" xml:space="preserve"><value>Data</value></data>
+  <data name="Field_From" xml:space="preserve"><value>From</value></data>
+  <data name="Field_To" xml:space="preserve"><value>To</value></data>
+  <data name="Field_Machine" xml:space="preserve"><value>Machine</value></data>
+  <data name="Field_MachineMessage" xml:space="preserve"><value>Machine message</value></data>
+
+  <data name="Message_Success" xml:space="preserve"><value>Request completed successfully.</value></data>
+  <data name="Message_MessageStored" xml:space="preserve"><value>Machine message stored.</value></data>
+
+  <data name="Ingestion_MachineIdInvalid" xml:space="preserve"><value>machineId '{0}' is not valid. Use 1 to {1} letters, digits, '.', '_', ':' or '-', starting with a letter or digit.</value></data>
+  <data name="Ingestion_DataTooLarge" xml:space="preserve"><value>data must not exceed {0} bytes.</value></data>
+</root>

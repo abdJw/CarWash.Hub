@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Layer: Domain (innermost).
+
+    Deliberately empty: no <ProjectReference> and no <PackageReference>. The dependency rule is
+    enforced by the compiler rather than by convention - an entity here physically cannot reach
+    for EF Core, ASP.NET Core, or any other outer concern.
+  -->
+
+</Project>

@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Layer: tests.
+
+    End-to-end tests through the real HTTP pipeline (WebApplicationFactory) against a real SQL
+    Server: the one in CARWASH_TEST_CONNECTION, or a Testcontainers instance when Docker is
+    running. Using the actual provider is the point: the migration, the check constraints, the
+    filtered unique index, the case-insensitive collation and the registration race all behave
+    here exactly as in production, which an in-memory provider could not show.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\CarWash.Hub.Domain\CarWash.Hub.Domain.csproj" />
+    <ProjectReference Include="..\..\src\CarWash.Hub.Application\CarWash.Hub.Application.csproj" />
+    <ProjectReference Include="..\..\src\CarWash.Hub.Persistence\CarWash.Hub.Persistence.csproj" />
+    <ProjectReference Include="..\..\src\CarWash.Hub.Api\CarWash.Hub.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Testcontainers.MsSql" />
+    <PackageReference Include="NSubstitute" />
+    <PackageReference Include="Shouldly" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="Shouldly" />
+  </ItemGroup>
+
+</Project>

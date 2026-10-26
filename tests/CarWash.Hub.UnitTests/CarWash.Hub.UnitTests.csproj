@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Layer: tests.
+
+    Fast, in-process tests with no database and no HTTP server: the machine-id resolver, the
+    payload format detector, the raw body reader, the client-key handler and options validator,
+    the dependency rule and the resource files.
+
+    xUnit v3 test projects are executables - they host the Microsoft Testing Platform themselves
+    rather than being loaded by an external runner, hence OutputType=Exe.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\CarWash.Hub.Domain\CarWash.Hub.Domain.csproj" />
+    <ProjectReference Include="..\..\src\CarWash.Hub.Application\CarWash.Hub.Application.csproj" />
+    <ProjectReference Include="..\..\src\CarWash.Hub.Infrastructure\CarWash.Hub.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\CarWash.Hub.Persistence\CarWash.Hub.Persistence.csproj" />
+    <!-- The raw body reader under test lives in Api. -->
+    <ProjectReference Include="..\..\src\CarWash.Hub.Api\CarWash.Hub.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+    <PackageReference Include="NSubstitute" />
+    <PackageReference Include="Shouldly" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="Shouldly" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,41 @@
+# CarWash Hub API - requests for the Visual Studio / Rider HTTP client.
+# The keys below are the dev-only keys from appsettings.Development.json; they are refused in every
+# other environment.
+
+@baseUrl = http://localhost:5180
+@secretKey = dev-only-ingest-key-0123456789abcdef
+@readKey = dev-only-read-key-0123456789abcdefgh
+
+### Push a status - data as a JSON object
+POST {{baseUrl}}/api/v1/machine-messages
+client-secret-key: {{secretKey}}
+Content-Type: application/json
+
+{"machineId":"CW-RUH-0001","data":{"status":"Idle","coins":12,"temperatureC":41.5}}
+
+### Push a status - data as a JSON string (stored unescaped)
+POST {{baseUrl}}/api/v1/machine-messages
+client-secret-key: {{secretKey}}
+Content-Type: application/json
+
+{"machineId":"CW-RUH-0002","data":"{\"status\":\"Washing\",\"program\":\"Foam\"}"}
+
+### Missing machineId, Arabic error
+POST {{baseUrl}}/api/v1/machine-messages
+client-secret-key: {{secretKey}}
+X-Lang: ar
+Content-Type: application/json
+
+{"data":{"status":"Idle"}}
+
+### Latest status of a machine
+GET {{baseUrl}}/api/v1/machines/CW-RUH-0001/messages/latest
+client-read-key: {{readKey}}
+
+### History, newest first
+GET {{baseUrl}}/api/v1/machines/CW-RUH-0001/messages?pageNumber=1&pageSize=20
+client-read-key: {{readKey}}
+
+### All machines, most recently seen first
+GET {{baseUrl}}/api/v1/machines?sortBy=lastSeenAt&sortDirection=Descending
+client-read-key: {{readKey}}

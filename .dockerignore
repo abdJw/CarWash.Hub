@@ -1,0 +1,28 @@
+# Keep the Docker build context small and, more importantly, free of host build output:
+# copying a host-built bin/ or obj/ into the image is the classic cause of "works on my
+# machine" image drift, because the restore inside the image would be skipped.
+
+**/bin/
+**/obj/
+**/out/
+**/logs/
+
+.git/
+.gitignore
+.vs/
+.vscode/
+.idea/
+
+**/*.user
+**/*.suo
+**/TestResults/
+**/.env
+**/.env.*
+**/secrets.json
+**/appsettings.*.local.json
+
+docker-compose*.yml
+Dockerfile*
+README.md
+LICENSE
+*.md

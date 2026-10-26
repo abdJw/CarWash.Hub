@@ -1,0 +1,67 @@
+# CarWash Hub API + SQL Server, for local development and demos.
+#
+#   docker compose up --build
+#
+# Secrets come from a .env file beside this one (see .env.example). Nothing sensitive is in this
+# file, so it is safe to commit.
+
+name: carwash-hub
+
+services:
+  mssql:
+    # SQL Server 2022 Developer edition; the migrations pin compatibility level 150, so nothing
+    # beyond the SQL Server 2019 floor is ever emitted.
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: carwash-hub-mssql
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in .env}
+    ports:
+      - "${MSSQL_PORT:-1433}:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q 'SELECT 1' -b -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  api:
+    build:
+      context: .
+      dockerfile: src/CarWash.Hub.Api/Dockerfile
+    image: carwash-hub/api:local
+    container_name: carwash-hub-api
+    restart: unless-stopped
+    depends_on:
+      mssql:
+        # Waits for a successful query, not merely for the container to exist.
+        condition: service_healthy
+    environment:
+      # Staging rather than Development: Swagger stays on, but the dev-only keys of
+      # appsettings.Development.json are not loaded - the keys below are required.
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Staging}
+      ASPNETCORE_URLS: http://+:8080
+
+      # Double underscore maps an environment variable onto a configuration section.
+      ConnectionStrings__Default: >-
+        Server=mssql;Database=carwash_hub;User Id=sa;Password=${MSSQL_SA_PASSWORD};
+        TrustServerCertificate=True;Encrypt=True
+      Seed__ApplyMigrations: "true"
+
+      # The shared key every machine sends, and the separate key for the read endpoints.
+      ClientKeys__IngestKeys__0__Id: ${CLIENT_SECRET_KEY_ID:-k1}
+      ClientKeys__IngestKeys__0__Key: ${CLIENT_SECRET_KEY:?Set CLIENT_SECRET_KEY in .env}
+      ClientKeys__ReadKeys__0__Id: ${CLIENT_READ_KEY_ID:-r1}
+      ClientKeys__ReadKeys__0__Key: ${CLIENT_READ_KEY:?Set CLIENT_READ_KEY in .env}
+    ports:
+      - "${API_PORT:-8080}:8080"
+    volumes:
+      - api-logs:/app/logs
+
+volumes:
+  mssql-data:
+  api-logs:

@@ -1,0 +1,20 @@
+<Project>
+
+  <!--
+    Test-project overrides.
+    Layer: n/a - MSBuild configuration for tests/.
+
+    MSBuild stops walking up at the FIRST Directory.Build.props it finds, so the root one must be
+    imported explicitly or every shared setting above would be silently lost.
+  -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- Public XML comments are required on shipping code, not on test methods. -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+</Project>

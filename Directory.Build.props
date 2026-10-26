@@ -1,0 +1,68 @@
+<Project>
+
+  <!--
+    Shared build settings for every project in the solution (src and tests).
+    Layer: n/a - solution-wide MSBuild configuration.
+
+    Anything version-related belongs in Directory.Packages.props, not here.
+  -->
+
+  <PropertyGroup Label="Target framework and language">
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- net10.0 implies C# 14; stated explicitly so an SDK roll cannot silently change it. -->
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Correctness enforcement">
+    <!--
+      Warnings are errors across the board: an unhandled null, an undocumented public member or
+      an obsolete API is a build failure, not a review comment.
+    -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <!--
+      Deliberately NOT latest-recommended or EnforceCodeStyleInBuild. Combined with
+      TreatWarningsAsErrors those turn hundreds of stylistic suggestions into hard build breaks,
+      which trains people to add <NoWarn> entries. Style is handled by .editorconfig at edit time.
+    -->
+    <AnalysisLevel>latest</AnalysisLevel>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Documentation">
+    <!-- XML docs from every src project are fed into Swagger, which the machine engineers read. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Globalization">
+    <!--
+      MUST stay false. Invariant globalization collapses every culture to the invariant one,
+      which would silently break ar-SA resource lookup. The Docker image is chosen to match
+      (Debian/Ubuntu-based with ICU, not Alpine).
+    -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Assembly metadata">
+    <Company>CarWash Hub</Company>
+    <Product>CarWash Hub</Product>
+    <Authors>CarWash Hub</Authors>
+    <Copyright>Copyright © CarWash Hub</Copyright>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Restore">
+    <!--
+      Lock files are committed so CI and the Docker build restore in locked mode, and a
+      transitive package can never change underneath a release without a reviewed diff.
+    -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+
+  <PropertyGroup Label="CI">
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+</Project>

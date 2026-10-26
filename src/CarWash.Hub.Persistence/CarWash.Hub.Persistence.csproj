@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Layer: Persistence.
+
+    DbContext, entity configurations, migrations, repositories, unit of work, the interceptor and
+    startup migration. This is the ONLY project that references an EF Core provider - which is
+    what makes the database swappable from a single registration point (AddPersistence).
+
+    It references Application, not the other way round: repositories implement abstractions
+    declared in Application, so nothing outside this project ever needs an EF Core type.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\CarWash.Hub.Application\CarWash.Hub.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <!-- Swap this single line (plus the UseSqlServer call in DependencyInjection.cs)
+         to change database provider. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="EFCore.NamingConventions" />
+    <!-- Remembers which machine id maps to which row, so a steady stream of messages from known
+         machines costs no registration lookup. -->
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
+    <!-- Security patch over the transitive version (see Directory.Packages.props). -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <!-- SeedOptions is bound from configuration and validated at startup. -->
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Design-time only: required by `dotnet ef migrations`, never shipped. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

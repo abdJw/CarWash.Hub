@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="Error_Unauthorized" xml:space="preserve"><value>يلزم مفتاح عميل صالح للوصول إلى هذا المورد.</value></data>
+  <data name="Error_Forbidden" xml:space="preserve"><value>ليس لديك صلاحية لتنفيذ هذا الإجراء.</value></data>
+  <data name="Error_NotFound" xml:space="preserve"><value>لم يتم العثور على {0} بالمعرّف '{1}'.</value></data>
+  <data name="Error_ValidationFailed" xml:space="preserve"><value>حدث خطأ أو أكثر في التحقق من البيانات.</value></data>
+  <data name="Error_Conflict" xml:space="preserve"><value>الطلب يتعارض مع الحالة الحالية للمورد.</value></data>
+  <data name="Error_Unexpected" xml:space="preserve"><value>حدث خطأ غير متوقع. يرجى ذكر الرقم المرجعي {0} عند الإبلاغ.</value></data>
+  <data name="Concurrency_Conflict" xml:space="preserve"><value>تم تعديل هذا السجل من قِبل مستخدم آخر. أعد تحميله وحاول مرة أخرى.</value></data>
+  <data name="Error_DuplicateValue" xml:space="preserve"><value>يوجد سجل بهذه القيمة مسبقاً.</value></data>
+  <data name="Error_TooManyRequests" xml:space="preserve"><value>عدد كبير جداً من الطلبات. انتظر قليلاً ثم حاول مرة أخرى.</value></data>
+  <data name="Error_RequestTooLarge" xml:space="preserve"><value>حجم محتوى الطلب كبير جداً.</value></data>
+  <data name="Error_BadRequest" xml:space="preserve"><value>تعذّرت قراءة الطلب.</value></data>
+
+  <data name="Auth_ClientSecretKeyMissing" xml:space="preserve"><value>الترويسة client-secret-key مطلوبة.</value></data>
+  <data name="Auth_ClientSecretKeyInvalid" xml:space="preserve"><value>قيمة client-secret-key غير صالحة.</value></data>
+  <data name="Auth_ClientReadKeyMissing" xml:space="preserve"><value>الترويسة client-read-key مطلوبة.</value></data>
+  <data name="Auth_ClientReadKeyInvalid" xml:space="preserve"><value>قيمة client-read-key غير صالحة.</value></data>
+
+  <data name="Validation_Required" xml:space="preserve"><value>{0} مطلوب.</value></data>
+  <data name="Validation_MaxLength" xml:space="preserve"><value>يجب ألا يتجاوز {0} {1} حرفاً.</value></data>
+  <data name="Validation_MalformedRequest" xml:space="preserve"><value>تعذّرت قراءة الطلب. تأكد من أن كل معامل من النوع المتوقع.</value></data>
+  <data name="Validation_DateRange" xml:space="preserve"><value>يجب ألا يكون {0} بعد {1}.</value></data>
+
+  <data name="Field_MachineId" xml:space="preserve"><value>معرّف الجهاز</value></data>
+  <data name="Field_Data" xml:space="preserve"><value>البيانات</value></data>
+  <data name="Field_From" xml:space="preserve"><value>من تاريخ</value></data>
+  <data name="Field_To" xml:space="preserve"><value>إلى تاريخ</value></data>
+  <data name="Field_Machine" xml:space="preserve"><value>الجهاز</value></data>
+  <data name="Field_MachineMessage" xml:space="preserve"><value>رسالة الجهاز</value></data>
+
+  <data name="Message_Success" xml:space="preserve"><value>تم تنفيذ الطلب بنجاح.</value></data>
+  <data name="Message_MessageStored" xml:space="preserve"><value>تم حفظ رسالة الجهاز.</value></data>
+
+  <data name="Ingestion_MachineIdInvalid" xml:space="preserve"><value>قيمة machineId '{0}' غير صالحة. استخدم من 1 إلى {1} من الحروف أو الأرقام أو '.' أو '_' أو ':' أو '-'، على أن تبدأ بحرف أو رقم.</value></data>
+  <data name="Ingestion_DataTooLarge" xml:space="preserve"><value>يجب ألا يتجاوز حجم data {0} بايت.</value></data>
+</root>

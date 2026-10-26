@@ -1,0 +1,22 @@
+# Normalise text to LF in the repository and check out with CRLF, matching .editorconfig.
+* text=auto eol=crlf
+
+# Files executed inside Linux containers or CI runners must keep LF.
+*.sh text eol=lf
+Dockerfile text eol=lf
+
+# Binary content - never touched.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.docx binary
+*.xlsx binary
+*.pptx binary
+*.zip binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
