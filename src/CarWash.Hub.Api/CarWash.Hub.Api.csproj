@@ -13,6 +13,10 @@
          from environment variables elsewhere. They are never committed. -->
     <UserSecretsId>carwash-hub-api</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <!-- The dashboard's components live in CarWash.Hub.Web, and a host with no .razor file of its
+         own does not get the framework's web assets (blazor.web.js) unless asked:
+         https://github.com/dotnet/aspnetcore/issues/64381 -->
+    <RequiresAspNetWebAssets>true</RequiresAspNetWebAssets>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,6 +24,8 @@
     <ProjectReference Include="..\CarWash.Hub.Infrastructure\CarWash.Hub.Infrastructure.csproj" />
     <!-- DI registration only. -->
     <ProjectReference Include="..\CarWash.Hub.Persistence\CarWash.Hub.Persistence.csproj" />
+    <!-- The dashboard, composed into this host by AddDashboard() / MapDashboard(). -->
+    <ProjectReference Include="..\CarWash.Hub.Web\CarWash.Hub.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup Label="OpenAPI and versioning">

@@ -1,0 +1,88 @@
+@using CarWash.Hub.Application.Features.Stations
+@inherits AdminDialogBase
+
+<MudDialog>
+    <DialogContent>
+        @if (Message is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-3">@Message</MudAlert>
+        }
+        <div class="cw-form">
+            <MudTextField @bind-Value="_code" Label="@L[DashboardText.FieldCode]" Variant="Variant.Outlined" MaxLength="32"
+                          Error="@HasError(nameof(SaveStationRequest.Code))" ErrorText="@ErrorOf(nameof(SaveStationRequest.Code))" Class="cw-ltr-input" />
+            <MudTextField @bind-Value="_name" Label="@L[DashboardText.FieldNameEn]" Variant="Variant.Outlined" MaxLength="200"
+                          Error="@HasError(nameof(SaveStationRequest.Name))" ErrorText="@ErrorOf(nameof(SaveStationRequest.Name))" />
+            <MudTextField @bind-Value="_nameAr" Label="@L[DashboardText.FieldNameAr]" Variant="Variant.Outlined" MaxLength="200"
+                          Error="@HasError(nameof(SaveStationRequest.NameAr))" ErrorText="@ErrorOf(nameof(SaveStationRequest.NameAr))" />
+            <MudTextField @bind-Value="_city" Label="@L[DashboardText.FieldCity]" Variant="Variant.Outlined" MaxLength="100"
+                          Error="@HasError(nameof(SaveStationRequest.City))" ErrorText="@ErrorOf(nameof(SaveStationRequest.City))" />
+            <MudTextField @bind-Value="_address" Label="@L[DashboardText.FieldAddress]" Variant="Variant.Outlined" MaxLength="500" Lines="2"
+                          Error="@HasError(nameof(SaveStationRequest.Address))" ErrorText="@ErrorOf(nameof(SaveStationRequest.Address))" />
+            <MudSwitch @bind-Value="_isActive" Label="@L[DashboardText.FieldInService]" Color="Color.Primary" />
+
+            <div class="cw-quiet">
+                <MudSwitch @bind-Value="_open24" Label="@L[DashboardText.FieldOpen24Hours]" Color="Color.Primary" />
+                @if (!_open24)
+                {
+                    <div class="cw-quiet-times">
+                        <MudTimePicker @bind-Time="_quietFrom" Label="@L[DashboardText.FieldQuietFrom]" Variant="Variant.Outlined" AmPm="false" />
+                        <MudTimePicker @bind-Time="_quietTo" Label="@L[DashboardText.FieldQuietTo]" Variant="Variant.Outlined" AmPm="false"
+                                       Error="@HasError(nameof(SaveStationRequest.QuietHoursEnd))" ErrorText="@ErrorOf(nameof(SaveStationRequest.QuietHoursEnd))" />
+                    </div>
+                }
+                <p class="cw-muted cw-small">@L[DashboardText.FieldQuietHint]</p>
+            </div>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L[DashboardText.CommonCancel]</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="Saving" OnClick="SubmitAsync">@L[DashboardText.CommonSave]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    /// <summary>Gets or sets the station to edit; null to create one.</summary>
+    [Parameter]
+    public StationDto? Station { get; set; }
+
+    private string _code = string.Empty;
+    private string _name = string.Empty;
+    private string _nameAr = string.Empty;
+    private string? _city;
+    private string? _address;
+    private bool _isActive = true;
+    private bool _open24;
+    private TimeSpan? _quietFrom = Domain.Entities.GasStation.DefaultQuietHoursStart.ToTimeSpan();
+    private TimeSpan? _quietTo = Domain.Entities.GasStation.DefaultQuietHoursEnd.ToTimeSpan();
+
+    protected override void OnInitialized()
+    {
+        if (Station is { } station)
+        {
+            (_code, _name, _nameAr, _city, _address, _isActive) = (station.Code, station.Name, station.NameAr, station.City, station.Address, station.IsActive);
+            _open24 = station.QuietHoursStart is null;
+            if (station is { QuietHoursStart: { } from, QuietHoursEnd: { } to })
+            {
+                (_quietFrom, _quietTo) = (from.ToTimeSpan(), to.ToTimeSpan());
+            }
+        }
+    }
+
+    private static TimeOnly? ToTime(TimeSpan? time) => time is { } value ? TimeOnly.FromTimeSpan(value) : null;
+
+    private Task SubmitAsync() => SaveAsync<IGasStationService>((service, token) => service.SaveAsync(
+        new SaveStationRequest
+        {
+            Id = Station?.Id,
+            Code = _code,
+            Name = _name,
+            NameAr = _nameAr,
+            City = _city,
+            Address = _address,
+            IsActive = _isActive,
+            QuietHoursStart = _open24 ? null : ToTime(_quietFrom),
+            QuietHoursEnd = _open24 ? null : ToTime(_quietTo),
+            RowVersion = Station?.RowVersion,
+        },
+        token));
+}

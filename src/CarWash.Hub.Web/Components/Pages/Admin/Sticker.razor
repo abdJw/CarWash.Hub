@@ -1,0 +1,92 @@
+@* A printable sticker for one machine: its name, station and MAC address, and a QR code that opens
+   its refill page. The QR code is drawn on the server as SVG, so printing needs no script. *@
+@page "/admin/sticker/{Id:guid}"
+@using CarWash.Hub.Application.Common.Options
+@using CarWash.Hub.Application.Exceptions
+@using CarWash.Hub.Application.Features.Refills
+@using Microsoft.Extensions.Options
+@using QRCoder
+@inject DashboardOperationRunner Runner
+@inject IStringLocalizer<DashboardResource> L
+@inject NavigationManager Navigation
+@inject IOptions<DashboardOptions> Dashboard
+@inject IJSRuntime JS
+
+<PageTitle>@L[DashboardText.StickerTitle] · @L[DashboardText.AppName]</PageTitle>
+
+@if (_form is null && !_notFound)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_notFound)
+{
+    <div class="cw-empty"><p>@L[DashboardText.MachineNotFound]</p></div>
+}
+else
+{
+    <div class="cw-sticker-page">
+        <p class="cw-muted cw-no-print">@L[DashboardText.StickerHint]</p>
+
+        <article class="cw-sticker">
+            <div class="cw-sticker-brand">
+                <svg viewBox="0 0 48 48" aria-hidden="true"><use href="#cw-logo" /></svg>
+                <span>@L[DashboardText.AppName]</span>
+            </div>
+            <div class="cw-sticker-qr">@((MarkupString)_qrSvg)</div>
+            <strong class="cw-sticker-scan">@L[DashboardText.StickerScan]</strong>
+            <div class="cw-sticker-machine">
+                <strong><bdi>@_form!.Title</bdi></strong>
+                @if (_form.StationName is { } station)
+                {
+                    <span>@station</span>
+                }
+                @if (!string.Equals(_form.Title, _form.Code, StringComparison.Ordinal))
+                {
+                    <span class="cw-mono">@_form.Code</span>
+                }
+            </div>
+        </article>
+
+        <div class="cw-no-print cw-sticker-actions">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.Print" OnClick="PrintAsync">
+                @L[DashboardText.StickerPrint]
+            </MudButton>
+            <span class="cw-mono cw-muted">@_target</span>
+        </div>
+    </div>
+}
+
+@code {
+    /// <summary>Gets or sets the machine, from the route.</summary>
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private RefillFormDto? _form;
+    private bool _notFound;
+    private string _qrSvg = string.Empty;
+    private string _target = string.Empty;
+
+    private async Task PrintAsync() => await JS.InvokeVoidAsync("carwashHub.print");
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _form = await Runner.QueryAsync<IRefillService, RefillFormDto>((service, token) => service.GetFormAsync(Id, token));
+        }
+        catch (NotFoundException)
+        {
+            _notFound = true;
+            return;
+        }
+
+        // The configured public address when there is one: a sticker printed from a staging or
+        // local session must still point at the live site.
+        var baseUrl = (Dashboard.Value.PublicBaseUrl ?? Navigation.BaseUri).TrimEnd('/');
+        _target = $"{baseUrl}/m/{Id}/refill";
+
+        using var generator = new QRCodeGenerator();
+        using var data = generator.CreateQrCode(_target, QRCodeGenerator.ECCLevel.Q);
+        _qrSvg = new SvgQRCode(data).GetGraphic(8, "#0b0b0b", "#ffffff", drawQuietZones: true, sizingMode: SvgQRCode.SizingMode.ViewBoxAttribute);
+    }
+}

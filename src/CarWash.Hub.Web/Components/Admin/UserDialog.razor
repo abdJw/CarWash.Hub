@@ -1,0 +1,90 @@
+@using CarWash.Hub.Application.Features.Stations
+@using CarWash.Hub.Application.Features.Users
+@using CarWash.Hub.Domain.Enums
+@inherits AdminDialogBase
+
+<MudDialog>
+    <DialogContent>
+        @if (Message is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-3">@Message</MudAlert>
+        }
+        <div class="cw-form">
+            <MudTextField @bind-Value="_userName" Label="@L[DashboardText.FieldUserName]" Variant="Variant.Outlined" MaxLength="64"
+                          Disabled="User is not null" Class="cw-ltr-input" autocomplete="off"
+                          Error="@HasError(nameof(SaveUserRequest.UserName))" ErrorText="@ErrorOf(nameof(SaveUserRequest.UserName))" />
+            <MudTextField @bind-Value="_displayName" Label="@L[DashboardText.FieldDisplayName]" Variant="Variant.Outlined" MaxLength="100"
+                          Error="@HasError(nameof(SaveUserRequest.DisplayName))" ErrorText="@ErrorOf(nameof(SaveUserRequest.DisplayName))" />
+            <MudTextField @bind-Value="_email" Label="@L[DashboardText.FieldEmail]" Variant="Variant.Outlined" MaxLength="256" InputType="InputType.Email"
+                          Class="cw-ltr-input"
+                          Error="@HasError(nameof(SaveUserRequest.Email))" ErrorText="@ErrorOf(nameof(SaveUserRequest.Email))" />
+            <MudSelect T="UserRole" @bind-Value="_role" Label="@L[DashboardText.FieldRole]" Variant="Variant.Outlined"
+                       Error="@HasError(nameof(SaveUserRequest.Role))" ErrorText="@ErrorOf(nameof(SaveUserRequest.Role))">
+                <MudSelectItem T="UserRole" Value="UserRole.StationUser">@L[DashboardText.RoleStationUser]</MudSelectItem>
+                <MudSelectItem T="UserRole" Value="UserRole.SuperAdmin">@L[DashboardText.RoleSuperAdmin]</MudSelectItem>
+            </MudSelect>
+            @if (_role == UserRole.StationUser)
+            {
+                <MudSelect T="Guid?" @bind-Value="_stationId" Label="@L[DashboardText.FieldStation]" Variant="Variant.Outlined"
+                           Error="@HasError(nameof(SaveUserRequest.GasStationId))" ErrorText="@ErrorOf(nameof(SaveUserRequest.GasStationId))">
+                    @foreach (var station in _stations.Where(station => station.IsActive || station.Id == User?.GasStationId))
+                    {
+                        <MudSelectItem T="Guid?" Value="station.Id">@station.Code · @(CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft ? station.NameAr : station.Name)</MudSelectItem>
+                    }
+                </MudSelect>
+            }
+            @if (User is null)
+            {
+                <MudTextField @bind-Value="_password" Label="@L[DashboardText.FieldTemporaryPassword]" HelperText="@L[DashboardText.FieldTemporaryPasswordHint]"
+                              Variant="Variant.Outlined" InputType="InputType.Password" Class="cw-ltr-input" autocomplete="new-password"
+                              Error="@HasError(nameof(SaveUserRequest.Password))" ErrorText="@ErrorOf(nameof(SaveUserRequest.Password))" />
+            }
+            <MudSwitch @bind-Value="_isActive" Label="@L[DashboardText.FieldCanSignIn]" Color="Color.Primary" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L[DashboardText.CommonCancel]</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="Saving" OnClick="SubmitAsync">@L[DashboardText.CommonSave]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    /// <summary>Gets or sets the user to edit; null to create one.</summary>
+    [Parameter]
+    public UserDto? User { get; set; }
+
+    private IReadOnlyList<StationDto> _stations = [];
+    private string _userName = string.Empty;
+    private string _displayName = string.Empty;
+    private string _email = string.Empty;
+    private UserRole _role = UserRole.StationUser;
+    private Guid? _stationId;
+    private string? _password;
+    private bool _isActive = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (User is { } user)
+        {
+            (_userName, _displayName, _email, _role, _stationId, _isActive) =
+                (user.UserName, user.DisplayName, user.Email, user.Role, user.GasStationId, user.IsActive);
+        }
+
+        _stations = await Runner.QueryAsync<IGasStationService, IReadOnlyList<StationDto>>((service, token) => service.ListAsync(token));
+    }
+
+    private Task SubmitAsync() => SaveAsync<IUserService>((service, token) => service.SaveAsync(
+        new SaveUserRequest
+        {
+            Id = User?.Id,
+            UserName = _userName,
+            DisplayName = _displayName,
+            Email = _email,
+            Role = _role,
+            GasStationId = _role == UserRole.StationUser ? _stationId : null,
+            IsActive = _isActive,
+            Password = User is null ? _password : null,
+            RowVersion = User?.RowVersion,
+        },
+        token));
+}

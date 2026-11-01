@@ -1,8 +1,12 @@
 using System.Reflection;
 using CarWash.Hub.Application;
+using CarWash.Hub.Application.Abstractions.Persistence;
 using CarWash.Hub.Domain;
 using CarWash.Hub.Infrastructure;
 using CarWash.Hub.Persistence;
+using CarWash.Hub.Web;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Components;
 
 namespace CarWash.Hub.UnitTests.Architecture;
 
@@ -18,6 +22,12 @@ public class DependencyRuleTests
     private const string InfrastructureAssembly = "CarWash.Hub.Infrastructure";
     private const string PersistenceAssembly = "CarWash.Hub.Persistence";
     private const string ApiAssembly = "CarWash.Hub.Api";
+    private const string WebAssembly = "CarWash.Hub.Web";
+
+    private static Assembly Web => typeof(DashboardResource).Assembly;
+
+    private static IEnumerable<Type> Components =>
+        Web.GetTypes().Where(type => typeof(ComponentBase).IsAssignableFrom(type) && !type.IsAbstract);
 
     private static IReadOnlyCollection<string> ReferencedAssemblyNames(Assembly assembly) =>
         [.. assembly.GetReferencedAssemblies().Select(a => a.Name!)];
@@ -83,5 +93,60 @@ public class DependencyRuleTests
 
         references.ShouldNotContain(InfrastructureAssembly);
         references.ShouldNotContain(ApiAssembly);
+    }
+
+    [Fact]
+    public void Web_does_not_reference_Persistence_or_Api()
+    {
+        // The dashboard reaches data only through Application services; the host composes it.
+        var references = ReferencedAssemblyNames(Web);
+
+        references.ShouldNotContain(PersistenceAssembly);
+        references.ShouldNotContain(ApiAssembly);
+    }
+
+    [Fact]
+    public void No_inner_layer_references_Web()
+    {
+        ReferencedAssemblyNames(DomainAssemblyReference.Assembly).ShouldNotContain(WebAssembly);
+        ReferencedAssemblyNames(ApplicationAssemblyReference.Assembly).ShouldNotContain(WebAssembly);
+        ReferencedAssemblyNames(InfrastructureAssemblyReference.Assembly).ShouldNotContain(WebAssembly);
+        ReferencedAssemblyNames(PersistenceAssemblyReference.Assembly).ShouldNotContain(WebAssembly);
+    }
+
+    [Fact]
+    public void Interactive_components_reach_application_services_only_through_the_runner()
+    {
+        // A circuit lives for hours; a scoped service injected into it would share one DbContext
+        // across every click. Only the static account pages, which run in a request scope, may.
+        var violations = Components
+            .Where(component => component.GetCustomAttribute<ExcludeFromInteractiveRoutingAttribute>() is null)
+            .SelectMany(component => component
+                .GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                .Where(property => property.GetCustomAttribute<InjectAttribute>() is not null && IsScopedDataAccess(property.PropertyType))
+                .Select(property => $"{component.Name}.{property.Name} ({property.PropertyType.Name})"))
+            .ToList();
+
+        violations.ShouldBeEmpty("inject DashboardOperationRunner and call the service through it");
+
+        static bool IsScopedDataAccess(Type type) =>
+            (type.Namespace?.StartsWith("CarWash.Hub.Application.Features", StringComparison.Ordinal) ?? false)
+            || type == typeof(IUnitOfWork)
+            || (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IGenericRepository<,>));
+    }
+
+    [Fact]
+    public void Every_routable_component_states_who_may_open_it()
+    {
+        // The router enforces [Authorize] inside the circuit; a page with neither attribute would be
+        // open to anyone already connected.
+        var undecided = Components
+            .Where(component => component.GetCustomAttributes<RouteAttribute>().Any())
+            .Where(component => !component.GetCustomAttributes<AuthorizeAttribute>(inherit: true).Any()
+                                && !component.GetCustomAttributes<AllowAnonymousAttribute>(inherit: true).Any())
+            .Select(component => component.FullName)
+            .ToList();
+
+        undecided.ShouldBeEmpty();
     }
 }

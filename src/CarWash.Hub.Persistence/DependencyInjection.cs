@@ -1,6 +1,8 @@
 using CarWash.Hub.Application.Abstractions.Persistence;
 using CarWash.Hub.Persistence.Context;
+using CarWash.Hub.Persistence.DataProtection;
 using CarWash.Hub.Persistence.Interceptors;
+using CarWash.Hub.Persistence.Locking;
 using CarWash.Hub.Persistence.Repositories;
 using CarWash.Hub.Persistence.Seeding;
 using Microsoft.EntityFrameworkCore;
@@ -91,6 +93,12 @@ public static class DependencyInjection
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IDbInitializer, DbInitializer>();
+
+        // Singleton: each lease opens a connection of its own, and holds nothing between calls.
+        services.AddSingleton<IWorkerLease, SqlAppLockWorkerLease>();
+
+        // Scoped: resolved in a scope of its own on each call by Infrastructure's key repository.
+        services.AddScoped<IDataProtectionKeyStore, DataProtectionKeyStore>();
 
         return services;
     }

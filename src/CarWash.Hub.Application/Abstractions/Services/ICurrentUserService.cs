@@ -1,3 +1,5 @@
+using CarWash.Hub.Domain.Enums;
+
 namespace CarWash.Hub.Application.Abstractions.Services;
 
 /// <summary>
@@ -11,10 +13,10 @@ namespace CarWash.Hub.Application.Abstractions.Services;
 /// constructing an <c>HttpContext</c>.
 /// </para>
 /// <para>
-/// <b>Two kinds of caller.</b> In Phase 1 every caller is a machine or a tester holding a shared
-/// client key, described by <see cref="ClientKeyId"/> and <see cref="Scopes"/>; <see cref="UserId"/>
-/// is always null. Phase 2's dashboard sign-in fills <see cref="UserId"/> and adds the user's role
-/// and station beside it, without changing the members already here.
+/// <b>Two kinds of caller.</b> A machine or a tester holds a shared client key, described by
+/// <see cref="ClientKeyId"/> and <see cref="Scopes"/>, and has no <see cref="UserId"/>. A dashboard
+/// user is described by <see cref="UserId"/>, <see cref="Role"/> and <see cref="GasStationId"/>, and
+/// has no key.
 /// </para>
 /// <para>
 /// Every member is nullable or empty by design: migrations and startup run with no request in
@@ -23,8 +25,17 @@ namespace CarWash.Hub.Application.Abstractions.Services;
 /// </remarks>
 public interface ICurrentUserService
 {
-    /// <summary>Gets the signed-in dashboard user's identifier; always null in Phase 1.</summary>
+    /// <summary>Gets the signed-in dashboard user's identifier, or null for a client key or no caller.</summary>
     Guid? UserId { get; }
+
+    /// <summary>Gets the signed-in dashboard user's sign-in name, or null.</summary>
+    string? UserName { get; }
+
+    /// <summary>Gets the signed-in dashboard user's role, or null for anyone else.</summary>
+    UserRole? Role { get; }
+
+    /// <summary>Gets the station of a signed-in station user, or null.</summary>
+    Guid? GasStationId { get; }
 
     /// <summary>Gets a value indicating whether the request carries an authenticated principal.</summary>
     bool IsAuthenticated { get; }

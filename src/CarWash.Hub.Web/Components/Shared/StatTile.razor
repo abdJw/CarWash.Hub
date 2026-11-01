@@ -1,0 +1,108 @@
+@* The stat tile contract: a sentence-case label, a semibold value, an optional signed delta against a
+   named period (coloured by direction and by whether up is good), and an optional sparkline.
+   A status, when given, is shown as an icon and a word beside the value - never colour alone. *@
+@inject IStringLocalizer<DashboardResource> L
+
+<section class="cw-tile @(Status is not null ? $"cw-tile--{Status}" : null)">
+    <header class="cw-tile-label">
+        @if (Icon is not null)
+        {
+            <MudIcon Icon="@Icon" Size="Size.Small" />
+        }
+        <span>@Label</span>
+    </header>
+
+    <div class="cw-tile-row">
+        <div class="cw-tile-figure">
+            <div class="cw-tile-value">
+                @Value
+                @if (StatusIcon is not null)
+                {
+                    <MudIcon Icon="@StatusIcon" Size="Size.Small" Class="cw-tile-status-icon" />
+                }
+            </div>
+
+            @if (Delta is { } delta)
+            {
+                <div class="cw-tile-delta @DeltaClass(delta)">
+                    @if (delta != 0)
+                    {
+                        <MudIcon Icon="@(delta > 0 ? Icons.Material.Rounded.ArrowUpward : Icons.Material.Rounded.ArrowDownward)" Size="Size.Small" />
+                        <strong class="cw-ltr">@DashboardFormat.Signed(delta)</strong>
+                        <span>@DeltaLabel</span>
+                    }
+                    else
+                    {
+                        <span>@SameLabel</span>
+                    }
+                </div>
+            }
+
+            @if (Hint is not null)
+            {
+                <div class="cw-tile-hint">@Hint</div>
+            }
+        </div>
+
+        @if (Trend is { Count: > 1 })
+        {
+            <Sparkline Values="Trend" Label="@TrendLabel" />
+        }
+    </div>
+</section>
+
+@code {
+    /// <summary>Gets or sets the label, in sentence case.</summary>
+    [Parameter, EditorRequired]
+    public string Label { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the formatted value.</summary>
+    [Parameter, EditorRequired]
+    public string Value { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets an icon for the label.</summary>
+    [Parameter]
+    public string? Icon { get; set; }
+
+    /// <summary>Gets or sets the change against the comparison period.</summary>
+    [Parameter]
+    public long? Delta { get; set; }
+
+    /// <summary>Gets or sets the comparison period's name, such as "vs. yesterday at this time".</summary>
+    [Parameter]
+    public string? DeltaLabel { get; set; }
+
+    /// <summary>Gets or sets the text for no change.</summary>
+    [Parameter]
+    public string? SameLabel { get; set; }
+
+    /// <summary>Gets or sets a value indicating whether an increase is good news.</summary>
+    [Parameter]
+    public bool UpIsGood { get; set; } = true;
+
+    /// <summary>Gets or sets a line of context under the value.</summary>
+    [Parameter]
+    public string? Hint { get; set; }
+
+    /// <summary>Gets or sets the trend values, oldest first.</summary>
+    [Parameter]
+    public IReadOnlyList<int>? Trend { get; set; }
+
+    /// <summary>Gets or sets what the trend shows, for screen readers.</summary>
+    [Parameter]
+    public string? TrendLabel { get; set; }
+
+    /// <summary>Gets or sets a reserved status - <c>good</c>, <c>warning</c> or <c>critical</c> - or null.</summary>
+    [Parameter]
+    public string? Status { get; set; }
+
+    private string? StatusIcon => Status switch
+    {
+        "good" => Icons.Material.Rounded.CheckCircle,
+        "warning" => Icons.Material.Rounded.Warning,
+        "critical" => Icons.Material.Rounded.Error,
+        _ => null,
+    };
+
+    private string DeltaClass(long delta) => delta == 0 ? "is-flat" : (delta > 0) == UpIsGood ? "is-good" : "is-bad";
+}

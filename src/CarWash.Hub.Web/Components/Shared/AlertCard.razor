@@ -1,0 +1,111 @@
+@* One alert: its severity as colour, icon and word; the sentence; where and when; how it closed or
+   who took it on; and what can be done - refill the service, or acknowledge it. *@
+@using CarWash.Hub.Domain.Enums
+@inject IStringLocalizer<DashboardResource> L
+@inject DashboardFormat Format
+
+<article class="cw-alert cw-alert--@Kind @(Alert.IsOpen ? null : "is-resolved")">
+    <span class="cw-alert-icon" aria-hidden="true"><MudIcon Icon="@AlertPresentation.Icon(Alert.Type)" Size="Size.Small" /></span>
+
+    <div class="cw-alert-main">
+        <div class="cw-alert-head">
+            @if (Alert.IsOpen)
+            {
+                <span class="cw-status cw-status--@Kind">
+                    <MudIcon Icon="@AlertPresentation.Icon(Alert.Type)" Size="Size.Small" />
+                    @AlertPresentation.Word(Alert.Type, L)
+                </span>
+            }
+            else
+            {
+                <span class="cw-status cw-status--muted">@AlertPresentation.Word(Alert.Type, L)</span>
+            }
+            <time class="cw-muted" datetime="@Alert.RaisedAt.ToString("O", CultureInfo.InvariantCulture)" title="@Format.DateTime(Alert.RaisedAt)">
+                @Format.Ago(Alert.RaisedAt, Now)
+            </time>
+        </div>
+
+        <p class="cw-alert-text">@AlertPresentation.Sentence(Alert, L, Format, Now)</p>
+
+        <div class="cw-alert-meta">
+            @if (ShowMachine)
+            {
+                <a href="machines/@Alert.MachineId" class="cw-alert-machine">
+                    <MudIcon Icon="@Icons.Material.Rounded.LocalCarWash" Size="Size.Small" />
+                    <bdi>@Alert.MachineTitle</bdi>
+                </a>
+                @if (Alert.StationName is { } station)
+                {
+                    <span><MudIcon Icon="@Icons.Material.Rounded.LocalGasStation" Size="Size.Small" /> @station</span>
+                }
+            }
+            @if (Alert is { ResolvedAt: { } resolvedAt, Resolution: { } resolution })
+            {
+                <span>
+                    <MudIcon Icon="@(resolution == AlertResolution.Refilled ? Icons.Material.Rounded.WaterDrop : Icons.Material.Rounded.TaskAlt)" Size="Size.Small" />
+                    @AlertPresentation.Resolution(resolution, L) · @Format.Ago(resolvedAt, Now)
+                </span>
+            }
+            @if (Alert.AcknowledgedAt is { } acknowledgedAt)
+            {
+                <span>
+                    <MudIcon Icon="@Icons.Material.Rounded.Visibility" Size="Size.Small" />
+                    @(Alert.AcknowledgedBy is { } by
+                        ? L[DashboardText.AlertAcknowledgedBy, by, Format.Ago(acknowledgedAt, Now)]
+                        : L[DashboardText.AlertAcknowledged, Format.Ago(acknowledgedAt, Now)])
+                </span>
+            }
+        </div>
+    </div>
+
+    @if (Alert.IsOpen && (CanRefill || CanAcknowledge))
+    {
+        <div class="cw-alert-actions">
+            @if (CanRefill)
+            {
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Rounded.WaterDrop" OnClick="() => OnRefill.InvokeAsync(Alert)">
+                    @L[DashboardText.RefillAction]
+                </MudButton>
+            }
+            @if (CanAcknowledge)
+            {
+                <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Rounded.Visibility" Disabled="Busy"
+                           OnClick="() => OnAcknowledge.InvokeAsync(Alert)">
+                    @L[DashboardText.AlertAcknowledge]
+                </MudButton>
+            }
+        </div>
+    }
+</article>
+
+@code {
+    /// <summary>Gets or sets the alert.</summary>
+    [Parameter, EditorRequired]
+    public AlertDto Alert { get; set; } = default!;
+
+    /// <summary>Gets or sets the current time.</summary>
+    [Parameter, EditorRequired]
+    public DateTimeOffset Now { get; set; }
+
+    /// <summary>Gets or sets a value indicating whether the machine is named (not on its own page).</summary>
+    [Parameter]
+    public bool ShowMachine { get; set; } = true;
+
+    /// <summary>Gets or sets a value indicating whether an action on this alert is in progress.</summary>
+    [Parameter]
+    public bool Busy { get; set; }
+
+    /// <summary>Gets or sets what the Refill button does; no button without it.</summary>
+    [Parameter]
+    public EventCallback<AlertDto> OnRefill { get; set; }
+
+    /// <summary>Gets or sets what the Acknowledge button does; no button without it.</summary>
+    [Parameter]
+    public EventCallback<AlertDto> OnAcknowledge { get; set; }
+
+    private string Kind => AlertPresentation.Kind(Alert.Severity);
+
+    private bool CanRefill => OnRefill.HasDelegate && Alert.Service is not null;
+
+    private bool CanAcknowledge => OnAcknowledge.HasDelegate && Alert.AcknowledgedAt is null;
+}

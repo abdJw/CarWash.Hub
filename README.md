@@ -7,7 +7,11 @@ Machine data ingestion for self-service car wash machines installed at gas stati
 is stored as text exactly as received. Read-back endpoints serve each machine's latest status and
 history.
 
-**Phase 2 (planned):** a Razor Pages dashboard for the owner and a portal for each gas station.
+**Phase 2 (in progress):** each message is parsed into service usage (soap, water, vacuum), and a
+live Blazor dashboard in the same host shows the fleet to the owner and to each gas station. It
+works on a phone and opens in Arabic by default. Refills are recorded per service, and each
+machine shows what is left and when it will run out. Alerts reach every open dashboard live when
+a service runs low or out or a machine goes quiet. Email and phone push follow.
 See [docs/phase-2-plan.md](docs/phase-2-plan.md).
 
 Machine engineers should read [docs/machine-integration-guide.md](docs/machine-integration-guide.md);
@@ -39,6 +43,11 @@ migrations are applied automatically. The development keys come from
 | `client-read-key` | `dev-only-read-key-0123456789abcdefgh` |
 
 Any key starting with `dev-only-` is refused outside the Development environment.
+
+**The dashboard** is at <http://localhost:5180/>.
+- In Development, sign in as `admin` with the password `dev-only-Admin#2026` (`Seed:Admin*` in
+  `appsettings.Development.json`). That account is created only while no Super Admin exists.
+- For live data, run `scripts/Simulate-CarWash.ps1` in another terminal.
 
 Once it is running:
 - Swagger UI is at <http://localhost:5180/swagger>. Click **Authorize**, paste both keys, and try
@@ -75,7 +84,23 @@ docker compose up --build # API on http://localhost:8080, Swagger at /swagger (S
 | `GET /api/v1/machines/{machineId}` | `client-read-key` | One machine |
 | `GET /api/v1/machines/{machineId}/messages/latest` | `client-read-key` | The machine's current status |
 | `GET /api/v1/machines/{machineId}/messages?from&to&pageNumber&pageSize` | `client-read-key` | History, newest first |
+| `GET /api/v1/machines/{machineId}/usage?from&to` | `client-read-key` | Uses per service, in total and per UTC hour (default last 24 h, at most 31 days) |
+| `GET /api/v1/processing/status` | `client-read-key` | Processing backlog (pending and failed messages) and the worker's state |
 | `GET /health`, `GET /health/ready` | none | Liveness, and readiness (which also checks the database) |
+
+**Dashboard routes** (signed-in user; the cookie never opens an API endpoint):
+
+| Route | Purpose |
+|---|---|
+| `/` | Overview: machines that need a refill or will run out within 24 hours, a "Needs attention" list, today's uses against yesterday, silent machines, uses by service over 24 h / 7 d / 30 d |
+| `/machines`, `/machines/{id}` | Machine cards with a level tag per service and a Refill button (search, "Needs refill" filter, sort by urgency); one machine's levels, refill history (with void), usage, latest uses and raw messages |
+| `/m/{id}/refill` | The phone page a machine's QR sticker opens: record a refill in a few taps |
+| `/alerts` | The alert centre: open alerts or the whole history, by kind (refill / no activity); refill or acknowledge in place. The bell in the app bar shows the open, unacknowledged count on every page |
+| `/account/login`, `/account/logout` | Sign-in and sign-out. Static pages with antiforgery; sign-in is rate-limited and locks an account after repeated failures |
+| `/account/culture?culture=en-US\|ar-SA` | Language switch (cookie) |
+| `/account/password` | Change your own password; required after an admin sets a temporary one |
+| `/admin` and `/admin/inbox`, `/admin/stations`, `/admin/users`, `/admin/services` | Super Admins only: name and assign new machines, stations, users (temporary password, reset, deactivate), service catalog |
+| `/admin/sticker/{id}` | Super Admins only: a printable sticker with the machine's name and a QR code to its refill page |
 
 **Response shapes:**
 - Success: an `ApiResponse<T>` envelope, `{ success, message, data, errors, correlationId }`.
@@ -99,7 +124,15 @@ Nothing secret is committed.
 | `ReverseProxy` | `Enabled`, `KnownProxies`, `KnownNetworks` | off | Turn on behind a proxy, so client IPs and HTTPS are seen correctly. |
 | `ApiDocumentation` | `Enabled`, `AllowedNetworks` | on except Production | Swagger / Scalar. In Production, enable it and restrict it to the engineers' network. |
 | `Seed` | `ApplyMigrations` | false (true in Development) | In production, prefer the idempotent script (below). |
+| `Seed` | `SeedData` | true | Inserts missing reference data (the soap, water and vacuum services). Never changes an existing row. |
+| `BackgroundWorkers` | `Enabled` | true | Runs the message processing worker in this process. Off in the integration tests. |
+| `Processing` | `BatchSize`, `SweepIntervalSeconds`, `MaxPastSkew`, `MaxFutureSkew`, `RetryMinDelay` | 200, 30, 7 days, 10 min, 2 s | How messages become usage; see "Message processing" below. |
 | `RequestLogging` | `Enabled`, `SlowRequestThresholdMs` | true, 2000 | One line per request. Headers and bodies are never logged. |
+| `Dashboard` | `TimeZone`, `DefaultCulture`, `PublicBaseUrl` | Asia/Amman, ar-SA, null | "Today" and every time on screen are in this zone. Startup fails if the zone is unknown. `PublicBaseUrl` is the address QR stickers point at; set it to the live site so a sticker printed from another address still works. |
+| `DashboardAuth` | `ExpireHours`, `RememberMeDays`, `RevalidationMinutes`, `MaxFailedAttempts`, `LockoutMinutes` | 12, 14, 5, 5, 15 | Session lifetimes, the session re-check interval, and the lockout. |
+| `Alerts` | `NoActivityAfterHours`, `BusyWithinMinutes` | 6, 15 | Machines send only when used: silence for this long (outside the station's quiet hours) means "silent" and raises a no-activity alert; a use this recent means "in use". A machine can override the hours in its settings. |
+| `Alerts` | `CheckIntervalSeconds`, `StartupGraceMinutes` | 60, 15 | How often the worker re-checks every machine's alerts, and how long after it starts before it may call a machine silent. |
+| `Seed` | `AdminUserName`, `AdminEmail`, `AdminDisplayName`, `AdminPassword` | — | The first Super Admin, created only while none exists. Set the password from a secret for the first start, then remove it. |
 
 The API **refuses to start** if the client keys are missing, shorter than 32 characters, contain
 placeholders, are shared between the two lists, or are `dev-only-` keys outside Development. The
@@ -146,8 +179,8 @@ src/
   CarWash.Hub.Application     →  Domain
   CarWash.Hub.Infrastructure  →  Application
   CarWash.Hub.Persistence     →  Application
-  CarWash.Hub.Api             →  Application, Infrastructure, Persistence
-  (Phase 2) CarWash.Hub.Web   →  Application, Infrastructure, Persistence
+  CarWash.Hub.Web             →  Application, Infrastructure        (Blazor dashboard, a Razor class library)
+  CarWash.Hub.Api             →  Application, Infrastructure, Persistence, Web
 tests/
   CarWash.Hub.UnitTests
   CarWash.Hub.IntegrationTests
@@ -213,6 +246,149 @@ The cyberani code these parts were copied from has five defects, fixed here:
    `application/problem+json` content type `[Produces("application/json")]` silently rewrote. The fix
    returns a `JsonResult`.
 
+### Message processing
+
+Each ESP32 message is one use of one service:
+`{"service":"soap","macAddress":"B0:CB:D8:D0:64:2C","readAt":"2026-10-31T13:03:45Z"}`.
+
+- **Ingest is unchanged.** The message is stored with `processing_status = Pending`, the 201 goes
+  back, and an in-process signal wakes `MachineStateWorker`. The worker also sweeps every
+  `SweepIntervalSeconds`, so a missed signal costs only latency.
+- **The worker** (`MachineStateProcessor`, one transaction per batch):
+  - parses the batch with `Esp32ServiceEventParser`;
+  - writes one `service_usages` row per use and increments `service_usage_hourly`;
+  - updates `machine_states`, which hold last seen, last use and total uses;
+  - marks each message `Processed`, `Ignored` (no `service`, or not JSON) or `Failed`, with the
+    reason in `processing_error`.
+- **Single writer.** A SQL Server application lock (`sp_getapplock`) keeps the worker to one
+  process, even during an IIS overlapped recycle. Counters are therefore plain increments, with no
+  race.
+- **Time.** `readAt` is trusted unless it is more than `MaxPastSkew` in the past or `MaxFutureSkew`
+  in the future. An unset clock reporting 1970 is replaced by the receive time.
+- **Retries are counted once.** A re-sent event has the same service and `readAt` and arrives at
+  least `RetryMinDelay` later. Two real uses in the same second arrive together and are both
+  counted, because under-counting would bring a refill alert too late.
+- **Unknown services** (`"service":"wax"`) are added to `service_definitions` as unconfigured, so
+  their usage is recorded from the first message.
+- **Backfill and reprocessing.** Messages stored before processing existed were migrated as
+  `Pending` and are processed on the first start. Resetting rows to `Pending` re-parses them.
+- `scripts/Simulate-CarWash.ps1` posts the same events, with options for rate, clock skew and
+  delayed retries.
+
+### Refills, levels and forecasts
+
+- **A refill** is one transaction on one machine that covers one or more services, each with a
+  capacity in **uses** ("soap: 300 uses until the next refill"). It can be backdated up to 30 days,
+  and carries optional notes and who recorded it.
+- **The form** pre-selects the services that are low, empty or used after empty, and pre-fills each
+  capacity from that service's last refill, else the catalog's default capacity. It opens from a
+  machine card, the machine page, or the machine's QR sticker on a phone.
+- **Levels** per machine and service live in `machine_service_states`:
+  remaining = capacity − uses since the refill.
+  - Ok, then **Low** at or below the service's low threshold (default 20%), **Empty** at zero, and
+    **Used after empty** below zero. A service that was never refilled shows "No refill recorded".
+  - A use whose `readAt` is before the refill belongs to the previous fill, so a delayed message
+    never empties a fresh refill.
+- **Only the worker writes levels.** Recording or voiding a refill (or changing the catalog) saves
+  the fact together with a `state_rebuild_requests` row and wakes the worker. The worker then
+  recomputes that machine from `service_usages`, so a count never drifts and the UI never races the
+  worker.
+- **Voiding** is a soft delete with a reason; the previous refill becomes current again. Super Admins
+  can void any refill; a station user can void their own within 24 hours.
+- **Forecast.** "Runs out in ~6 h" walks a 28-day hour-of-week usage profile forward from now, so a
+  quiet night is not counted like a busy afternoon. With under a week of history it uses an
+  hour-of-day profile. It needs at least 5 uses of history and looks at most 30 days ahead. The
+  worker refreshes forecasts every 15 minutes.
+
+### Alerts
+
+- **What raises one.**
+  - A service gets one level alert at a time, the most urgent that applies:
+    - **Runs out soon:** still above its threshold, but forecast to run out within 24 hours;
+    - **Low:** at or below the service's low threshold;
+    - **Empty:** zero uses left;
+    - **Used after empty:** still being used after running out.
+  - **No activity:** no message for `NoActivityAfterHours`, not counting the station's quiet hours.
+- **How severe.** Empty and used-after-empty are critical; the others are warnings. Each shows with
+  its icon and word, never colour alone.
+- **Who raises them.** Only the processing worker, under its lease, by comparing what should be
+  open with what is.
+  - It checks after every batch, for the machines just touched, including right after a refill is
+    recorded.
+  - It checks once a minute for every machine: forecasts come due and machines go quiet with time,
+    not with a message.
+  - Because the check works from current state, running it twice or after a missed run gives the
+    same result.
+- **Which machines.** Only machines assigned to an active station and in service. Unassigning a
+  machine or taking it out of service closes its alerts.
+- **How one closes.**
+  - A more urgent alert replaces it ("Escalated").
+  - Recording a refill closes it ("Refilled"). This includes a backdated refill, but not a void.
+  - A no-activity alert closes on the machine's next message.
+- **Who is told.** A toast and a chime in every open tab of every user who can see the machine.
+  - Toasts come on a first alert, when it turns critical, and always for used after empty and no
+    activity.
+  - "Runs out soon" turning into "Low" is not news, so it doesn't toast again.
+  - More than three at once become one "N new alerts" toast.
+  - The chime plays once per alert per device, after the page has been clicked once (a browser
+    rule), and can be turned off from the bell.
+- **Acknowledge.** Means "I'm handling it". It clears the bell's count but leaves the alert open
+  until the condition clears.
+- **Quiet hours** are set per station, 23:00–07:00 by default (local time); a station can be "Open
+  24 hours". Silence then doesn't count, so a machine last used before closing isn't silent
+  overnight.
+- **Live.**
+  - Alerts reach the dashboard over its existing SignalR (Blazor Server) connection; there is no
+    separate hub.
+  - The event carries no content: each tab reloads its alerts through its own user's station
+    scope, so no station sees another's.
+- **Hosting requirement.** The no-activity check runs only while the site is running. Shared IIS
+  unloads an idle site after about 20 minutes, which happens exactly when machines are quiet.
+  - Keep it awake with an external uptime ping on `/health` every 5 minutes (for example
+    UptimeRobot, free), or with `startMode=AlwaysRunning`.
+
+### The dashboard (Blazor Server in the API host)
+
+- **One site.** `CarWash.Hub.Web` is a Razor class library that the host composes with
+  `AddDashboard()` and `MapDashboard()`. The shared hosting gives one site, and machines keep
+  `/api/*`.
+- **Two kinds of caller, kept apart.**
+  - The dashboard cookie (`DashboardCookie`) is the default scheme.
+  - The API policies name their client-key schemes, so a cookie never satisfies them.
+  - The fallback policy still demands a key, so every dashboard endpoint states its own
+    authorization: static assets are anonymous, while pages and `/_blazor` require a signed-in user.
+- **One DI scope per operation.** Components call services only through
+  `DashboardOperationRunner`.
+  - It opens a scope per call and copies the circuit's user into `CurrentPrincipalHolder`, so the
+    station scope and audit columns see that user.
+  - A scoped `DbContext` therefore never lives as long as a circuit.
+  - `DependencyRuleTests` enforces this.
+- **Live.**
+  - After each committed batch, the processing worker publishes a `MachineActivityEvent`.
+  - `DashboardEventBus` gives each open tab a bounded queue of its own.
+  - Pages coalesce events into one reload every 1.5 s, and pulse the cards of machines just used.
+- **Sessions.**
+  - The cookie is re-checked against the stored user every 5 minutes, and an open circuit every
+    5 minutes. A deactivated user or a changed security stamp ends the session.
+  - Data Protection keys live in `data_protection_keys`, so an IIS recycle signs nobody out.
+- **Language.** Arabic (`ar-SA`, Gregorian calendar) right-to-left is the dashboard default; the
+  API still defaults to English.
+- **Administration.**
+  - Each admin service checks for a Super Admin itself, beyond the pages' `[Authorize]`.
+  - Edits carry the row version they started from, so a stale edit is a 409, never a silent
+    overwrite.
+  - Changing a user's role, station, active flag or password issues a new security stamp, which
+    ends their open sessions. An admin cannot change their own access.
+  - A machine becomes visible to a station only when assigned from the New machines inbox. This is
+    also the defence against an invented machine id.
+- **Dialogs** (refill, void, the admin forms) render inside the themed, mirrored root. That gives
+  them the theme's colours in light and dark, and the page's reading direction in Arabic.
+- **Charts.**
+  - Hand-built HTML and CSS: no chart library and no inline script.
+  - Service colours come from a palette validated for colour-vision deficiency, and are stepped
+    separately for light and dark.
+  - Every chart has a legend and a table view.
+
 ### Middleware ordering
 
 1. **Forwarded headers** (when `ReverseProxy:Enabled`), before anything reads the client address.
@@ -221,17 +397,22 @@ The cyberani code these parts were copied from has five defects, fixed here:
    client saw.
 4. **Request localization**, *above* the exception handler. The culture flows through an
    `AsyncLocal`, so below the handler every error body would be in English.
-5. **Exception handling**: anything thrown below becomes a localized problem document.
+5. **Exception handling**: anything thrown below becomes a localized problem document. Directly
+   inside it, dashboard paths get an error *page* instead (`UseDashboardErrorHandling`).
 6. **Security headers**, written on `OnStarting`, so error responses carry them too.
+   - API and health paths get `default-src 'none'`, and the documentation keeps its own policy.
+   - Dashboard paths allow scripts only from this site (none inline) plus the Blazor WebSocket,
+     and their HTML is `no-store`.
 7. **HTTPS redirection.**
 8. **Swagger / Scalar**, *before* routing and authorization: the fallback policy would otherwise
    demand a key for the documentation itself.
 9. **Routing.**
 10. **Authentication.**
 11. **Rate limiter**, which refuses a flood before any key is hashed.
-12. **Authorization**: the `Ingest` and `Read` policies plus the fallback.
-13. **Log enrichment** with the key id.
-14. **Endpoints.**
+12. **Authorization**: the `Ingest`, `Read` and dashboard policies, plus the fallback.
+13. **Antiforgery**, for the dashboard's form posts.
+14. **Log enrichment** with the key id.
+15. **Endpoints**: controllers, health checks, then `MapDashboard()`.
 
 ---
 
@@ -274,7 +455,9 @@ dotnet test --project tests/CarWash.Hub.IntegrationTests   # needs a database, s
   - the stored-payload rule (string data unescaped, other JSON raw);
   - the client-key handler and its options validator;
   - the dependency rule;
-  - completeness of the English and Arabic resources.
+  - completeness of the English and Arabic resources;
+  - the level and forecast maths, and the alert rules: which alert a level calls for, severity, who
+    is told, refill detection, and silence across quiet hours.
 - **Integration tests** run the real pipeline (`WebApplicationFactory`) against real SQL Server.
   They use the server in `CARWASH_TEST_CONNECTION` if set, otherwise a Testcontainers
   `mssql/server:2022` container (this needs Docker). With neither, they are **skipped**, not

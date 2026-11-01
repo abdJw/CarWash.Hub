@@ -1,0 +1,107 @@
+@* Sign-in. Static server rendering - not interactive - because issuing the cookie needs the HTTP
+   response. Plain inputs post an ordinary form; antiforgery is validated by the endpoint. Being a
+   static page, it calls the sign-in service directly, inside its own request scope. *@
+@page "/account/login"
+@using CarWash.Hub.Application.Features.Auth
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.RateLimiting
+@using Microsoft.Extensions.Options
+@attribute [AllowAnonymous]
+@attribute [ExcludeFromInteractiveRouting]
+@attribute [EnableRateLimiting(DashboardAuthentication.SignInRateLimitPolicy)]
+@layout AccountLayout
+@inject ISignInService SignIn
+@inject NavigationManager Navigation
+@inject IStringLocalizer<DashboardResource> L
+@inject IOptions<DashboardCookieOptions> CookieOptions
+@inject IDateTimeProvider Clock
+
+<PageTitle>@L[DashboardText.LoginTitle] · @L[DashboardText.AppName]</PageTitle>
+
+<h1 class="cw-auth-title">@L[DashboardText.LoginTitle]</h1>
+<p class="cw-auth-subtitle">@L[DashboardText.LoginSubtitle]</p>
+
+@if (_error is not null)
+{
+    <div class="cw-auth-error" role="alert">@_error</div>
+}
+
+<EditForm Model="Input!" method="post" FormName="login" OnSubmit="SubmitAsync" class="cw-auth-form">
+    <label for="login-user">@L[DashboardText.LoginUserName]</label>
+    <InputText id="login-user" @bind-Value="Input!.UserName" autocomplete="username" autocapitalize="none" spellcheck="false" required />
+
+    <label for="login-password">@L[DashboardText.LoginPassword]</label>
+    <InputText id="login-password" type="password" @bind-Value="Input!.Password" autocomplete="current-password" required />
+
+    <label class="cw-auth-check">
+        <InputCheckbox @bind-Value="Input!.RememberMe" />
+        <span>@L[DashboardText.LoginRememberMe]</span>
+    </label>
+
+    <button type="submit" class="cw-auth-submit">@L[DashboardText.LoginSubmit]</button>
+</EditForm>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private SignInForm? Input { get; set; }
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    private string? _error;
+
+    protected override void OnInitialized() => Input ??= new SignInForm();
+
+    private async Task SubmitAsync()
+    {
+        var form = Input ?? new SignInForm();
+        if (string.IsNullOrWhiteSpace(form.UserName) || string.IsNullOrEmpty(form.Password))
+        {
+            _error = L[DashboardText.LoginRequired];
+            return;
+        }
+
+        var result = await SignIn.SignInAsync(form.UserName, form.Password, HttpContext.RequestAborted);
+        form.Password = null;
+
+        if (!result.Succeeded)
+        {
+            _error = result.Failure == SignInFailure.LockedOut && result.LockedOutUntil is { } until
+                ? L[DashboardText.LoginLockedOut, Math.Max(1, (int)Math.Ceiling((until - Clock.UtcNow).TotalMinutes))]
+                : L[DashboardText.LoginFailed];
+            return;
+        }
+
+        // "Keep me signed in" is a fixed-length persistent cookie; otherwise a browser-session cookie
+        // that slides with activity.
+        var properties = form.RememberMe
+            ? new AuthenticationProperties
+            {
+                IsPersistent = true,
+                ExpiresUtc = Clock.UtcNow.AddDays(CookieOptions.Value.RememberMeDays),
+                AllowRefresh = false,
+            }
+            : new AuthenticationProperties { IsPersistent = false };
+
+        await HttpContext.SignInAsync(DashboardAuthentication.Scheme, DashboardAuthentication.CreatePrincipal(result.User!), properties);
+
+        // A temporary password set by an admin is replaced before anything else.
+        var target = DashboardAuthentication.SafeReturnUrl(ReturnUrl);
+        Navigation.NavigateTo(
+            result.User!.MustChangePassword ? $"{DashboardAuthentication.ChangePasswordPath}?returnUrl={Uri.EscapeDataString(target)}" : target,
+            forceLoad: true);
+    }
+
+    private sealed class SignInForm
+    {
+        public string? UserName { get; set; }
+
+        public string? Password { get; set; }
+
+        // On by default: the dashboard is mostly used from a phone at the station.
+        public bool RememberMe { get; set; } = true;
+    }
+}

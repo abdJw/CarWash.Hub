@@ -1,0 +1,3 @@
+@* Every page in this folder and below requires a signed-in dashboard user. The router checks it on
+   each navigation inside the circuit; the endpoint checks it on the first request. *@
+@attribute [Authorize(Policy = DashboardPolicies.Authenticated)]

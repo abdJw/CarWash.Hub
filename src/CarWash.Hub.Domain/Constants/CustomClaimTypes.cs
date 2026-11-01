@@ -5,8 +5,8 @@ namespace CarWash.Hub.Domain.Constants;
 /// </summary>
 /// <remarks>
 /// Layer: Domain. Short, explicit names rather than the long WS-Federation URIs, so they read the
-/// same in a log, a test and the code. Phase 2 adds the dashboard user's claims (user id, role,
-/// gas station) beside these.
+/// same in a log, a test and the code. A machine or tester carries <see cref="KeyId"/> and
+/// <see cref="Scope"/>; a dashboard user carries the rest.
 /// </remarks>
 public static class CustomClaimTypes
 {
@@ -15,6 +15,30 @@ public static class CustomClaimTypes
 
     /// <summary>A scope the key grants; see <see cref="ClientScopes"/>.</summary>
     public const string Scope = "scope";
+
+    /// <summary>The dashboard user's id.</summary>
+    public const string UserId = "sub";
+
+    /// <summary>The dashboard user's sign-in name.</summary>
+    public const string UserName = "name";
+
+    /// <summary>The dashboard user's name as shown in the dashboard.</summary>
+    public const string DisplayName = "display_name";
+
+    /// <summary>The dashboard user's role; see <see cref="Enums.UserRole"/>.</summary>
+    public const string Role = "role";
+
+    /// <summary>The gas station a station user belongs to.</summary>
+    public const string GasStationId = "station_id";
+
+    /// <summary>
+    /// The user's security stamp when the session began. A password reset or a deactivation changes
+    /// the stamp, which ends every session issued before it.
+    /// </summary>
+    public const string SecurityStamp = "security_stamp";
+
+    /// <summary>Present while the user must choose a new password before using the dashboard.</summary>
+    public const string MustChangePassword = "must_change_password";
 }
 
 /// <summary>

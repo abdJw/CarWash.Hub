@@ -1,0 +1,12 @@
+@page "/not-found"
+@attribute [AllowAnonymous]
+@inject IStringLocalizer<DashboardResource> L
+
+<PageTitle>@L[DashboardText.NotFoundTitle] · @L[DashboardText.AppName]</PageTitle>
+
+<div class="cw-empty">
+    <MudIcon Icon="@Icons.Material.Rounded.TravelExplore" Size="Size.Large" />
+    <h1 class="cw-h1">@L[DashboardText.NotFoundTitle]</h1>
+    <p>@L[DashboardText.NotFoundText]</p>
+    <MudButton Href="" Variant="Variant.Outlined" Color="Color.Primary">@L[DashboardText.CommonBackToOverview]</MudButton>
+</div>

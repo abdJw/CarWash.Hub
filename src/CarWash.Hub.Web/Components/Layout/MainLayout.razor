@@ -1,0 +1,203 @@
+@* The interactive shell: app bar, navigation (a drawer on wide screens, a bottom bar on phones),
+   language and theme switches, and an error boundary around every page. *@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@inject IStringLocalizer<DashboardResource> L
+@inject AuthenticationStateProvider AuthenticationState
+
+<MudThemeProvider @ref="_themeProvider" Theme="DashboardTheme.Theme" @bind-IsDarkMode="_isDark" />
+
+<MudRTLProvider RightToLeft="_isRtl">
+    <div class="cw-root @(_isDark ? "cw-dark" : "cw-light")">
+        @* Dialogs, menus and snackbars render where their providers are: inside the root, so they
+           get the theme's colour roles and the page's reading direction. *@
+        <MudPopoverProvider />
+        <MudDialogProvider />
+        <MudSnackbarProvider />
+        <MudLayout>
+            <MudAppBar Elevation="0" Class="cw-appbar">
+                <MudIconButton Icon="@Icons.Material.Rounded.Menu" Color="Color.Inherit" Edge="Edge.Start"
+                               OnClick="() => _drawerOpen = !_drawerOpen" aria-label="@L[DashboardText.NavMenu]" Class="cw-hide-xs" />
+                <a href="" class="cw-brand">
+                    <svg class="cw-brand-mark" viewBox="0 0 48 48" aria-hidden="true"><use href="#cw-logo" /></svg>
+                    <span>@L[DashboardText.AppName]</span>
+                </a>
+                <MudSpacer />
+
+                @if (_ready)
+                {
+                    <AlertBell />
+                }
+
+                <MudTooltip Text="@L[DashboardText.NavLanguage]">
+                    <MudButton Variant="Variant.Text" Color="Color.Inherit" OnClick="SwitchLanguage"
+                               StartIcon="@Icons.Material.Rounded.Translate" Class="cw-lang"
+                               aria-label="@(_isRtl ? "English" : "العربية")">
+                        <span class="cw-lang-text">@(_isRtl ? "English" : "العربية")</span>
+                    </MudButton>
+                </MudTooltip>
+
+                <MudTooltip Text="@(_isDark ? L[DashboardText.NavLightMode] : L[DashboardText.NavDarkMode])">
+                    <MudIconButton Icon="@(_isDark ? Icons.Material.Rounded.LightMode : Icons.Material.Rounded.DarkMode)"
+                                   Color="Color.Inherit" OnClick="ToggleThemeAsync"
+                                   aria-label="@(_isDark ? L[DashboardText.NavLightMode] : L[DashboardText.NavDarkMode])" />
+                </MudTooltip>
+
+                <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" aria-label="@_displayName">
+                    <ActivatorContent>
+                        @* MudBlazor 9: a custom activator opens its menu itself, through the context. *@
+                        <MudIconButton Color="Color.Inherit" aria-label="@_displayName" aria-haspopup="menu" OnClick="args => context.ToggleAsync(args)" Class="cw-avatar-button">
+                            <MudAvatar Size="Size.Small" Class="cw-avatar">@Initials</MudAvatar>
+                        </MudIconButton>
+                    </ActivatorContent>
+                    <ChildContent>
+                        <div class="cw-menu-user">
+                            <strong>@_displayName</strong>
+                            <span>@_roleLabel</span>
+                        </div>
+                        <MudDivider />
+                        <MudMenuItem Icon="@Icons.Material.Rounded.Key" Href="@DashboardAuthentication.ChangePasswordPath" ForceLoad="true">
+                            @L[DashboardText.NavChangePassword]
+                        </MudMenuItem>
+                        <MudMenuItem Icon="@Icons.Material.Rounded.Logout" Href="@DashboardAuthentication.SignOutPath" ForceLoad="true">
+                            @L[DashboardText.NavSignOut]
+                        </MudMenuItem>
+                    </ChildContent>
+                </MudMenu>
+            </MudAppBar>
+
+            <MudDrawer @bind-Open="_drawerOpen" Variant="DrawerVariant.Responsive" ClipMode="DrawerClipMode.Always"
+                       Breakpoint="Breakpoint.Md" Elevation="0" Class="cw-drawer">
+                <MudNavMenu Class="pt-2">
+                    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Rounded.SpaceDashboard">@L[DashboardText.NavOverview]</MudNavLink>
+                    <MudNavLink Href="machines" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Rounded.LocalCarWash">@L[DashboardText.NavMachines]</MudNavLink>
+                    <MudNavLink Href="alerts" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Rounded.Notifications">@L[DashboardText.NavAlerts]</MudNavLink>
+                    @if (_isSuperAdmin)
+                    {
+                        <MudNavGroup Title="@L[DashboardText.NavAdmin]" Icon="@Icons.Material.Rounded.AdminPanelSettings" Expanded="true">
+                            <MudNavLink Href="admin/inbox" Icon="@Icons.Material.Rounded.Inbox">@L[DashboardText.NavInbox]</MudNavLink>
+                            <MudNavLink Href="admin/stations" Icon="@Icons.Material.Rounded.LocalGasStation">@L[DashboardText.NavStations]</MudNavLink>
+                            <MudNavLink Href="admin/users" Icon="@Icons.Material.Rounded.Group">@L[DashboardText.NavUsers]</MudNavLink>
+                            <MudNavLink Href="admin/services" Icon="@Icons.Material.Rounded.Tune">@L[DashboardText.NavServices]</MudNavLink>
+                        </MudNavGroup>
+                    }
+                </MudNavMenu>
+            </MudDrawer>
+
+            <MudMainContent Class="cw-main">
+                <div class="cw-content">
+                    <ErrorBoundary @ref="_errorBoundary">
+                        <ChildContent>@Body</ChildContent>
+                        <ErrorContent>
+                            <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="my-4">
+                                @L[DashboardText.ErrorBoundary]
+                                <MudButton Variant="Variant.Text" Color="Color.Error" Class="ms-2" OnClick="Reload">@L[DashboardText.ErrorReload]</MudButton>
+                            </MudAlert>
+                        </ErrorContent>
+                    </ErrorBoundary>
+                </div>
+            </MudMainContent>
+        </MudLayout>
+
+        <nav class="cw-bottom-nav" aria-label="@L[DashboardText.NavMenu]">
+            <NavLink href="" Match="NavLinkMatch.All" ActiveClass="active">
+                <MudIcon Icon="@Icons.Material.Rounded.SpaceDashboard" />
+                <span>@L[DashboardText.NavOverview]</span>
+            </NavLink>
+            <NavLink href="machines" Match="NavLinkMatch.Prefix" ActiveClass="active">
+                <MudIcon Icon="@Icons.Material.Rounded.LocalCarWash" />
+                <span>@L[DashboardText.NavMachines]</span>
+            </NavLink>
+            <NavLink href="alerts" Match="NavLinkMatch.Prefix" ActiveClass="active">
+                <MudIcon Icon="@Icons.Material.Rounded.Notifications" />
+                <span>@L[DashboardText.NavAlerts]</span>
+            </NavLink>
+            @if (_isSuperAdmin)
+            {
+                <NavLink href="admin" Match="NavLinkMatch.Prefix" ActiveClass="active">
+                    <MudIcon Icon="@Icons.Material.Rounded.AdminPanelSettings" />
+                    <span>@L[DashboardText.NavAdmin]</span>
+                </NavLink>
+            }
+        </nav>
+    </div>
+</MudRTLProvider>
+
+@code {
+    private MudThemeProvider? _themeProvider;
+    private ErrorBoundary? _errorBoundary;
+    private bool _drawerOpen = true;
+    private bool _isDark;
+    private bool _isRtl = CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
+    private string _displayName = string.Empty;
+    private string _roleLabel = string.Empty;
+    private bool _isSuperAdmin;
+
+    // False while the user is being sent to change a temporary password: nothing loads until then.
+    private bool _ready;
+
+    private string Initials =>
+        string.Concat(_displayName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => char.ToUpperInvariant(part[0])));
+
+    protected override async Task OnInitializedAsync()
+    {
+        Navigation.LocationChanged += OnLocationChanged;
+
+        var user = (await AuthenticationState.GetAuthenticationStateAsync()).User;
+
+        // A temporary password set by an admin must be replaced before the dashboard is used.
+        if (user.HasClaim(claim => claim.Type == Domain.Constants.CustomClaimTypes.MustChangePassword))
+        {
+            var returnUrl = "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
+            Navigation.NavigateTo($"{DashboardAuthentication.ChangePasswordPath}?returnUrl={Uri.EscapeDataString(returnUrl)}", forceLoad: true);
+            return;
+        }
+
+        _displayName = user.FindFirst(Domain.Constants.CustomClaimTypes.DisplayName)?.Value ?? user.Identity?.Name ?? string.Empty;
+        _isSuperAdmin = user.IsInRole(nameof(Domain.Enums.UserRole.SuperAdmin));
+        _roleLabel = _isSuperAdmin ? L[DashboardText.RoleSuperAdmin] : L[DashboardText.RoleStationUser];
+        _ready = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        // The device's saved choice, or else the operating system's.
+        var saved = await JS.InvokeAsync<string?>("carwashHub.theme.get");
+        _isDark = saved switch
+        {
+            "dark" => true,
+            "light" => false,
+            _ => _themeProvider is not null && await _themeProvider.GetSystemDarkModeAsync(),
+        };
+        StateHasChanged();
+    }
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+
+    // A failed page must not stay failed after navigating away from it.
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) => _errorBoundary?.Recover();
+
+    private async Task ToggleThemeAsync()
+    {
+        _isDark = !_isDark;
+        await JS.InvokeVoidAsync("carwashHub.theme.set", _isDark ? "dark" : "light");
+    }
+
+    // The culture is fixed for a circuit, so a language change is a full reload through the
+    // endpoint that stores the choice.
+    private void SwitchLanguage()
+    {
+        var target = _isRtl ? "en-US" : "ar-SA";
+        var returnUrl = "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
+        Navigation.NavigateTo($"{AccountEndpoints.CulturePath}?culture={target}&returnUrl={Uri.EscapeDataString(returnUrl)}", forceLoad: true);
+    }
+
+    private void Reload() => Navigation.Refresh(forceReload: true);
+}

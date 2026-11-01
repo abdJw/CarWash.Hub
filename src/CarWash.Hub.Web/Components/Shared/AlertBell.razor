@@ -1,0 +1,241 @@
+@* The bell in the app bar, on every page: how many open alerts nobody has taken on yet, the latest
+   ones a tap away, and - when one is raised - a toast and a chime in every open tab.
+
+   It lives in the layout, outside the page's error boundary: an exception here would end the whole
+   circuit. So every piece of work is caught and logged, and the bell simply shows what it last knew
+   until the next reload succeeds. *@
+@using Microsoft.Extensions.Logging
+@implements IAsyncDisposable
+@inject DashboardOperationRunner Runner
+@inject LiveUpdates Live
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+@inject IStringLocalizer<DashboardResource> L
+@inject DashboardFormat Format
+@inject IDateTimeProvider Clock
+@inject ILogger<AlertBell> Logger
+
+<MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" AriaLabel="@Label" ListClass="cw-bell-list" PopoverClass="cw-bell-popover">
+    <ActivatorContent>
+        <MudBadge Content="@Unacknowledged" Visible="@(Unacknowledged > 0)" Max="99" Overlap="true" Bordered="true"
+                  Color="@(_summary?.UnacknowledgedCritical > 0 ? Color.Error : Color.Warning)" Class="cw-bell">
+            <MudIconButton Icon="@(Unacknowledged > 0 ? Icons.Material.Rounded.NotificationsActive : Icons.Material.Rounded.Notifications)"
+                           Color="Color.Inherit" aria-label="@Label" aria-haspopup="menu" OnClick="args => context.ToggleAsync(args)" />
+        </MudBadge>
+    </ActivatorContent>
+    <ChildContent>
+        <div class="cw-bell-head">
+            <strong>@L[DashboardText.AlertsTitle]</strong>
+            @if (_summary is { Open: > 0 } summary)
+            {
+                <span class="cw-muted">@L[DashboardText.AlertsOpenCount, DashboardFormat.Number(summary.Open)]</span>
+            }
+        </div>
+        <MudDivider />
+        @if (_summary is null || _summary.Latest.Count == 0)
+        {
+            <div class="cw-bell-empty">
+                <MudIcon Icon="@Icons.Material.Rounded.TaskAlt" Size="Size.Small" />
+                @L[DashboardText.AlertsAllGood]
+            </div>
+        }
+        else
+        {
+            @foreach (var alert in _summary.Latest)
+            {
+                <MudMenuItem Href="@($"machines/{alert.MachineId}")" Class="@($"cw-bell-item cw-bell-item--{AlertPresentation.Kind(alert.Severity)}")">
+                    <span class="cw-bell-alert">
+                        <MudIcon Icon="@AlertPresentation.Icon(alert.Type)" Size="Size.Small" Class="cw-bell-icon" />
+                        <span class="cw-bell-body">
+                            <span>@AlertPresentation.Sentence(alert, L, Format, Clock.UtcNow)</span>
+                            <span class="cw-muted">@Format.Ago(alert.RaisedAt, Clock.UtcNow)</span>
+                        </span>
+                    </span>
+                </MudMenuItem>
+            }
+        }
+        <MudDivider />
+        <MudMenuItem Href="alerts" Icon="@Icons.Material.Rounded.ListAlt">@L[DashboardText.AlertsViewAll]</MudMenuItem>
+        <MudMenuItem OnClick="ToggleSoundAsync" AutoClose="false"
+                     Icon="@(_soundOn ? Icons.Material.Rounded.VolumeUp : Icons.Material.Rounded.VolumeOff)">
+            @(_soundOn ? L[DashboardText.AlertsSoundOn] : L[DashboardText.AlertsSoundOff])
+        </MudMenuItem>
+    </ChildContent>
+</MudMenu>
+
+@code {
+    private const int MaxToasts = 3;
+    private static readonly TimeSpan ReloadDelay = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan FallbackReload = TimeSpan.FromMinutes(2);
+
+    private readonly CancellationTokenSource _disposed = new();
+    private AlertSummaryDto? _summary;
+    private long? _seenUpTo;
+    private bool _soundOn = true;
+    private bool _reloadScheduled;
+
+    private int Unacknowledged => _summary?.Unacknowledged ?? 0;
+
+    private string Label => L[DashboardText.AlertsBellLabel, DashboardFormat.Number(Unacknowledged)];
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        Live.AlertsChanged -= OnAlertsChangedAsync;
+        await _disposed.CancelAsync();
+        _disposed.Dispose();
+    }
+
+    protected override void OnInitialized() => Live.AlertsChanged += OnAlertsChangedAsync;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await SafelyAsync(async () => _soundOn = await JS.InvokeAsync<bool>("carwashHub.sound.enabled"));
+        await ReloadAsync();
+        StateHasChanged();
+        _ = FallbackLoopAsync();
+    }
+
+    private Task OnAlertsChangedAsync(AlertsChangedEvent alerts) => _disposed.IsCancellationRequested
+        ? Task.CompletedTask
+        : InvokeAsync(() =>
+        {
+            if (!_reloadScheduled)
+            {
+                _reloadScheduled = true;
+                _ = ReloadSoonAsync();
+            }
+        });
+
+    // Several batches within a second become one reload.
+    private async Task ReloadSoonAsync()
+    {
+        try
+        {
+            await Task.Delay(ReloadDelay, _disposed.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        await InvokeAsync(async () =>
+        {
+            _reloadScheduled = false;
+            await ReloadAsync();
+            StateHasChanged();
+        });
+    }
+
+    // An event dropped by a busy tab, or a circuit that reconnected, is caught up here.
+    private async Task FallbackLoopAsync()
+    {
+        using var timer = new PeriodicTimer(FallbackReload);
+        try
+        {
+            while (await timer.WaitForNextTickAsync(_disposed.Token))
+            {
+                await InvokeAsync(async () =>
+                {
+                    await ReloadAsync();
+                    StateHasChanged();
+                });
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // The tab closed.
+        }
+        catch (Exception exception)
+        {
+            Logger.LogDebug(exception, "The alert bell stopped refreshing");
+        }
+    }
+
+    private Task ReloadAsync() => SafelyAsync(async () =>
+    {
+        var summary = await Runner.QueryAsync<IAlertService, AlertSummaryDto>(
+            (service, token) => service.GetSummaryAsync(_seenUpTo, token), _disposed.Token);
+
+        // The first load only sets the mark: alerts that were already open are no news.
+        IReadOnlyList<AlertDto> fresh = _seenUpTo is null ? [] : summary.Fresh;
+        _seenUpTo = Math.Max(_seenUpTo ?? 0, summary.LatestId);
+        _summary = summary;
+
+        if (fresh.Count > 0)
+        {
+            await AnnounceAsync(fresh, summary.FreshCount);
+        }
+    });
+
+    private async Task AnnounceAsync(IReadOnlyList<AlertDto> fresh, int count)
+    {
+        if (count > MaxToasts)
+        {
+            var worst = fresh.Max(alert => alert.Severity);
+            Snackbar.Add(L[DashboardText.AlertsNew, DashboardFormat.Number(count)], AlertPresentation.ToastSeverity(worst), options =>
+            {
+                options.Icon = Icons.Material.Rounded.NotificationsActive;
+                options.Action = L[DashboardText.AlertsViewAction];
+                options.OnClick = _ => Open("alerts");
+            });
+        }
+        else
+        {
+            // Oldest first, so the newest ends up on top.
+            foreach (var alert in fresh.OrderBy(alert => alert.Id))
+            {
+                Snackbar.Add(AlertPresentation.Sentence(alert, L, Format, Clock.UtcNow), AlertPresentation.ToastSeverity(alert.Severity), options =>
+                {
+                    options.Icon = AlertPresentation.Icon(alert.Type);
+                    options.VisibleStateDuration = 12_000;
+                    options.Action = L[DashboardText.AlertsOpenAction];
+                    options.OnClick = _ => Open($"machines/{alert.MachineId}");
+                });
+            }
+        }
+
+        // One chime per alert across this device's tabs; silently skipped until the page has been
+        // clicked once, which browsers require before playing sound.
+        var newest = fresh.Max(alert => alert.Id);
+        await SafelyAsync(async () => await JS.InvokeAsync<bool>("carwashHub.sound.play", newest));
+    }
+
+    private Task Open(string path)
+    {
+        Navigation.NavigateTo(path);
+        return Task.CompletedTask;
+    }
+
+    private Task ToggleSoundAsync() => SafelyAsync(async () =>
+    {
+        _soundOn = !_soundOn;
+        await JS.InvokeVoidAsync("carwashHub.sound.setEnabled", _soundOn);
+    });
+
+    private async Task SafelyAsync(Func<Task> work)
+    {
+        try
+        {
+            await work();
+        }
+        catch (OperationCanceledException)
+        {
+            // The tab closed.
+        }
+        catch (JSDisconnectedException)
+        {
+            // The tab closed.
+        }
+        catch (Exception exception)
+        {
+            Logger.LogWarning(exception, "The alert bell could not update");
+        }
+    }
+}

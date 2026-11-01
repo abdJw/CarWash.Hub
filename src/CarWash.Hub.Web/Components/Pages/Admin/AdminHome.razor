@@ -1,0 +1,53 @@
+@page "/admin"
+@using CarWash.Hub.Application.Features.Catalog
+@using CarWash.Hub.Application.Features.Machines
+@using CarWash.Hub.Application.Features.Stations
+@using CarWash.Hub.Application.Features.Users
+@inherits LivePageBase
+
+<PageTitle>@L[DashboardText.AdminTitle] · @L[DashboardText.AppName]</PageTitle>
+
+<header class="cw-page-head">
+    <h1 class="cw-h1">@L[DashboardText.AdminTitle]</h1>
+</header>
+
+<div class="cw-admin-tiles">
+    @foreach (var section in Sections)
+    {
+        <a class="cw-admin-tile @(section.Attention ? "needs-attention" : null)" href="@section.Href">
+            <span class="cw-admin-icon"><MudIcon Icon="@section.Icon" /></span>
+            <span class="cw-admin-text">
+                <strong>@section.Title</strong>
+                <span class="cw-muted">@section.Hint</span>
+            </span>
+            @if (section.Count is { } count)
+            {
+                <span class="cw-admin-count">@DashboardFormat.Number(count)</span>
+            }
+        </a>
+    }
+</div>
+
+@code {
+    private int? _unassigned;
+    private int? _stations;
+    private int? _users;
+    private int? _servicesToReview;
+
+    private IEnumerable<(string Href, string Icon, string Title, string Hint, int? Count, bool Attention)> Sections =>
+    [
+        ("admin/inbox", Icons.Material.Rounded.Inbox, L[DashboardText.NavInbox], L[DashboardText.AdminInboxHint], _unassigned, _unassigned > 0),
+        ("admin/stations", Icons.Material.Rounded.LocalGasStation, L[DashboardText.NavStations], L[DashboardText.AdminStationsHint], _stations, false),
+        ("admin/users", Icons.Material.Rounded.Group, L[DashboardText.NavUsers], L[DashboardText.AdminUsersHint], _users, false),
+        ("admin/services", Icons.Material.Rounded.Tune, L[DashboardText.NavServices], L[DashboardText.AdminServicesHint], _servicesToReview, _servicesToReview > 0),
+    ];
+
+    protected override async Task LoadAsync(CancellationToken cancellationToken)
+    {
+        _unassigned = (await Runner.QueryAsync<IMachineAdminService, IReadOnlyList<MachineSettingsDto>>((service, token) => service.ListUnassignedAsync(token), cancellationToken)).Count;
+        _stations = (await Runner.QueryAsync<IGasStationService, IReadOnlyList<StationDto>>((service, token) => service.ListAsync(token), cancellationToken)).Count;
+        _users = (await Runner.QueryAsync<IUserService, IReadOnlyList<UserDto>>((service, token) => service.ListAsync(token), cancellationToken)).Count;
+        _servicesToReview = (await Runner.QueryAsync<IServiceCatalogService, IReadOnlyList<ServiceDefinitionDto>>((service, token) => service.ListAsync(token), cancellationToken))
+            .Count(service => !service.IsConfigured);
+    }
+}

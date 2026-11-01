@@ -1,0 +1,196 @@
+@* Uses per service over time, as stacked columns - part-to-whole per bucket, magnitude across them.
+   Built from HTML and CSS rather than a chart library: it lays out at any width, mirrors itself in
+   right-to-left, needs no script (so the strict content-security policy holds), and its hover
+   layer is pure CSS - no round trip to the server per mouse move.
+
+   Mark specs: columns at most 24px wide, a 2px surface gap between stacked segments, 4px rounded
+   top and square base, hairline gridlines. Identity is never colour alone: a legend is always
+   shown, the tooltip names each service, and the table view carries every value. *@
+@inject IStringLocalizer<DashboardResource> L
+@inject DashboardFormat Format
+
+<figure class="viz-card @Class @(Dimmed ? "is-refreshing" : null)">
+    <figcaption class="viz-head">
+        <div>
+            <h2 class="viz-title">@Title</h2>
+            <p class="viz-sub">@Summary</p>
+        </div>
+        <button type="button" class="viz-toggle" aria-pressed="@(_asTable ? "true" : "false")" @onclick="() => _asTable = !_asTable">
+            <MudIcon Icon="@(_asTable ? Icons.Material.Rounded.BarChart : Icons.Material.Rounded.TableRows)" Size="Size.Small" />
+            <span>@(_asTable ? L[DashboardText.ChartShowChart] : L[DashboardText.ChartShowTable])</span>
+        </button>
+    </figcaption>
+
+    <ul class="viz-legend">
+        @foreach (var service in LegendServices)
+        {
+            <li><span class="viz-swatch @Services.Css(service)"></span>@Services.Name(service)</li>
+        }
+    </ul>
+
+    @if (_asTable)
+    {
+        <div class="viz-table-wrap">
+            <table class="viz-table">
+                <thead>
+                    <tr>
+                        <th scope="col">@L[DashboardText.ChartTime]</th>
+                        @foreach (var service in LegendServices)
+                        {
+                            <th scope="col">@Services.Name(service)</th>
+                        }
+                        <th scope="col">@L[DashboardText.ChartTotal]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var bucket in Series.Buckets)
+                    {
+                        <tr>
+                            <th scope="row">@Format.BucketTitle(bucket.Start, Series.Range)</th>
+                            @foreach (var service in LegendServices)
+                            {
+                                <td>@DashboardFormat.Number(CountOf(bucket, service))</td>
+                            }
+                            <td><strong>@DashboardFormat.Number(bucket.Total)</strong></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="viz-plot" role="img" aria-label="@Summary">
+            <div class="viz-y" aria-hidden="true">
+                <span style="bottom: 100%">@DashboardFormat.Number(AxisMax)</span>
+                <span style="bottom: 50%">@DashboardFormat.Number(AxisMax / 2)</span>
+                <span style="bottom: 0">0</span>
+            </div>
+
+            <div class="viz-area">
+                <div class="viz-gridline" style="bottom: 100%"></div>
+                <div class="viz-gridline" style="bottom: 50%"></div>
+                <div class="viz-gridline viz-baseline" style="bottom: 0"></div>
+
+                <div class="viz-cols">
+                    @for (var index = 0; index < Series.Buckets.Count; index++)
+                    {
+                        var bucket = Series.Buckets[index];
+                        var title = Format.BucketTitle(bucket.Start, Series.Range);
+                        <div class="viz-col @TipAlignment(index)" tabindex="0" aria-label="@($"{title}: {L[DashboardText.ChartUses, DashboardFormat.Number(bucket.Total)]}")">
+                            @if (bucket.Total > 0)
+                            {
+                                <div class="viz-stack" style="height: @Percent(bucket.Total)%">
+                                    @foreach (var count in Services.InOrder(bucket.Counts))
+                                    {
+                                        <span class="viz-seg @Services.Css(count.Service)" style="flex-grow: @count.Count"></span>
+                                    }
+                                </div>
+                            }
+                            <div class="viz-tip" role="tooltip">
+                                <strong class="viz-tip-value">@L[DashboardText.ChartUses, DashboardFormat.Number(bucket.Total)]</strong>
+                                <span class="viz-tip-label">@title</span>
+                                @foreach (var count in Services.InOrder(bucket.Counts))
+                                {
+                                    <span class="viz-tip-row">
+                                        <i class="viz-linekey @Services.Css(count.Service)"></i>
+                                        <b>@DashboardFormat.Number(count.Count)</b>
+                                        <span>@Services.Name(count.Service)</span>
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                @if (Series.Total == 0)
+                {
+                    <p class="viz-empty">@L[DashboardText.ChartNoData]</p>
+                }
+            </div>
+
+            <div class="viz-x" aria-hidden="true">
+                @for (var index = 0; index < Series.Buckets.Count; index++)
+                {
+                    <span>@(index % LabelStep == LabelOffset ? Format.BucketLabel(Series.Buckets[index].Start, Series.Range) : null)</span>
+                }
+            </div>
+        </div>
+    }
+</figure>
+
+@code {
+    private bool _asTable;
+
+    /// <summary>Gets or sets the chart title.</summary>
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the usage to draw.</summary>
+    [Parameter, EditorRequired]
+    public UsageSeriesDto Series { get; set; } = default!;
+
+    /// <summary>Gets or sets the service names, icons and colours.</summary>
+    [Parameter, EditorRequired]
+    public ServiceLookup Services { get; set; } = ServiceLookup.Empty;
+
+    /// <summary>Gets or sets a value indicating whether newer data is loading; the chart dims but stays.</summary>
+    [Parameter]
+    public bool Dimmed { get; set; }
+
+    /// <summary>Gets or sets extra classes for the card.</summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    // The services with uses in this window - plus every catalog service, so the legend does not
+    // jump about as data arrives - in display order.
+    private IReadOnlyList<string> LegendServices =>
+    [
+        .. Services.Ordered.Select(service => service.Code)
+            .Union(Series.Totals.Select(total => total.Service), StringComparer.OrdinalIgnoreCase)
+            .OrderBy(Services.Order)
+            .ThenBy(code => code, StringComparer.Ordinal),
+    ];
+
+    private string Summary
+    {
+        get
+        {
+            if (Series.Buckets.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var first = Format.BucketLabel(Series.Buckets[0].Start, Series.Range);
+            var last = Format.BucketLabel(Series.Buckets[^1].Start, Series.Range);
+            return L[DashboardText.ChartSummary, DashboardFormat.Number(Series.Total), first, last];
+        }
+    }
+
+    // A clean, even ceiling - 2, 4, 6, 8 or 10 times a power of ten - so both tick labels, the top
+    // and the half-way line, are whole round numbers.
+    private int AxisMax
+    {
+        get
+        {
+            var max = Math.Max(1, Series.Buckets.Count == 0 ? 0 : Series.Buckets.Max(bucket => bucket.Total));
+            var magnitude = Math.Pow(10, Math.Floor(Math.Log10(max)));
+            var step = new[] { 2d, 4d, 6d, 8d, 10d }.First(candidate => candidate * magnitude >= max);
+            return (int)(step * magnitude);
+        }
+    }
+
+    // About six axis labels whatever the bucket count, ending on the newest bucket.
+    private int LabelStep => Math.Max(1, (int)Math.Ceiling(Series.Buckets.Count / 6d));
+
+    private int LabelOffset => (Series.Buckets.Count - 1) % LabelStep;
+
+    private string Percent(int total) => (100d * total / AxisMax).ToString("0.##", CultureInfo.InvariantCulture);
+
+    // Tooltips near either edge open inwards, so they never overflow the card.
+    private string? TipAlignment(int index) =>
+        index < Series.Buckets.Count / 4 ? "tip-start" : index >= Series.Buckets.Count * 3 / 4 ? "tip-end" : null;
+
+    private static int CountOf(UsageBucketDto bucket, string service) =>
+        bucket.Counts.FirstOrDefault(count => string.Equals(count.Service, service, StringComparison.OrdinalIgnoreCase))?.Count ?? 0;
+}

@@ -1,0 +1,11 @@
+@page "/account/access-denied"
+@attribute [AllowAnonymous]
+@attribute [ExcludeFromInteractiveRouting]
+@layout AccountLayout
+@inject IStringLocalizer<DashboardResource> L
+
+<PageTitle>@L[DashboardText.AccessDeniedTitle] · @L[DashboardText.AppName]</PageTitle>
+
+<h1 class="cw-auth-title">@L[DashboardText.AccessDeniedTitle]</h1>
+<p class="cw-auth-subtitle">@L[DashboardText.AccessDeniedText]</p>
+<a class="cw-auth-submit" href="">@L[DashboardText.CommonBackToOverview]</a>

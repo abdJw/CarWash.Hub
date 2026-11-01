@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="App_Name" xml:space="preserve"><value>CarWash Hub</value></data>
+  <data name="App_Loading" xml:space="preserve"><value>Loading the dashboard…</value></data>
+  <data name="Nav_Overview" xml:space="preserve"><value>Overview</value></data>
+  <data name="Nav_Machines" xml:space="preserve"><value>Machines</value></data>
+  <data name="Nav_Menu" xml:space="preserve"><value>Menu</value></data>
+  <data name="Nav_SignOut" xml:space="preserve"><value>Sign out</value></data>
+  <data name="Nav_DarkMode" xml:space="preserve"><value>Dark mode</value></data>
+  <data name="Nav_LightMode" xml:space="preserve"><value>Light mode</value></data>
+  <data name="Nav_Language" xml:space="preserve"><value>Language</value></data>
+  <data name="Role_SuperAdmin" xml:space="preserve"><value>Super Admin</value></data>
+  <data name="Role_StationUser" xml:space="preserve"><value>Station user</value></data>
+  <data name="Login_Title" xml:space="preserve"><value>Sign in</value></data>
+  <data name="Login_Subtitle" xml:space="preserve"><value>Machines, usage and refills in one place.</value></data>
+  <data name="Login_UserName" xml:space="preserve"><value>User name or e-mail</value></data>
+  <data name="Login_Password" xml:space="preserve"><value>Password</value></data>
+  <data name="Login_RememberMe" xml:space="preserve"><value>Keep me signed in on this device</value></data>
+  <data name="Login_Submit" xml:space="preserve"><value>Sign in</value></data>
+  <data name="Login_Required" xml:space="preserve"><value>Enter your user name and password.</value></data>
+  <data name="Login_Failed" xml:space="preserve"><value>The user name or password is incorrect.</value></data>
+  <data name="Login_LockedOut" xml:space="preserve"><value>Too many failed attempts. Try again in {0} minutes.</value></data>
+  <data name="Logout_Prompt" xml:space="preserve"><value>Sign out of CarWash Hub on this device?</value></data>
+  <data name="Logout_Confirm" xml:space="preserve"><value>Sign out</value></data>
+  <data name="Logout_Done" xml:space="preserve"><value>You have signed out.</value></data>
+  <data name="Logout_SignInAgain" xml:space="preserve"><value>Sign in again</value></data>
+  <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Common_Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Common_BackToOverview" xml:space="preserve"><value>Back to the overview</value></data>
+  <data name="AccessDenied_Title" xml:space="preserve"><value>No access</value></data>
+  <data name="AccessDenied_Text" xml:space="preserve"><value>Your account cannot open this page.</value></data>
+  <data name="NotFound_Title" xml:space="preserve"><value>Page not found</value></data>
+  <data name="NotFound_Text" xml:space="preserve"><value>This page does not exist, or it is not available to you.</value></data>
+  <data name="Error_Title" xml:space="preserve"><value>Something went wrong</value></data>
+  <data name="Error_Text" xml:space="preserve"><value>The page could not be shown. Reference: {0}</value></data>
+  <data name="Error_Boundary" xml:space="preserve"><value>This part of the page failed to load.</value></data>
+  <data name="Error_Reload" xml:space="preserve"><value>Reload</value></data>
+  <data name="Live_Label" xml:space="preserve"><value>Live</value></data>
+  <data name="Live_Updated" xml:space="preserve"><value>Updated {0}</value></data>
+  <data name="Range_24Hours" xml:space="preserve"><value>24 hours</value></data>
+  <data name="Range_7Days" xml:space="preserve"><value>7 days</value></data>
+  <data name="Range_30Days" xml:space="preserve"><value>30 days</value></data>
+  <data name="Kpi_UsesToday" xml:space="preserve"><value>Uses today</value></data>
+  <data name="Kpi_VsYesterday" xml:space="preserve"><value>vs. yesterday at this time</value></data>
+  <data name="Kpi_SameAsYesterday" xml:space="preserve"><value>same as yesterday at this time</value></data>
+  <data name="Kpi_Machines" xml:space="preserve"><value>Machines in service</value></data>
+  <data name="Kpi_BusyNow" xml:space="preserve"><value>{0} in use now</value></data>
+  <data name="Kpi_Silent" xml:space="preserve"><value>Silent machines</value></data>
+  <data name="Kpi_SilentHint" xml:space="preserve"><value>No message for {0} hours or more</value></data>
+  <data name="Kpi_AllReporting" xml:space="preserve"><value>Every machine is reporting</value></data>
+  <data name="Kpi_Unassigned" xml:space="preserve"><value>Unassigned machines</value></data>
+  <data name="Kpi_UnassignedHint" xml:space="preserve"><value>Waiting to be assigned to a station</value></data>
+  <data name="Kpi_Last12Hours" xml:space="preserve"><value>Uses per hour, last 12 hours</value></data>
+  <data name="Chart_UsageTitle" xml:space="preserve"><value>Uses by service</value></data>
+  <data name="Chart_ShowTable" xml:space="preserve"><value>Show as table</value></data>
+  <data name="Chart_ShowChart" xml:space="preserve"><value>Show as chart</value></data>
+  <data name="Chart_Total" xml:space="preserve"><value>Total</value></data>
+  <data name="Chart_Time" xml:space="preserve"><value>Time</value></data>
+  <data name="Chart_NoData" xml:space="preserve"><value>No uses in this period.</value></data>
+  <data name="Chart_Summary" xml:space="preserve"><value>{0} uses from {1} to {2}</value></data>
+  <data name="Chart_Uses" xml:space="preserve"><value>{0} uses</value></data>
+  <data name="Overview_Title" xml:space="preserve"><value>Overview</value></data>
+  <data name="Overview_TodayByService" xml:space="preserve"><value>Today by service</value></data>
+  <data name="Overview_Busiest" xml:space="preserve"><value>Busiest machines today</value></data>
+  <data name="Overview_AllMachines" xml:space="preserve"><value>All machines</value></data>
+  <data name="Overview_NoUsesToday" xml:space="preserve"><value>No uses yet today.</value></data>
+  <data name="Machines_Title" xml:space="preserve"><value>Machines</value></data>
+  <data name="Machines_Search" xml:space="preserve"><value>Search by name, MAC address or station</value></data>
+  <data name="Machines_Empty" xml:space="preserve"><value>No machine matches.</value></data>
+  <data name="Machines_NoneYet" xml:space="preserve"><value>No machine has sent a message yet. Machines appear here on their own as soon as they report.</value></data>
+  <data name="Machines_Count" xml:space="preserve"><value>{0} of {1} machines</value></data>
+  <data name="Filter_All" xml:space="preserve"><value>All</value></data>
+  <data name="Filter_Busy" xml:space="preserve"><value>In use</value></data>
+  <data name="Filter_Idle" xml:space="preserve"><value>Idle</value></data>
+  <data name="Filter_Silent" xml:space="preserve"><value>Silent</value></data>
+  <data name="Filter_Unassigned" xml:space="preserve"><value>Unassigned</value></data>
+  <data name="Sort_Label" xml:space="preserve"><value>Sort by</value></data>
+  <data name="Sort_Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Sort_LastSeen" xml:space="preserve"><value>Last seen</value></data>
+  <data name="Sort_UsesToday" xml:space="preserve"><value>Uses today</value></data>
+  <data name="Activity_Busy" xml:space="preserve"><value>In use now</value></data>
+  <data name="Activity_Idle" xml:space="preserve"><value>Idle · {0}</value></data>
+  <data name="Activity_Silent" xml:space="preserve"><value>Silent · {0}</value></data>
+  <data name="Activity_Unknown" xml:space="preserve"><value>Not heard from yet</value></data>
+  <data name="Machine_Unassigned" xml:space="preserve"><value>No station</value></data>
+  <data name="Machine_Inactive" xml:space="preserve"><value>Out of service</value></data>
+  <data name="Machine_UsesToday" xml:space="preserve"><value>Uses today</value></data>
+  <data name="Machine_NoUsesToday" xml:space="preserve"><value>No uses today</value></data>
+  <data name="Machine_LastUse" xml:space="preserve"><value>Last use {0}</value></data>
+  <data name="Machine_Mac" xml:space="preserve"><value>MAC address</value></data>
+  <data name="Machine_Station" xml:space="preserve"><value>Station</value></data>
+  <data name="Machine_FirstSeen" xml:space="preserve"><value>First seen</value></data>
+  <data name="Machine_LastSeen" xml:space="preserve"><value>Last message</value></data>
+  <data name="Machine_TotalUses" xml:space="preserve"><value>Uses since first seen</value></data>
+  <data name="Machine_UsesInRange" xml:space="preserve"><value>Uses in this period</value></data>
+  <data name="Machine_RecentUses" xml:space="preserve"><value>Latest uses</value></data>
+  <data name="Machine_RecentMessages" xml:space="preserve"><value>Latest messages</value></data>
+  <data name="Machine_NoUses" xml:space="preserve"><value>No uses yet.</value></data>
+  <data name="Machine_NoMessages" xml:space="preserve"><value>No messages yet.</value></data>
+  <data name="Machine_NotFound" xml:space="preserve"><value>This machine does not exist, or it is not at your station.</value></data>
+  <data name="Machine_Open" xml:space="preserve"><value>Open {0}</value></data>
+  <data name="MessageStatus_Pending" xml:space="preserve"><value>Pending</value></data>
+  <data name="MessageStatus_Processed" xml:space="preserve"><value>Counted</value></data>
+  <data name="MessageStatus_Ignored" xml:space="preserve"><value>Not a use</value></data>
+  <data name="MessageStatus_Failed" xml:space="preserve"><value>Failed</value></data>
+  <data name="Time_JustNow" xml:space="preserve"><value>just now</value></data>
+  <data name="Time_MinutesAgo" xml:space="preserve"><value>{0} min ago</value></data>
+  <data name="Time_HoursAgo" xml:space="preserve"><value>{0} h ago</value></data>
+  <data name="Time_DaysAgo" xml:space="preserve"><value>{0} d ago</value></data>
+  <data name="Duration_Minutes" xml:space="preserve"><value>{0} min</value></data>
+  <data name="Duration_Hours" xml:space="preserve"><value>{0} h</value></data>
+  <data name="Duration_Days" xml:space="preserve"><value>{0} d</value></data>
+  <data name="Nav_Admin" xml:space="preserve"><value>Administration</value></data>
+  <data name="Nav_Stations" xml:space="preserve"><value>Stations</value></data>
+  <data name="Nav_Inbox" xml:space="preserve"><value>New machines</value></data>
+  <data name="Nav_Users" xml:space="preserve"><value>Users</value></data>
+  <data name="Nav_Services" xml:space="preserve"><value>Services</value></data>
+  <data name="Nav_ChangePassword" xml:space="preserve"><value>Change password</value></data>
+  <data name="Common_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Common_Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Common_Saved" xml:space="preserve"><value>Saved.</value></data>
+  <data name="Common_Active" xml:space="preserve"><value>In service</value></data>
+  <data name="Common_Inactive" xml:space="preserve"><value>Out of service</value></data>
+  <data name="Admin_Title" xml:space="preserve"><value>Administration</value></data>
+  <data name="Admin_InboxHint" xml:space="preserve"><value>Machines that have reported but belong to no station yet</value></data>
+  <data name="Admin_StationsHint" xml:space="preserve"><value>Gas stations, and where each machine is installed</value></data>
+  <data name="Admin_UsersHint" xml:space="preserve"><value>Who can sign in, and what they can see</value></data>
+  <data name="Admin_ServicesHint" xml:space="preserve"><value>Names, refill tracking and low-level thresholds</value></data>
+  <data name="Field_Code" xml:space="preserve"><value>Code</value></data>
+  <data name="Field_NameEn" xml:space="preserve"><value>Name in English</value></data>
+  <data name="Field_NameAr" xml:space="preserve"><value>Name in Arabic</value></data>
+  <data name="Field_City" xml:space="preserve"><value>City</value></data>
+  <data name="Field_Address" xml:space="preserve"><value>Address</value></data>
+  <data name="Field_InService" xml:space="preserve"><value>In service</value></data>
+  <data name="Field_MachineName" xml:space="preserve"><value>Machine name</value></data>
+  <data name="Field_MachineNameHint" xml:space="preserve"><value>For example "Bay 2 – vacuum". Leave empty to show the MAC address.</value></data>
+  <data name="Field_Station" xml:space="preserve"><value>Station</value></data>
+  <data name="Field_NoStation" xml:space="preserve"><value>No station (stays in New machines)</value></data>
+  <data name="Field_UserName" xml:space="preserve"><value>User name</value></data>
+  <data name="Field_Email" xml:space="preserve"><value>E-mail</value></data>
+  <data name="Field_DisplayName" xml:space="preserve"><value>Full name</value></data>
+  <data name="Field_Role" xml:space="preserve"><value>Role</value></data>
+  <data name="Field_CanSignIn" xml:space="preserve"><value>Can sign in</value></data>
+  <data name="Field_TemporaryPassword" xml:space="preserve"><value>Temporary password</value></data>
+  <data name="Field_TemporaryPasswordHint" xml:space="preserve"><value>At least 8 characters. They choose their own at the first sign-in.</value></data>
+  <data name="Field_TracksRefill" xml:space="preserve"><value>Track refills</value></data>
+  <data name="Field_DefaultCapacity" xml:space="preserve"><value>Default capacity (uses)</value></data>
+  <data name="Field_LowThreshold" xml:space="preserve"><value>Low level at (%)</value></data>
+  <data name="Field_SortOrder" xml:space="preserve"><value>Order</value></data>
+  <data name="Field_Icon" xml:space="preserve"><value>Icon</value></data>
+  <data name="Stations_Title" xml:space="preserve"><value>Stations</value></data>
+  <data name="Stations_Add" xml:space="preserve"><value>Add station</value></data>
+  <data name="Stations_Empty" xml:space="preserve"><value>No station yet. Add the first one, then assign machines to it.</value></data>
+  <data name="Stations_New" xml:space="preserve"><value>New station</value></data>
+  <data name="Stations_Edit" xml:space="preserve"><value>Edit station</value></data>
+  <data name="Stations_Machines" xml:space="preserve"><value>{0} machines</value></data>
+  <data name="Stations_Users" xml:space="preserve"><value>{0} users</value></data>
+  <data name="Inbox_Title" xml:space="preserve"><value>New machines</value></data>
+  <data name="Inbox_Intro" xml:space="preserve"><value>These machines have sent messages but belong to no station. Name each one and assign it to its station; until then, station users cannot see it.</value></data>
+  <data name="Inbox_Empty" xml:space="preserve"><value>No new machines: every machine has a station.</value></data>
+  <data name="Inbox_Assign" xml:space="preserve"><value>Name and assign</value></data>
+  <data name="Inbox_FirstSeen" xml:space="preserve"><value>First seen {0}</value></data>
+  <data name="Machine_Edit" xml:space="preserve"><value>Machine settings</value></data>
+  <data name="Users_Title" xml:space="preserve"><value>Users</value></data>
+  <data name="Users_Add" xml:space="preserve"><value>Add user</value></data>
+  <data name="Users_New" xml:space="preserve"><value>New user</value></data>
+  <data name="Users_Edit" xml:space="preserve"><value>Edit user</value></data>
+  <data name="Users_ResetPassword" xml:space="preserve"><value>Reset password</value></data>
+  <data name="Users_ResetDone" xml:space="preserve"><value>Password reset. Give it to {0}: they must change it at the next sign-in.</value></data>
+  <data name="Users_Locked" xml:space="preserve"><value>Locked until {0}</value></data>
+  <data name="Users_MustChange" xml:space="preserve"><value>Must choose a password</value></data>
+  <data name="Users_LastSignIn" xml:space="preserve"><value>Last sign-in {0}</value></data>
+  <data name="Users_NeverSignedIn" xml:space="preserve"><value>Never signed in</value></data>
+  <data name="Users_You" xml:space="preserve"><value>You</value></data>
+  <data name="Services_Title" xml:space="preserve"><value>Services</value></data>
+  <data name="Services_Intro" xml:space="preserve"><value>Services appear here on their own the first time a machine reports one. Review new ones, and set how refills are tracked.</value></data>
+  <data name="Services_NeedsReview" xml:space="preserve"><value>New – review</value></data>
+  <data name="Services_Tracked" xml:space="preserve"><value>Refills tracked</value></data>
+  <data name="Services_NotTracked" xml:space="preserve"><value>Refills not tracked</value></data>
+  <data name="Services_Capacity" xml:space="preserve"><value>Default {0} uses</value></data>
+  <data name="Services_Threshold" xml:space="preserve"><value>Low at {0}%</value></data>
+  <data name="Services_Edit" xml:space="preserve"><value>Edit service</value></data>
+  <data name="Password_Title" xml:space="preserve"><value>Change password</value></data>
+  <data name="Password_Intro" xml:space="preserve"><value>At least 8 characters. Your other devices are signed out.</value></data>
+  <data name="Password_MustChange" xml:space="preserve"><value>Choose your own password before you continue.</value></data>
+  <data name="Password_Current" xml:space="preserve"><value>Current password</value></data>
+  <data name="Password_New" xml:space="preserve"><value>New password</value></data>
+  <data name="Password_Confirm" xml:space="preserve"><value>Confirm the new password</value></data>
+  <data name="Password_Mismatch" xml:space="preserve"><value>The two new passwords do not match.</value></data>
+  <data name="Password_Changed" xml:space="preserve"><value>Your password has been changed.</value></data>
+  <data name="Password_Continue" xml:space="preserve"><value>Continue</value></data>
+  <data name="Levels_Title" xml:space="preserve"><value>Levels</value></data>
+  <data name="Levels_NoneTracked" xml:space="preserve"><value>No service on this machine is tracked for refills.</value></data>
+  <data name="Level_Ok" xml:space="preserve"><value>OK</value></data>
+  <data name="Level_Low" xml:space="preserve"><value>Low</value></data>
+  <data name="Level_Empty" xml:space="preserve"><value>Empty</value></data>
+  <data name="Level_Overused" xml:space="preserve"><value>Used after empty</value></data>
+  <data name="Level_NeverRefilled" xml:space="preserve"><value>No refill recorded</value></data>
+  <data name="Level_Left" xml:space="preserve"><value>{0} of {1} uses left</value></data>
+  <data name="Level_OverBy" xml:space="preserve"><value>{0} uses after empty</value></data>
+  <data name="Level_RunsOutIn" xml:space="preserve"><value>Runs out in ~{0}</value></data>
+  <data name="Level_RunsOutAt" xml:space="preserve"><value>expected {0}</value></data>
+  <data name="Level_RefilledAgo" xml:space="preserve"><value>Refilled {0}</value></data>
+  <data name="Refill_Action" xml:space="preserve"><value>Refill</value></data>
+  <data name="Refill_Title" xml:space="preserve"><value>Record a refill</value></data>
+  <data name="Refill_Services" xml:space="preserve"><value>Services refilled</value></data>
+  <data name="Refill_SelectAll" xml:space="preserve"><value>All services</value></data>
+  <data name="Refill_Capacity" xml:space="preserve"><value>Uses until the next refill</value></data>
+  <data name="Refill_Now" xml:space="preserve"><value>Now</value></data>
+  <data name="Refill_Earlier" xml:space="preserve"><value>Earlier</value></data>
+  <data name="Refill_When" xml:space="preserve"><value>When was it refilled?</value></data>
+  <data name="Refill_Date" xml:space="preserve"><value>Date</value></data>
+  <data name="Refill_Time" xml:space="preserve"><value>Time</value></data>
+  <data name="Refill_Notes" xml:space="preserve"><value>Notes (optional)</value></data>
+  <data name="Refill_Save" xml:space="preserve"><value>Save refill</value></data>
+  <data name="Refill_Saved" xml:space="preserve"><value>Refill saved. The levels update in a moment.</value></data>
+  <data name="Refill_NoneTracked" xml:space="preserve"><value>No service is tracked for refills yet. A Super Admin can turn tracking on under Services.</value></data>
+  <data name="Refill_NowLevel" xml:space="preserve"><value>Now: {0}</value></data>
+  <data name="RefillHistory_Title" xml:space="preserve"><value>Refill history</value></data>
+  <data name="RefillHistory_Empty" xml:space="preserve"><value>No refill recorded yet.</value></data>
+  <data name="Refill_By" xml:space="preserve"><value>by {0}</value></data>
+  <data name="Refill_Void" xml:space="preserve"><value>Void</value></data>
+  <data name="Refill_Voided" xml:space="preserve"><value>Voided</value></data>
+  <data name="Refill_VoidedBy" xml:space="preserve"><value>Voided by {0}</value></data>
+  <data name="Refill_VoidTitle" xml:space="preserve"><value>Void this refill?</value></data>
+  <data name="Refill_VoidHint" xml:space="preserve"><value>The levels are recomputed as if it had never been recorded. It stays in the history, struck through.</value></data>
+  <data name="Refill_VoidReason" xml:space="preserve"><value>Reason</value></data>
+  <data name="Refill_VoidConfirm" xml:space="preserve"><value>Void refill</value></data>
+  <data name="Refill_VoidDone" xml:space="preserve"><value>Refill voided.</value></data>
+  <data name="RefillPage_Done" xml:space="preserve"><value>Refill saved</value></data>
+  <data name="RefillPage_OpenMachine" xml:space="preserve"><value>Open the machine</value></data>
+  <data name="Sticker_Title" xml:space="preserve"><value>QR sticker</value></data>
+  <data name="Sticker_Scan" xml:space="preserve"><value>Scan to record a refill</value></data>
+  <data name="Sticker_Print" xml:space="preserve"><value>Print</value></data>
+  <data name="Sticker_Hint" xml:space="preserve"><value>Print this and stick it on the machine. Scanning it with a phone camera opens this machine's refill page.</value></data>
+  <data name="Kpi_NeedsRefill" xml:space="preserve"><value>Need a refill</value></data>
+  <data name="Kpi_NeedsRefillHint" xml:space="preserve"><value>Low, empty or used after empty</value></data>
+  <data name="Kpi_RunsOutSoon" xml:space="preserve"><value>Run out within 24 hours</value></data>
+  <data name="Kpi_RunsOutSoonHint" xml:space="preserve"><value>At their usual pace</value></data>
+  <data name="Overview_Attention" xml:space="preserve"><value>Needs attention</value></data>
+  <data name="Overview_AllGood" xml:space="preserve"><value>Nothing needs attention right now.</value></data>
+  <data name="Filter_NeedsRefill" xml:space="preserve"><value>Needs refill</value></data>
+  <data name="Nav_Alerts" xml:space="preserve"><value>Alerts</value></data>
+  <data name="Alerts_Title" xml:space="preserve"><value>Alerts</value></data>
+  <data name="Alerts_Intro" xml:space="preserve"><value>Raised when a service runs low or out, or a machine goes quiet. Recording a refill closes the refill alerts by itself.</value></data>
+  <data name="Alerts_FilterOpen" xml:space="preserve"><value>Open</value></data>
+  <data name="Alerts_FilterAll" xml:space="preserve"><value>All</value></data>
+  <data name="Alerts_KindAll" xml:space="preserve"><value>All types</value></data>
+  <data name="Alerts_KindRefill" xml:space="preserve"><value>Refill</value></data>
+  <data name="Alerts_KindNoActivity" xml:space="preserve"><value>No activity</value></data>
+  <data name="Alerts_NoneOpen" xml:space="preserve"><value>No open alerts. Every machine is fine.</value></data>
+  <data name="Alerts_None" xml:space="preserve"><value>No alerts yet.</value></data>
+  <data name="Alerts_LoadMore" xml:space="preserve"><value>Show more</value></data>
+  <data name="Alerts_ViewAll" xml:space="preserve"><value>View all alerts</value></data>
+  <data name="Alerts_OpenCount" xml:space="preserve"><value>{0} open</value></data>
+  <data name="Alerts_BellLabel" xml:space="preserve"><value>Alerts: {0} need attention</value></data>
+  <data name="Alerts_AllGood" xml:space="preserve"><value>No open alerts</value></data>
+  <data name="Alerts_SoundOn" xml:space="preserve"><value>Alert sound: on</value></data>
+  <data name="Alerts_SoundOff" xml:space="preserve"><value>Alert sound: off</value></data>
+  <data name="Alerts_New" xml:space="preserve"><value>{0} new alerts</value></data>
+  <data name="Alerts_OpenAction" xml:space="preserve"><value>Open</value></data>
+  <data name="Alerts_ViewAction" xml:space="preserve"><value>View</value></data>
+  <data name="Alert_Acknowledge" xml:space="preserve"><value>Acknowledge</value></data>
+  <data name="Alert_AcknowledgedBy" xml:space="preserve"><value>Acknowledged by {0} · {1}</value></data>
+  <data name="Alert_Acknowledged" xml:space="preserve"><value>Acknowledged · {0}</value></data>
+  <data name="AlertType_RunsOutSoon" xml:space="preserve"><value>Runs out soon</value></data>
+  <data name="AlertType_Low" xml:space="preserve"><value>Low</value></data>
+  <data name="AlertType_Empty" xml:space="preserve"><value>Empty</value></data>
+  <data name="AlertType_UsedAfterEmpty" xml:space="preserve"><value>Used after empty</value></data>
+  <data name="AlertType_NoActivity" xml:space="preserve"><value>No activity</value></data>
+  <data name="AlertText_RunsOutSoon" xml:space="preserve"><value>{0} on {1} will run out in about {2}.</value></data>
+  <data name="AlertText_RunsOutSoonAt" xml:space="preserve"><value>{0} on {1} was expected to run out around {2}.</value></data>
+  <data name="AlertText_Low" xml:space="preserve"><value>{0} is low on {1}: {2} of {3} uses left.</value></data>
+  <data name="AlertText_Empty" xml:space="preserve"><value>{0} has run out on {1}.</value></data>
+  <data name="AlertText_UsedAfterEmpty" xml:space="preserve"><value>{0} on {1} is still being used after running out.</value></data>
+  <data name="AlertText_NoActivity" xml:space="preserve"><value>Nothing from {0} since {1}.</value></data>
+  <data name="AlertResolution_Refilled" xml:space="preserve"><value>Closed: refilled</value></data>
+  <data name="AlertResolution_Escalated" xml:space="preserve"><value>Closed: replaced by a more urgent alert</value></data>
+  <data name="AlertResolution_Cleared" xml:space="preserve"><value>Closed: no longer applies</value></data>
+  <data name="AlertResolution_ActivityResumed" xml:space="preserve"><value>Closed: the machine reported again</value></data>
+  <data name="AlertResolution_NotEligible" xml:space="preserve"><value>Closed: machine out of service or unassigned</value></data>
+  <data name="Machine_Alerts" xml:space="preserve"><value>Alerts</value></data>
+  <data name="Machine_AlertsNone" xml:space="preserve"><value>No alerts for this machine.</value></data>
+  <data name="Field_NoActivityHours" xml:space="preserve"><value>Alert after hours without activity</value></data>
+  <data name="Field_NoActivityHoursHint" xml:space="preserve"><value>Leave empty for the default: {0} hours, not counting the station's quiet hours.</value></data>
+  <data name="Field_Open24Hours" xml:space="preserve"><value>Open 24 hours</value></data>
+  <data name="Field_QuietFrom" xml:space="preserve"><value>Quiet hours from</value></data>
+  <data name="Field_QuietTo" xml:space="preserve"><value>Until</value></data>
+  <data name="Field_QuietHint" xml:space="preserve"><value>Silence during quiet hours, usually while the station is closed, does not raise a no-activity alert.</value></data>
+  <data name="Stations_QuietHours" xml:space="preserve"><value>Quiet {0}–{1}</value></data>
+  <data name="Stations_Open24" xml:space="preserve"><value>Open 24 hours</value></data>
+</root>

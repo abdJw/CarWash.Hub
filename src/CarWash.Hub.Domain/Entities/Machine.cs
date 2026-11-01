@@ -15,10 +15,10 @@ namespace CarWash.Hub.Domain.Entities;
 /// </para>
 /// <para>
 /// <b>Last-seen is not stored here.</b> It is the newest <see cref="MachineMessage.ReceivedAt"/>,
-/// read through the <c>(machine_id, received_at DESC)</c> index. Writing it here on every message
-/// would bump <see cref="RowVersion"/> constantly and make every admin edit of the machine fail
-/// with a concurrency conflict. <see cref="AuditableEntity{TKey}.CreatedAt"/> is when the machine
-/// was first seen.
+/// read through the <c>(machine_id, received_at DESC)</c> index, and the processing worker keeps it
+/// in <see cref="State"/>. Writing it here on every message would bump <see cref="RowVersion"/>
+/// constantly and make every admin edit of the machine fail with a concurrency conflict.
+/// <see cref="AuditableEntity{TKey}.CreatedAt"/> is when the machine was first seen.
 /// </para>
 /// </remarks>
 public class Machine : AuditableEntity<Guid>, IHasRowVersion
@@ -44,6 +44,12 @@ public class Machine : AuditableEntity<Guid>, IHasRowVersion
     /// <summary>Gets or sets a value indicating whether the machine is in service.</summary>
     public bool IsActive { get; set; } = true;
 
+    /// <summary>
+    /// Gets or sets after how many hours without a message (outside its station's quiet hours) the
+    /// machine raises a no-activity alert; null for the configured default.
+    /// </summary>
+    public int? NoActivityAfterHours { get; set; }
+
     /// <inheritdoc />
     public byte[] RowVersion { get; set; } = [];
 
@@ -52,4 +58,10 @@ public class Machine : AuditableEntity<Guid>, IHasRowVersion
     /// never loaded whole, since a machine accumulates messages indefinitely.
     /// </summary>
     public ICollection<MachineMessage> Messages { get; } = [];
+
+    /// <summary>
+    /// Gets or sets what the processing worker knows from the machine's messages; null until its
+    /// first message has been processed. Read-only outside the worker.
+    /// </summary>
+    public MachineState? State { get; set; }
 }

@@ -1,0 +1,9 @@
+@* Shown in place of a page a signed-in user may not open, without leaving the dashboard. *@
+@inject IStringLocalizer<DashboardResource> L
+
+<div class="cw-empty">
+    <MudIcon Icon="@Icons.Material.Rounded.Lock" Size="Size.Large" />
+    <h1 class="cw-h1">@L[DashboardText.AccessDeniedTitle]</h1>
+    <p>@L[DashboardText.AccessDeniedText]</p>
+    <MudButton Href="" Variant="Variant.Outlined" Color="Color.Primary">@L[DashboardText.CommonBackToOverview]</MudButton>
+</div>

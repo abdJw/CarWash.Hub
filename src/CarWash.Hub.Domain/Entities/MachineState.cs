@@ -1,0 +1,39 @@
+using CarWash.Hub.Domain.Common;
+
+namespace CarWash.Hub.Domain.Entities;
+
+/// <summary>
+/// What is known about a machine from its messages: when it was last heard from and last used.
+/// </summary>
+/// <remarks>
+/// Layer: Domain.
+/// <para>
+/// <b>Why a separate row.</b> <see cref="Machine"/> is row-versioned for admin edits; writing
+/// last-seen there on every message would make each edit fail with a concurrency conflict. This row
+/// shares the machine's key, has no rowversion, and is written only by the processing worker, so the
+/// dashboard reads a machine's live state with a key lookup instead of aggregating its messages.
+/// </para>
+/// </remarks>
+public class MachineState : BaseEntity<Guid>
+{
+    /// <summary>Gets or sets the machine; its key is this row's key.</summary>
+    public Machine Machine { get; set; } = null!;
+
+    /// <summary>Gets or sets when the newest processed message arrived, in UTC.</summary>
+    public DateTimeOffset LastSeenAt { get; set; }
+
+    /// <summary>Gets or sets the newest processed message.</summary>
+    public long LastMessageId { get; set; }
+
+    /// <summary>Gets or sets when a service was last used, in UTC; null if never.</summary>
+    public DateTimeOffset? LastUsageAt { get; set; }
+
+    /// <summary>Gets or sets the service used last; null if never.</summary>
+    public string? LastServiceCode { get; set; }
+
+    /// <summary>Gets or sets the number of uses recorded, across services, since the machine was first seen.</summary>
+    public long TotalUses { get; set; }
+
+    /// <summary>Gets or sets when the worker last wrote this row, in UTC.</summary>
+    public DateTimeOffset UpdatedAt { get; set; }
+}

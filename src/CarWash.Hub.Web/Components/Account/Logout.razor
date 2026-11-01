@@ -1,0 +1,46 @@
+@* Sign-out, as a confirmation form. A form post carries an antiforgery token, so another site cannot
+   sign a user out; and a static page has one, which an interactive menu item could not. *@
+@page "/account/logout"
+@using Microsoft.AspNetCore.Authentication
+@attribute [AllowAnonymous]
+@attribute [ExcludeFromInteractiveRouting]
+@layout AccountLayout
+@inject IStringLocalizer<DashboardResource> L
+
+<PageTitle>@L[DashboardText.NavSignOut] · @L[DashboardText.AppName]</PageTitle>
+
+@if (_signedOut || HttpContext.User.Identity?.IsAuthenticated != true)
+{
+    <h1 class="cw-auth-title">@L[DashboardText.LogoutDone]</h1>
+    <a class="cw-auth-submit" href="@DashboardAuthentication.SignInPath">@L[DashboardText.LogoutSignInAgain]</a>
+}
+else
+{
+    <h1 class="cw-auth-title">@L[DashboardText.NavSignOut]</h1>
+    <p class="cw-auth-subtitle">@L[DashboardText.LogoutPrompt]</p>
+
+    <EditForm Model="Input!" method="post" FormName="logout" OnSubmit="SignOutAsync" class="cw-auth-form">
+        <button type="submit" class="cw-auth-submit">@L[DashboardText.LogoutConfirm]</button>
+        <a class="cw-auth-secondary" href="">@L[DashboardText.CommonCancel]</a>
+    </EditForm>
+}
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private SignOutForm? Input { get; set; }
+
+    private bool _signedOut;
+
+    protected override void OnInitialized() => Input ??= new SignOutForm();
+
+    private async Task SignOutAsync()
+    {
+        await HttpContext.SignOutAsync(DashboardAuthentication.Scheme);
+        _signedOut = true;
+    }
+
+    private sealed class SignOutForm;
+}

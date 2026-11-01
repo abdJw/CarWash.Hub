@@ -40,5 +40,20 @@ public sealed class MachineMessageConfiguration : IEntityTypeConfiguration<Machi
         builder.HasIndex(m => new { m.MachineId, m.ReceivedAt, m.Id })
             .IsDescending(false, true, true)
             .HasDatabaseName("ix_machine_messages_machine_id_received_at");
+
+        // tinyint, defaulting to Pending (0) - which is what makes every message stored before
+        // processing existed part of the first backlog.
+        builder.Property(m => m.ProcessingStatus).HasConversion<byte>().IsRequired();
+        builder.Property(m => m.ProcessingError).HasMaxLength(MachineMessage.ProcessingErrorMaxLength);
+
+        // The worker's queue, and the failures the status endpoint counts. Filtered, so each holds
+        // only its own handful of rows however long the history grows; the pending one is read in id
+        // order. The predicates must stay literal for SQL Server to match them to the queries.
+        builder.HasIndex(m => m.Id, "ix_machine_messages_pending")
+            .HasFilter("[processing_status] = 0")
+            .HasDatabaseName("ix_machine_messages_pending");
+        builder.HasIndex(m => m.Id, "ix_machine_messages_failed")
+            .HasFilter("[processing_status] = 3")
+            .HasDatabaseName("ix_machine_messages_failed");
     }
 }

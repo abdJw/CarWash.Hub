@@ -1,0 +1,53 @@
+@* A service's level as a tag: icon, name, what is left and when it runs out - "Soap 15% · ~6 h".
+   The status colour comes with a status icon, and an urgent state with its word. *@
+@using CarWash.Hub.Domain.Enums
+@inject IStringLocalizer<DashboardResource> L
+@inject DashboardFormat Format
+
+<span class="cw-level cw-level--@Kind" title="@Title">
+    <MudIcon Icon="@Services.Icon(Level.Service)" Size="Size.Small" />
+    <span>@Services.Name(Level.Service)</span>
+    @switch (Level.Level)
+    {
+        case ServiceLevel.Ok:
+        case ServiceLevel.Low:
+            @if (Kind == "warning")
+            {
+                <MudIcon Icon="@Icons.Material.Rounded.Warning" Size="Size.Small" Class="cw-level-status" />
+            }
+            <b class="cw-ltr">@Level.PercentRemaining%</b>
+            @if (Level.ForecastEmptyAt is { } at && at > Now)
+            {
+                <span class="cw-level-eta">· ~@Format.Duration(at - Now)</span>
+            }
+            break;
+        case ServiceLevel.Empty:
+        case ServiceLevel.Overused:
+            <MudIcon Icon="@LevelPresentation.Icon(Level.Level)" Size="Size.Small" Class="cw-level-status" />
+            <b>@LevelPresentation.Word(Level.Level, L)</b>
+            break;
+        default:
+            <span class="cw-muted">· @L[DashboardText.LevelNeverRefilled]</span>
+            break;
+    }
+</span>
+
+@code {
+    /// <summary>Gets or sets the level.</summary>
+    [Parameter, EditorRequired]
+    public ServiceLevelDto Level { get; set; } = default!;
+
+    /// <summary>Gets or sets the service names and icons.</summary>
+    [Parameter, EditorRequired]
+    public ServiceLookup Services { get; set; } = ServiceLookup.Empty;
+
+    /// <summary>Gets or sets the current time.</summary>
+    [Parameter, EditorRequired]
+    public DateTimeOffset Now { get; set; }
+
+    private string Kind => LevelPresentation.Kind(Level.Level, Level.ForecastEmptyAt, Now);
+
+    private string Title => Level.Capacity is { } capacity
+        ? $"{Services.Name(Level.Service)}: {LevelPresentation.Word(Level.Level, L)} · {L[DashboardText.LevelLeft, Math.Max(0, Level.Remaining ?? 0), capacity]}"
+        : $"{Services.Name(Level.Service)}: {L[DashboardText.LevelNeverRefilled]}";
+}

@@ -27,15 +27,21 @@ public interface IIngestionService
 /// since the machine will retry and the registration is reused. Wrapping both in a transaction
 /// would buy nothing and cost a round trip on every message.
 /// </para>
+/// <para>
+/// <b>Parsing happens elsewhere.</b> The message is stored as pending and the processing worker is
+/// woken; the 201 never waits for parsing, and nothing downstream can make ingestion fail.
+/// </para>
 /// </remarks>
 /// <param name="unitOfWork">Data access.</param>
 /// <param name="currentUser">The caller's key id, address and correlation id.</param>
 /// <param name="dateTime">The receive timestamp.</param>
+/// <param name="processingTrigger">Wakes the processing worker.</param>
 /// <param name="logger">Logger.</param>
 public sealed class IngestionService(
     IUnitOfWork unitOfWork,
     ICurrentUserService currentUser,
     IDateTimeProvider dateTime,
+    IMessageProcessingTrigger processingTrigger,
     ILogger<IngestionService> logger) : IIngestionService
 {
     private const int UserAgentMaxLength = 512;
@@ -69,6 +75,7 @@ public sealed class IngestionService(
 
         await unitOfWork.MachineMessages.AddAsync(message, cancellationToken).ConfigureAwait(false);
         await unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        processingTrigger.Signal();
 
         logger.LogInformation(
             "Stored message {MessageId} for machine {MachineCode} ({PayloadSizeBytes} bytes, key {ClientKeyId})",

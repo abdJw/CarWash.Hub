@@ -1,0 +1,179 @@
+@page "/machines"
+@inherits LivePageBase
+
+<PageTitle>@L[DashboardText.MachinesTitle] · @L[DashboardText.AppName]</PageTitle>
+
+<header class="cw-page-head">
+    <h1 class="cw-h1">@L[DashboardText.MachinesTitle]</h1>
+    <LiveBadge At="LastRefreshedAt" Now="Now" />
+</header>
+
+<div class="cw-filters cw-filters--wrap">
+    <MudTextField T="string" @bind-Value="_search" Immediate="true" DebounceInterval="250"
+                  Placeholder="@L[DashboardText.MachinesSearch]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Rounded.Search" Clearable="true"
+                  Class="cw-search" aria-label="@L[DashboardText.MachinesSearch]" />
+
+    <div class="cw-segmented" role="group" aria-label="@L[DashboardText.MachinesTitle]">
+        @foreach (var (filter, key) in Filters)
+        {
+            if (filter == MachineFilter.Unassigned && !_isSuperAdmin)
+            {
+                continue;
+            }
+
+            <button type="button" class="@(filter == _filter ? "is-selected" : null)" aria-pressed="@(filter == _filter ? "true" : "false")"
+                    @onclick="() => _filter = filter">
+                @L[key]
+                <span class="cw-count">@DashboardFormat.Number(_machines.Count(machine => Matches(machine, filter)))</span>
+            </button>
+        }
+    </div>
+
+    <MudSelect T="MachineSort" @bind-Value="_sort" Label="@L[DashboardText.SortLabel]" Variant="Variant.Outlined" Margin="Margin.Dense"
+               Dense="true" Class="cw-sort">
+        <MudSelectItem Value="MachineSort.Urgency">@L[DashboardText.OverviewAttention]</MudSelectItem>
+        <MudSelectItem Value="MachineSort.Name">@L[DashboardText.SortName]</MudSelectItem>
+        <MudSelectItem Value="MachineSort.UsesToday">@L[DashboardText.SortUsesToday]</MudSelectItem>
+        <MudSelectItem Value="MachineSort.LastSeen">@L[DashboardText.SortLastSeen]</MudSelectItem>
+    </MudSelect>
+</div>
+
+@if (!_loaded)
+{
+    <div class="cw-machines">
+        @for (var i = 0; i < 6; i++)
+        {
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="200px" Class="cw-skeleton" />
+        }
+    </div>
+}
+else if (_machines.Count == 0)
+{
+    <div class="cw-empty">
+        <MudIcon Icon="@Icons.Material.Rounded.SensorsOff" Size="Size.Large" />
+        <p>@L[DashboardText.MachinesNoneYet]</p>
+    </div>
+}
+else
+{
+    var visible = Visible;
+    <p class="cw-muted cw-result-count">@L[DashboardText.MachinesCount, DashboardFormat.Number(visible.Count), DashboardFormat.Number(_machines.Count)]</p>
+
+    @if (visible.Count == 0)
+    {
+        <div class="cw-empty"><p>@L[DashboardText.MachinesEmpty]</p></div>
+    }
+    else
+    {
+        <div class="cw-machines @(IsRefreshing ? "is-refreshing" : null)">
+            @foreach (var machine in visible)
+            {
+                <MachineCard @key="machine.Id" Machine="machine" Services="_services" Now="Now" Pulse="IsPulsing(machine.Id)"
+                             OnRefill="card => OpenRefillAsync(card.Id, card.Title, _services)" />
+            }
+        </div>
+    }
+}
+
+@code {
+    private static readonly (MachineFilter Filter, string Key)[] Filters =
+    [
+        (MachineFilter.All, DashboardText.FilterAll),
+        (MachineFilter.NeedsRefill, DashboardText.FilterNeedsRefill),
+        (MachineFilter.Busy, DashboardText.FilterBusy),
+        (MachineFilter.Idle, DashboardText.FilterIdle),
+        (MachineFilter.Silent, DashboardText.FilterSilent),
+        (MachineFilter.Unassigned, DashboardText.FilterUnassigned),
+    ];
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
+    [SupplyParameterFromQuery(Name = "filter")]
+    private string? FilterQuery { get; set; }
+
+    private IReadOnlyList<MachineCardDto> _machines = [];
+    private ServiceLookup _services = ServiceLookup.Empty;
+    private bool _loaded;
+    private bool _isSuperAdmin;
+    private string? _search;
+    private MachineFilter _filter = MachineFilter.All;
+    private MachineSort _sort = MachineSort.Urgency;
+
+    private enum MachineFilter
+    {
+        All,
+        NeedsRefill,
+        Busy,
+        Idle,
+        Silent,
+        Unassigned,
+    }
+
+    private enum MachineSort
+    {
+        Urgency,
+        Name,
+        UsesToday,
+        LastSeen,
+    }
+
+    private IReadOnlyList<MachineCardDto> Visible
+    {
+        get
+        {
+            var term = _search?.Trim();
+            var matches = _machines
+                .Where(machine => Matches(machine, _filter))
+                .Where(machine => string.IsNullOrEmpty(term)
+                                  || machine.Code.Contains(term, StringComparison.OrdinalIgnoreCase)
+                                  || (machine.DisplayName?.Contains(term, StringComparison.CurrentCultureIgnoreCase) ?? false)
+                                  || (machine.StationName?.Contains(term, StringComparison.CurrentCultureIgnoreCase) ?? false));
+
+            return _sort switch
+            {
+                MachineSort.Urgency => [.. matches
+                    .OrderByDescending(machine => LevelPresentation.Urgency(machine, Now))
+                    .ThenBy(machine => machine.Title, StringComparer.CurrentCulture)],
+                MachineSort.UsesToday => [.. matches.OrderByDescending(machine => machine.UsesTodayTotal).ThenBy(machine => machine.Title, StringComparer.CurrentCulture)],
+                MachineSort.LastSeen => [.. matches.OrderByDescending(machine => machine.LastSeenAt ?? DateTimeOffset.MinValue)],
+                _ => [.. matches.OrderBy(machine => machine.Title, StringComparer.CurrentCulture)],
+            };
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isSuperAdmin = (await AuthenticationState).User.IsInRole(nameof(CarWash.Hub.Domain.Enums.UserRole.SuperAdmin));
+        if (Enum.TryParse<MachineFilter>(FilterQuery, ignoreCase: true, out var filter))
+        {
+            _filter = filter;
+        }
+
+        await base.OnInitializedAsync();
+    }
+
+    protected override async Task LoadAsync(CancellationToken cancellationToken)
+    {
+        if (_services.Ordered.Count == 0)
+        {
+            _services = new ServiceLookup(await Runner.QueryAsync<IFleetDashboardService, IReadOnlyList<ServiceInfoDto>>(
+                (service, token) => service.GetServicesAsync(token), cancellationToken));
+        }
+
+        _machines = await Runner.QueryAsync<IFleetDashboardService, IReadOnlyList<MachineCardDto>>(
+            (service, token) => service.GetMachinesAsync(token), cancellationToken);
+        _loaded = true;
+    }
+
+    private static bool Matches(MachineCardDto machine, MachineFilter filter) => filter switch
+    {
+        MachineFilter.NeedsRefill => LevelPresentation.NeedsRefill(machine),
+        MachineFilter.Busy => machine.Activity == MachineActivity.Busy,
+        MachineFilter.Idle => machine.Activity == MachineActivity.Idle,
+        MachineFilter.Silent => machine.Activity is MachineActivity.Silent or MachineActivity.Unknown,
+        MachineFilter.Unassigned => machine.GasStationId is null,
+        _ => true,
+    };
+}

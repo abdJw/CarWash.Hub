@@ -1,0 +1,132 @@
+@* One machine at a glance: name, station, activity, each tracked service's level as a tag, today's
+   uses and the last 12 hours. The card is one big link to the machine (a stretched link, so the
+   Refill button beside it stays a real button). It pulses briefly when a use arrives. *@
+@inject IStringLocalizer<DashboardResource> L
+@inject DashboardFormat Format
+
+<article class="cw-machine @(Pulse ? "is-pulsing" : null) @(Machine.IsActive ? null : "is-inactive")">
+    <a class="cw-machine-link" href="machines/@Machine.Id" aria-label="@L[DashboardText.MachineOpen, Machine.Title]"></a>
+    <div class="cw-machine-head">
+        <div class="cw-machine-title">
+            <strong><bdi>@Machine.Title</bdi></strong>
+            @if (!string.IsNullOrWhiteSpace(Machine.DisplayName))
+            {
+                <span class="cw-mono">@Machine.Code</span>
+            }
+        </div>
+        <ActivityChip Activity="Machine.Activity" LastSeenAt="Machine.LastSeenAt" Now="Now" />
+    </div>
+
+    <div class="cw-machine-station">
+        <MudIcon Icon="@Icons.Material.Rounded.LocalGasStation" Size="Size.Small" />
+        @if (Machine.StationName is { } station)
+        {
+            <span>@station</span>
+        }
+        else
+        {
+            <span class="cw-muted">@L[DashboardText.MachineUnassigned]</span>
+        }
+        @if (!Machine.IsActive)
+        {
+            <span class="cw-status cw-status--muted">@L[DashboardText.MachineInactive]</span>
+        }
+    </div>
+
+    @if (TrackedLevels.Any(level => level.Capacity is not null))
+    {
+        <div class="cw-levels">
+            @foreach (var level in TrackedLevels)
+            {
+                <LevelChip Level="level" Services="Services" Now="Now" />
+            }
+        </div>
+    }
+    else if (Services.AnyTracked)
+    {
+        @* Never refilled: one quiet line rather than a "no refill" tag per service. *@
+        <div class="cw-levels">
+            <span class="cw-level cw-level--muted">
+                <MudIcon Icon="@Icons.Material.Rounded.HelpOutline" Size="Size.Small" />
+                @L[DashboardText.LevelNeverRefilled]
+            </span>
+        </div>
+    }
+
+    <div class="cw-machine-uses">
+        <div class="cw-machine-count">
+            <span class="cw-machine-num">@DashboardFormat.Number(Machine.UsesTodayTotal)</span>
+            <span class="cw-muted">@L[DashboardText.MachineUsesToday]</span>
+        </div>
+        <Sparkline Values="Machine.Last12Hours" Label="@L[DashboardText.KpiLast12Hours]" />
+    </div>
+
+    @if (Machine.UsesToday.Count > 0)
+    {
+        <ul class="cw-service-counts">
+            @foreach (var count in Services.InOrder(Machine.UsesToday))
+            {
+                <li>
+                    <span class="viz-swatch @Services.Css(count.Service)"></span>
+                    <MudIcon Icon="@Services.Icon(count.Service)" Size="Size.Small" />
+                    <span>@Services.Name(count.Service)</span>
+                    <b>@DashboardFormat.Number(count.Count)</b>
+                </li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p class="cw-machine-none cw-muted">@L[DashboardText.MachineNoUsesToday]</p>
+    }
+
+    <div class="cw-machine-foot">
+        @if (Machine.LastUsageAt is { } lastUse)
+        {
+            <span class="cw-muted">
+                @if (Machine.LastServiceCode is { } service)
+                {
+                    <MudIcon Icon="@Services.Icon(service)" Size="Size.Small" />
+                }
+                @L[DashboardText.MachineLastUse, Format.Ago(lastUse, Now)]
+            </span>
+        }
+        @if (OnRefill.HasDelegate && Machine.IsActive && Services.AnyTracked)
+        {
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Rounded.WaterDrop" Class="cw-machine-action"
+                       OnClick="() => OnRefill.InvokeAsync(Machine)">
+                @L[DashboardText.RefillAction]
+            </MudButton>
+        }
+    </div>
+</article>
+
+@code {
+    /// <summary>Gets or sets the machine.</summary>
+    [Parameter, EditorRequired]
+    public MachineCardDto Machine { get; set; } = default!;
+
+    /// <summary>Gets or sets the service names, icons and colours.</summary>
+    [Parameter, EditorRequired]
+    public ServiceLookup Services { get; set; } = ServiceLookup.Empty;
+
+    /// <summary>Gets or sets the current time.</summary>
+    [Parameter, EditorRequired]
+    public DateTimeOffset Now { get; set; }
+
+    /// <summary>Gets or sets a value indicating whether a use just arrived.</summary>
+    [Parameter]
+    public bool Pulse { get; set; }
+
+    /// <summary>Gets or sets what the Refill button does; no button without it.</summary>
+    [Parameter]
+    public EventCallback<MachineCardDto> OnRefill { get; set; }
+
+    // Tracked services, most urgent first, then in display order.
+    private IReadOnlyList<ServiceLevelDto> TrackedLevels =>
+    [
+        .. Machine.Levels
+            .OrderByDescending(level => level.Level)
+            .ThenBy(level => Services.Order(level.Service)),
+    ];
+}

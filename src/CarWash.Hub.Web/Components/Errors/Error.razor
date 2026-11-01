@@ -1,0 +1,23 @@
+@* Re-rendered by the exception handler when a dashboard request fails outside a circuit. Static, and
+   anonymous, so it can always be shown. The reference is the correlation id the logs carry. *@
+@page "/error"
+@attribute [AllowAnonymous]
+@attribute [ExcludeFromInteractiveRouting]
+@layout AccountLayout
+@inject IStringLocalizer<DashboardResource> L
+
+<PageTitle>@L[DashboardText.ErrorTitle] · @L[DashboardText.AppName]</PageTitle>
+
+<h1 class="cw-auth-title">@L[DashboardText.ErrorTitle]</h1>
+<p class="cw-auth-subtitle">@L[DashboardText.ErrorText, Reference]</p>
+<a class="cw-auth-submit" href="">@L[DashboardText.CommonBackToOverview]</a>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    private string Reference =>
+        HttpContext.Items.TryGetValue(CarWash.Hub.Application.Common.Constants.HttpContextItemKeys.CorrelationId, out var id) && id is string value
+            ? value
+            : HttpContext.TraceIdentifier;
+}

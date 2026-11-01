@@ -17,6 +17,8 @@
     <!-- IServiceCollection, for the AddApplication() composition extension. -->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <!-- IOptions<T>: the processing settings are bound by Infrastructure and read here. -->
+    <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="FluentValidation" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
   </ItemGroup>

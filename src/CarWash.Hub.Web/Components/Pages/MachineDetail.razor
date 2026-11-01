@@ -1,0 +1,373 @@
+@page "/machines/{Id:guid}"
+@using CarWash.Hub.Application.Exceptions
+@using CarWash.Hub.Application.Features.Machines
+@using CarWash.Hub.Application.Features.Refills
+@using CarWash.Hub.Domain.Enums
+@using CarWash.Hub.Web.Components.Admin
+@inherits LivePageBase
+
+<PageTitle>@(_detail?.Card.Title ?? L[DashboardText.MachinesTitle]) · @L[DashboardText.AppName]</PageTitle>
+
+<MudButton Href="machines" Variant="Variant.Text" Size="Size.Small" Class="cw-back"
+           StartIcon="@(CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft ? Icons.Material.Rounded.ArrowForward : Icons.Material.Rounded.ArrowBack)">
+    @L[DashboardText.MachinesTitle]
+</MudButton>
+
+@if (_notFound)
+{
+    <div class="cw-empty">
+        <MudIcon Icon="@Icons.Material.Rounded.SearchOff" Size="Size.Large" />
+        <p>@L[DashboardText.MachineNotFound]</p>
+    </div>
+}
+else if (_detail is null)
+{
+    <MudSkeleton SkeletonType="SkeletonType.Text" Width="40%" Height="48px" />
+    <div class="cw-kpis mt-4">
+        @for (var i = 0; i < 4; i++)
+        {
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="112px" Class="cw-skeleton" />
+        }
+    </div>
+}
+else
+{
+    var card = _detail.Card;
+
+    <header class="cw-page-head cw-page-head--machine @(IsPulsing(card.Id) ? "is-pulsing" : null)">
+        <div>
+            <h1 class="cw-h1" tabindex="-1"><bdi>@card.Title</bdi></h1>
+            <div class="cw-machine-meta">
+                @if (!string.IsNullOrWhiteSpace(card.DisplayName))
+                {
+                    <span class="cw-mono" title="@L[DashboardText.MachineMac]">@card.Code</span>
+                }
+                <span>
+                    <MudIcon Icon="@Icons.Material.Rounded.LocalGasStation" Size="Size.Small" />
+                    @(card.StationName ?? L[DashboardText.MachineUnassigned])
+                </span>
+                <ActivityChip Activity="card.Activity" LastSeenAt="card.LastSeenAt" Now="Now" />
+                @if (!card.IsActive)
+                {
+                    <span class="cw-status cw-status--muted">@L[DashboardText.MachineInactive]</span>
+                }
+            </div>
+        </div>
+        <div class="cw-head-actions">
+            <LiveBadge At="LastRefreshedAt" Now="Now" />
+            @if (card.IsActive && _services.AnyTracked)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Rounded.WaterDrop"
+                           OnClick="() => OpenRefillAsync(card.Id, card.Title, _services)">
+                    @L[DashboardText.RefillAction]
+                </MudButton>
+            }
+            @if (_isSuperAdmin)
+            {
+                <MudButton Href="@($"admin/sticker/{card.Id}")" Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Rounded.QrCode2">
+                    @L[DashboardText.StickerTitle]
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Rounded.Settings" OnClick="EditAsync">
+                    @L[DashboardText.MachineEdit]
+                </MudButton>
+            }
+        </div>
+    </header>
+
+    @if (card.Levels.Any(level => level.Capacity is not null))
+    {
+        <section class="cw-card cw-levels-card">
+            <h2 class="cw-card-title">@L[DashboardText.LevelsTitle]</h2>
+            <div class="cw-meters">
+                @foreach (var level in card.Levels.OrderBy(level => _services.Order(level.Service)))
+                {
+                    <LevelMeter Level="level" Services="_services" Now="Now" />
+                }
+            </div>
+        </section>
+    }
+    else if (_services.AnyTracked)
+    {
+        <section class="cw-card cw-levels-card">
+            <h2 class="cw-card-title">@L[DashboardText.LevelsTitle]</h2>
+            <p class="cw-muted cw-small">@L[DashboardText.LevelNeverRefilled]</p>
+        </section>
+    }
+
+    <div class="cw-filters">
+        <RangePicker Value="_range" ValueChanged="OnRangeChangedAsync" AriaLabel="@L[DashboardText.ChartUsageTitle]" />
+    </div>
+
+    <div class="cw-kpis @(IsRefreshing ? "is-refreshing" : null)">
+        <StatTile Label="@L[DashboardText.MachineUsesInRange]" Icon="@Icons.Material.Rounded.TouchApp"
+                  Value="@DashboardFormat.Number(_detail.Usage.Total)" />
+        <StatTile Label="@L[DashboardText.MachineUsesToday]" Icon="@Icons.Material.Rounded.Today"
+                  Value="@DashboardFormat.Number(card.UsesTodayTotal)"
+                  Trend="card.Last12Hours" TrendLabel="@L[DashboardText.KpiLast12Hours]" />
+        <StatTile Label="@L[DashboardText.MachineTotalUses]" Icon="@Icons.Material.Rounded.Functions"
+                  Value="@DashboardFormat.Number(card.TotalUses)"
+                  Hint="@($"{L[DashboardText.MachineFirstSeen]}: {Format.DateTime(card.FirstSeenAt)}")" />
+        <StatTile Label="@L[DashboardText.MachineLastSeen]" Icon="@Icons.Material.Rounded.Sensors"
+                  Value="@(card.LastSeenAt is { } seen ? Format.Ago(seen, Now) : "—")"
+                  Hint="@(card.LastSeenAt is { } at ? Format.DateTime(at) : null)" />
+    </div>
+
+    <div class="cw-grid">
+        <UsageChart Class="cw-span-2" Title="@L[DashboardText.ChartUsageTitle]" Series="_detail.Usage" Services="_services" Dimmed="IsRefreshing" />
+
+        <section class="cw-card cw-span-2">
+            <h2 class="cw-card-title">@L[DashboardText.MachineAlerts]</h2>
+            @if (_alerts.Count == 0)
+            {
+                <p class="cw-muted">@L[DashboardText.MachineAlertsNone]</p>
+            }
+            else
+            {
+                <div class="cw-alerts cw-alerts--flat">
+                    @foreach (var alert in _alerts)
+                    {
+                        <AlertCard @key="alert.Id" Alert="alert" Now="Now" ShowMachine="false" Busy="_acknowledging.Contains(alert.Id)"
+                                   OnRefill="RefillFromAlertAsync" OnAcknowledge="AcknowledgeAsync" />
+                    }
+                </div>
+            }
+        </section>
+
+        <section class="cw-card cw-span-2">
+            <h2 class="cw-card-title">@L[DashboardText.RefillHistoryTitle]</h2>
+            @if (_history.Count == 0)
+            {
+                <p class="cw-muted">@L[DashboardText.RefillHistoryEmpty]</p>
+            }
+            else
+            {
+                <ul class="cw-history">
+                    @foreach (var refill in _history)
+                    {
+                        <li class="@(refill.IsVoided ? "is-voided" : null)">
+                            <div class="cw-history-main">
+                                <div class="cw-history-when">
+                                    <strong>@Format.DateTime(refill.RefilledAt)</strong>
+                                    @if (refill.RecordedBy is { } by)
+                                    {
+                                        <span class="cw-muted">@L[DashboardText.RefillBy, by]</span>
+                                    }
+                                    @if (refill.IsVoided)
+                                    {
+                                        <span class="cw-status cw-status--muted">@L[DashboardText.RefillVoided]</span>
+                                    }
+                                </div>
+                                <div class="cw-service-counts">
+                                    @foreach (var item in refill.Items.OrderBy(item => _services.Order(item.Service)))
+                                    {
+                                        <span class="cw-history-item">
+                                            <MudIcon Icon="@_services.Icon(item.Service)" Size="Size.Small" />
+                                            @_services.Name(item.Service) <b>@DashboardFormat.Number(item.Capacity)</b>
+                                        </span>
+                                    }
+                                </div>
+                                @if (refill.Notes is { } notes)
+                                {
+                                    <p class="cw-muted cw-small">@notes</p>
+                                }
+                                @if (refill.IsVoided)
+                                {
+                                    <p class="cw-muted cw-small">@(refill.VoidedBy is { } voider ? L[DashboardText.RefillVoidedBy, voider] : L[DashboardText.RefillVoided])@(refill.VoidReason is { } reason ? $": {reason}" : null)</p>
+                                }
+                            </div>
+                            @if (refill.CanVoid)
+                            {
+                                <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Error" StartIcon="@Icons.Material.Rounded.Undo" OnClick="() => VoidAsync(refill)">
+                                    @L[DashboardText.RefillVoid]
+                                </MudButton>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+
+        <section class="cw-card">
+            <h2 class="cw-card-title">@L[DashboardText.MachineRecentUses]</h2>
+            @if (_detail.RecentUses.Count == 0)
+            {
+                <p class="cw-muted">@L[DashboardText.MachineNoUses]</p>
+            }
+            else
+            {
+                <ul class="cw-feed">
+                    @foreach (var use in _detail.RecentUses)
+                    {
+                        <li>
+                            <span class="cw-feed-icon @_services.Css(use.Service)"><MudIcon Icon="@_services.Icon(use.Service)" Size="Size.Small" /></span>
+                            <span class="cw-feed-name">@_services.Name(use.Service)</span>
+                            <time class="cw-muted" datetime="@use.OccurredAt.ToString("O", CultureInfo.InvariantCulture)" title="@Format.DateTime(use.OccurredAt)">
+                                @Format.TimeOfDay(use.OccurredAt) · @Format.Ago(use.OccurredAt, Now)
+                            </time>
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+
+        <section class="cw-card">
+            <h2 class="cw-card-title">@L[DashboardText.MachineRecentMessages]</h2>
+            @if (_detail.RecentMessages.Count == 0)
+            {
+                <p class="cw-muted">@L[DashboardText.MachineNoMessages]</p>
+            }
+            else
+            {
+                <ul class="cw-messages">
+                    @foreach (var message in _detail.RecentMessages)
+                    {
+                        <li>
+                            <div class="cw-messages-head">
+                                <span class="cw-status cw-status--@StatusKind(message.Status)">
+                                    <MudIcon Icon="@StatusIcon(message.Status)" Size="Size.Small" />
+                                    @StatusText(message.Status)
+                                </span>
+                                <time class="cw-muted" datetime="@message.ReceivedAt.ToString("O", CultureInfo.InvariantCulture)">@Format.DateTime(message.ReceivedAt)</time>
+                                <span class="cw-muted cw-mono">#@message.Id</span>
+                            </div>
+                            <code class="cw-payload" dir="ltr">@message.Payload</code>
+                            @if (message.ProcessingError is { } error)
+                            {
+                                <p class="cw-muted cw-small">@error</p>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+    </div>
+}
+
+@code {
+    /// <summary>Gets or sets the machine's key, from the route.</summary>
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private DashboardRange _range = DashboardRange.Last24Hours;
+    private MachineDetailDto? _detail;
+    private ServiceLookup _services = ServiceLookup.Empty;
+    private bool _notFound;
+    private bool _isSuperAdmin;
+    private const int RecentAlerts = 15;
+
+    private IReadOnlyList<RefillDto> _history = [];
+    private IReadOnlyList<AlertDto> _alerts = [];
+    private readonly HashSet<long> _acknowledging = [];
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isSuperAdmin = (await AuthenticationState).User.IsInRole(nameof(UserRole.SuperAdmin));
+        await base.OnInitializedAsync();
+    }
+
+    private async Task EditAsync()
+    {
+        var machine = await Runner.QueryAsync<IMachineAdminService, MachineSettingsDto>((service, token) => service.GetAsync(Id, token), PageToken);
+        var dialog = await Dialogs.ShowAsync<MachineDialog>(
+            L[DashboardText.MachineEdit],
+            new DialogParameters<MachineDialog> { { dialog => dialog.Machine, machine } },
+            AdminDialogs.Options);
+
+        if (await dialog.Result is { Canceled: false })
+        {
+            await RefreshAsync();
+        }
+    }
+
+    protected override bool IsRelevant(MachineActivityEvent activity) => activity.MachineIds.Contains(Id);
+
+    protected override bool IsRelevant(AlertsChangedEvent alerts) => alerts.MachineIds.Contains(Id);
+
+    private Task RefillFromAlertAsync(AlertDto alert) => OpenRefillAsync(Id, alert.MachineTitle, _services, alert.Service);
+
+    private async Task AcknowledgeAsync(AlertDto alert)
+    {
+        _acknowledging.Add(alert.Id);
+        try
+        {
+            await Runner.CommandAsync<IAlertService>((service, token) => service.AcknowledgeAsync(alert.Id, token));
+            await RefreshAsync();
+        }
+        finally
+        {
+            _acknowledging.Remove(alert.Id);
+        }
+    }
+
+    protected override async Task LoadAsync(CancellationToken cancellationToken)
+    {
+        if (_services.Ordered.Count == 0)
+        {
+            _services = new ServiceLookup(await Runner.QueryAsync<IFleetDashboardService, IReadOnlyList<ServiceInfoDto>>(
+                (service, token) => service.GetServicesAsync(token), cancellationToken));
+        }
+
+        try
+        {
+            _detail = await Runner.QueryAsync<IFleetDashboardService, MachineDetailDto>(
+                (service, token) => service.GetMachineAsync(Id, _range, token), cancellationToken);
+            _history = await Runner.QueryAsync<IRefillService, IReadOnlyList<RefillDto>>(
+                (service, token) => service.GetHistoryAsync(Id, token), cancellationToken);
+            var alerts = await Runner.QueryAsync<IAlertService, IReadOnlyList<AlertDto>>(
+                (service, token) => service.ListAsync(new AlertQuery { MachineId = Id, Take = RecentAlerts }, token), cancellationToken);
+            _alerts = [.. alerts.OrderByDescending(alert => alert.IsOpen).ThenByDescending(alert => alert.Id)];
+            _notFound = false;
+        }
+        catch (NotFoundException)
+        {
+            _detail = null;
+            _notFound = true;
+        }
+    }
+
+    private async Task VoidAsync(RefillDto refill)
+    {
+        var dialog = await Dialogs.ShowAsync<VoidRefillDialog>(
+            L[DashboardText.RefillVoidTitle],
+            new DialogParameters<VoidRefillDialog> { { dialog => dialog.RefillId, refill.Id } },
+            AdminDialogs.Options);
+
+        if (await dialog.Result is { Canceled: false })
+        {
+            await RefreshAsync();
+        }
+    }
+
+    private async Task OnRangeChangedAsync(DashboardRange range)
+    {
+        _range = range;
+        await RefreshAsync();
+    }
+
+    private static string StatusKind(ProcessingStatus status) => status switch
+    {
+        ProcessingStatus.Processed => "good",
+        ProcessingStatus.Failed => "critical",
+        ProcessingStatus.Pending => "neutral",
+        _ => "muted",
+    };
+
+    private static string StatusIcon(ProcessingStatus status) => status switch
+    {
+        ProcessingStatus.Processed => Icons.Material.Rounded.CheckCircle,
+        ProcessingStatus.Failed => Icons.Material.Rounded.Error,
+        ProcessingStatus.Pending => Icons.Material.Rounded.HourglassTop,
+        _ => Icons.Material.Rounded.RemoveCircleOutline,
+    };
+
+    private string StatusText(ProcessingStatus status) => status switch
+    {
+        ProcessingStatus.Processed => L[DashboardText.MessageStatusProcessed],
+        ProcessingStatus.Failed => L[DashboardText.MessageStatusFailed],
+        ProcessingStatus.Pending => L[DashboardText.MessageStatusPending],
+        _ => L[DashboardText.MessageStatusIgnored],
+    };
+}

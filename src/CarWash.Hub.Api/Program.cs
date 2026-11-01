@@ -5,6 +5,7 @@ using CarWash.Hub.Application;
 using CarWash.Hub.Infrastructure;
 using CarWash.Hub.Infrastructure.Localization;
 using CarWash.Hub.Persistence;
+using CarWash.Hub.Web;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Serilog;
@@ -26,7 +27,8 @@ try
         .AddApplication()
         .AddInfrastructure(builder.Configuration)
         .AddPersistence(builder.Configuration)
-        .AddApiServices(builder.Configuration);
+        .AddApiServices(builder.Configuration)
+        .AddDashboard(builder.Configuration);
 
     var app = builder.Build();
 
@@ -61,6 +63,10 @@ try
     // 4. Exception handling: converts anything thrown below into a localized ProblemDetails.
     app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+    // 4b. ...except on dashboard paths, where a failure is a page, not JSON. Directly inside the
+    //     API handler, so it sees a dashboard exception first; API paths never enter it.
+    app.UseDashboardErrorHandling();
+
     // 5. Security headers, registered via OnStarting so they land on every response - including
     //    the error responses produced above.
     app.UseMiddleware<SecurityHeadersMiddleware>();
@@ -77,9 +83,9 @@ try
     //    not exist until a route has matched.
     app.UseRouting();
 
-    // 8. Authentication. No default scheme is configured: each endpoint's policy authenticates
-    //    with the one client-key scheme it names (step 10). Kept in place for Phase 2, whose
-    //    dashboard adds a default cookie scheme.
+    // 8. Authentication. The dashboard cookie is the default scheme, so pages and the Blazor
+    //    connection see the signed-in user. API endpoints are unaffected: each policy authenticates
+    //    with the one client-key scheme it names (step 10), which replaces the cookie's user.
     app.UseAuthentication();
 
     // 9. The per-address ingest limit. Before authorization, so a flood is refused before any
@@ -87,9 +93,14 @@ try
     app.UseRateLimiter();
 
     // 10. Authorization: the Ingest and Read policies authenticate client-secret-key or
-    //     client-read-key, and the fallback policy refuses everything else that is not explicitly
-    //     anonymous - including unknown paths, which answer 401 to a caller without a key.
+    //     client-read-key, the dashboard policies the cookie, and the fallback policy refuses
+    //     everything else that is not explicitly anonymous - including unknown paths, which answer
+    //     401 to a caller without a key.
     app.UseAuthorization();
+
+    // 10b. Antiforgery for the dashboard's form posts (sign-in, sign-out). After authentication and
+    //      authorization, before any endpoint runs, as the framework requires.
+    app.UseAntiforgery();
 
     // 11. Adds the authenticated key's id to the log context - after authorization, because that
     //     is where the policy put the principal.
@@ -111,6 +122,10 @@ try
         Predicate = check => check.Tags.Contains("ready"),
         ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse,
     }).AllowAnonymous().ExcludeFromDescription();
+
+    // The dashboard: static assets (anonymous), pages and the Blazor connection (signed-in user),
+    // and the account endpoints. Every route states its own authorization; see MapDashboard.
+    app.MapDashboard();
 
     await app.RunAsync().ConfigureAwait(false);
 }

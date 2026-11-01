@@ -13,7 +13,8 @@ public sealed class MachineConfiguration : IEntityTypeConfiguration<Machine>
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        builder.ToTable("machines");
+        builder.ToTable("machines", table =>
+            table.HasCheckConstraint("ck_machines_no_activity_after_hours", "no_activity_after_hours BETWEEN 1 AND 168"));
         builder.HasKey(m => m.Id);
         builder.Property(m => m.Id).ValueGeneratedNever();
 

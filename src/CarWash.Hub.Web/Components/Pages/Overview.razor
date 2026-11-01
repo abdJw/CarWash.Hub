@@ -1,0 +1,224 @@
+@page "/"
+@inherits LivePageBase
+
+<PageTitle>@L[DashboardText.OverviewTitle] · @L[DashboardText.AppName]</PageTitle>
+
+<header class="cw-page-head">
+    <h1 class="cw-h1">@L[DashboardText.OverviewTitle]</h1>
+    <LiveBadge At="LastRefreshedAt" Now="Now" />
+</header>
+
+<div class="cw-filters">
+    <RangePicker Value="_range" ValueChanged="OnRangeChangedAsync" AriaLabel="@L[DashboardText.ChartUsageTitle]" />
+</div>
+
+@if (_overview is null)
+{
+    <div class="cw-kpis">
+        @for (var i = 0; i < 4; i++)
+        {
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="128px" Class="cw-skeleton" />
+        }
+    </div>
+    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="320px" Class="cw-skeleton mt-4" />
+}
+else
+{
+    <div class="cw-kpis @(IsRefreshing ? "is-refreshing" : null)">
+        <StatTile Label="@L[DashboardText.KpiUsesToday]"
+                  Icon="@Icons.Material.Rounded.TouchApp"
+                  Value="@DashboardFormat.Number(_overview.UsesToday)"
+                  Delta="_overview.UsesToday - _overview.UsesYesterdaySoFar"
+                  DeltaLabel="@L[DashboardText.KpiVsYesterday]"
+                  SameLabel="@L[DashboardText.KpiSameAsYesterday]"
+                  Trend="_overview.Last12Hours"
+                  TrendLabel="@L[DashboardText.KpiLast12Hours]" />
+
+        <a class="cw-tile-link" href="machines?filter=needsrefill">
+            <StatTile Label="@L[DashboardText.KpiNeedsRefill]"
+                      Icon="@Icons.Material.Rounded.WaterDrop"
+                      Value="@DashboardFormat.Number(_needsRefill)"
+                      Status="@(_needsRefill > 0 ? "critical" : "good")"
+                      Hint="@L[DashboardText.KpiNeedsRefillHint]" />
+        </a>
+
+        <StatTile Label="@L[DashboardText.KpiRunsOutSoon]"
+                  Icon="@Icons.Material.Rounded.HourglassBottom"
+                  Value="@DashboardFormat.Number(_runsOutSoon)"
+                  Status="@(_runsOutSoon > 0 ? "warning" : null)"
+                  Hint="@L[DashboardText.KpiRunsOutSoonHint]" />
+
+        <StatTile Label="@L[DashboardText.KpiMachines]"
+                  Icon="@Icons.Material.Rounded.LocalCarWash"
+                  Value="@DashboardFormat.Number(_overview.MachineCount)"
+                  Hint="@L[DashboardText.KpiBusyNow, DashboardFormat.Number(_overview.BusyCount)]" />
+
+        <StatTile Label="@L[DashboardText.KpiSilent]"
+                  Icon="@Icons.Material.Rounded.PortableWifiOff"
+                  Value="@DashboardFormat.Number(_overview.SilentCount)"
+                  Status="@(_overview.SilentCount > 0 ? "warning" : "good")"
+                  Hint="@(_overview.SilentCount > 0 ? L[DashboardText.KpiSilentHint, _noActivityHours] : L[DashboardText.KpiAllReporting])" />
+
+        @if (_isSuperAdmin)
+        {
+            <a class="cw-tile-link" href="machines?filter=unassigned">
+                <StatTile Label="@L[DashboardText.KpiUnassigned]"
+                          Icon="@Icons.Material.Rounded.Inbox"
+                          Value="@DashboardFormat.Number(_overview.UnassignedCount)"
+                          Hint="@L[DashboardText.KpiUnassignedHint]" />
+            </a>
+        }
+    </div>
+
+    <section class="cw-attention">
+        <div class="cw-card-head">
+            <h2 class="cw-card-title">@L[DashboardText.OverviewAttention]</h2>
+        </div>
+        @if (_attention.Count == 0)
+        {
+            <p class="cw-all-good"><MudIcon Icon="@Icons.Material.Rounded.TaskAlt" Size="Size.Small" /> @L[DashboardText.OverviewAllGood]</p>
+        }
+        else
+        {
+            <div class="cw-machines">
+                @foreach (var machine in _attention)
+                {
+                    <MachineCard @key="machine.Id" Machine="machine" Services="_services" Now="Now" Pulse="IsPulsing(machine.Id)"
+                                 OnRefill="card => OpenRefillAsync(card.Id, card.Title, _services)" />
+                }
+            </div>
+        }
+    </section>
+
+    <div class="cw-grid">
+        <UsageChart Class="cw-span-2"
+                    Title="@L[DashboardText.ChartUsageTitle]"
+                    Series="_overview.Usage"
+                    Services="_services"
+                    Dimmed="IsRefreshing" />
+
+        <section class="cw-card">
+            <h2 class="cw-card-title">@L[DashboardText.OverviewTodayByService]</h2>
+            @if (_overview.TodayByService.Count == 0)
+            {
+                <p class="cw-muted">@L[DashboardText.OverviewNoUsesToday]</p>
+            }
+            else
+            {
+                var top = _overview.TodayByService.Max(count => count.Count);
+                <ul class="cw-bars">
+                    @foreach (var count in _services.InOrder(_overview.TodayByService))
+                    {
+                        <li>
+                            <span class="cw-bars-label">
+                                <MudIcon Icon="@_services.Icon(count.Service)" Size="Size.Small" />
+                                @_services.Name(count.Service)
+                            </span>
+                            <span class="cw-bars-track">
+                                <span class="cw-bars-fill @_services.Css(count.Service)" style="inline-size: @Share(count.Count, top)%"></span>
+                            </span>
+                            <b class="cw-bars-value">@DashboardFormat.Number(count.Count)</b>
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+
+        <section class="cw-card">
+            <div class="cw-card-head">
+                <h2 class="cw-card-title">@L[DashboardText.OverviewBusiest]</h2>
+                <MudButton Href="machines" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
+                           EndIcon="@(CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft ? Icons.Material.Rounded.ChevronLeft : Icons.Material.Rounded.ChevronRight)">
+                    @L[DashboardText.OverviewAllMachines]
+                </MudButton>
+            </div>
+            @if (_busiest.Count == 0)
+            {
+                <p class="cw-muted">@L[DashboardText.OverviewNoUsesToday]</p>
+            }
+            else
+            {
+                <ol class="cw-rank">
+                    @foreach (var machine in _busiest)
+                    {
+                        <li class="@(IsPulsing(machine.Id) ? "is-pulsing" : null)">
+                            <a href="machines/@machine.Id">
+                                <span class="cw-rank-name">
+                                    <strong><bdi>@machine.Title</bdi></strong>
+                                    <span class="cw-muted">@(machine.StationName ?? L[DashboardText.MachineUnassigned])</span>
+                                </span>
+                                <b>@DashboardFormat.Number(machine.UsesTodayTotal)</b>
+                            </a>
+                        </li>
+                    }
+                </ol>
+            }
+        </section>
+    </div>
+}
+
+@code {
+    private const int BusiestCount = 5;
+    private const int AttentionCount = 6;
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
+    [Inject]
+    private Microsoft.Extensions.Options.IOptions<ActivityOptions> ActivityOptions { get; set; } = default!;
+
+    private DashboardRange _range = DashboardRange.Last24Hours;
+    private FleetOverviewDto? _overview;
+    private ServiceLookup _services = ServiceLookup.Empty;
+    private IReadOnlyList<MachineCardDto> _busiest = [];
+    private IReadOnlyList<MachineCardDto> _attention = [];
+    private int _needsRefill;
+    private int _runsOutSoon;
+    private bool _isSuperAdmin;
+    private int _noActivityHours;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isSuperAdmin = (await AuthenticationState).User.IsInRole(nameof(CarWash.Hub.Domain.Enums.UserRole.SuperAdmin));
+        _noActivityHours = ActivityOptions.Value.NoActivityAfterHours;
+        await base.OnInitializedAsync();
+    }
+
+    protected override async Task LoadAsync(CancellationToken cancellationToken)
+    {
+        if (_services.Ordered.Count == 0)
+        {
+            _services = new ServiceLookup(await Runner.QueryAsync<IFleetDashboardService, IReadOnlyList<ServiceInfoDto>>(
+                (service, token) => service.GetServicesAsync(token), cancellationToken));
+        }
+
+        _overview = await Runner.QueryAsync<IFleetDashboardService, FleetOverviewDto>(
+            (service, token) => service.GetOverviewAsync(_range, token), cancellationToken);
+
+        var machines = await Runner.QueryAsync<IFleetDashboardService, IReadOnlyList<MachineCardDto>>(
+            (service, token) => service.GetMachinesAsync(token), cancellationToken);
+
+        _busiest = [.. machines.Where(machine => machine.UsesTodayTotal > 0).OrderByDescending(machine => machine.UsesTodayTotal).Take(BusiestCount)];
+
+        var now = Now;
+        var active = machines.Where(machine => machine.IsActive).ToList();
+        _needsRefill = active.Count(LevelPresentation.NeedsRefill);
+        _runsOutSoon = active.Count(machine => LevelPresentation.RunsOutSoon(machine, now));
+        _attention = [.. active
+            .Select(machine => (Machine: machine, Score: LevelPresentation.Urgency(machine, now)))
+            .Where(entry => entry.Score > 0)
+            .OrderByDescending(entry => entry.Score)
+            .ThenBy(entry => entry.Machine.Levels.Min(level => level.ForecastEmptyAt) ?? DateTimeOffset.MaxValue)
+            .Take(AttentionCount)
+            .Select(entry => entry.Machine)];
+    }
+
+    private async Task OnRangeChangedAsync(DashboardRange range)
+    {
+        _range = range;
+        await RefreshAsync();
+    }
+
+    private static string Share(int value, int top) =>
+        (100d * value / Math.Max(1, top)).ToString("0.##", CultureInfo.InvariantCulture);
+}

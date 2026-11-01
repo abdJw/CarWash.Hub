@@ -1,0 +1,75 @@
+@* Name a machine, assign it to a station, or take it out of service. *@
+@using CarWash.Hub.Application.Features.Machines
+@using CarWash.Hub.Application.Features.Stations
+@using Microsoft.Extensions.Options
+@inherits AdminDialogBase
+@inject IOptions<ActivityOptions> Activity
+
+<MudDialog>
+    <DialogContent>
+        @if (Message is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-3">@Message</MudAlert>
+        }
+        <div class="cw-form">
+            <div class="cw-form-fact">
+                <span class="cw-muted">@L[DashboardText.MachineMac]</span>
+                <span class="cw-mono">@Machine.Code</span>
+            </div>
+            <MudTextField @bind-Value="_displayName" Label="@L[DashboardText.FieldMachineName]" HelperText="@L[DashboardText.FieldMachineNameHint]"
+                          Variant="Variant.Outlined" MaxLength="200"
+                          Error="@HasError(nameof(UpdateMachineRequest.DisplayName))" ErrorText="@ErrorOf(nameof(UpdateMachineRequest.DisplayName))" />
+            <MudSelect T="Guid?" @bind-Value="_stationId" Label="@L[DashboardText.FieldStation]" Variant="Variant.Outlined"
+                       Error="@HasError(nameof(UpdateMachineRequest.GasStationId))" ErrorText="@ErrorOf(nameof(UpdateMachineRequest.GasStationId))">
+                <MudSelectItem T="Guid?" Value="null">@L[DashboardText.FieldNoStation]</MudSelectItem>
+                @foreach (var station in _stations.Where(station => station.IsActive || station.Id == Machine.GasStationId))
+                {
+                    <MudSelectItem T="Guid?" Value="station.Id">@StationLabel(station)</MudSelectItem>
+                }
+            </MudSelect>
+            <MudNumericField T="int?" @bind-Value="_noActivityHours" Label="@L[DashboardText.FieldNoActivityHours]"
+                             HelperText="@L[DashboardText.FieldNoActivityHoursHint, Activity.Value.NoActivityAfterHours]"
+                             Placeholder="@Activity.Value.NoActivityAfterHours.ToString(CultureInfo.CurrentCulture)"
+                             Variant="Variant.Outlined" Min="1" Max="168" Clearable="true"
+                             Error="@HasError(nameof(UpdateMachineRequest.NoActivityAfterHours))" ErrorText="@ErrorOf(nameof(UpdateMachineRequest.NoActivityAfterHours))" />
+            <MudSwitch @bind-Value="_isActive" Label="@L[DashboardText.FieldInService]" Color="Color.Primary" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L[DashboardText.CommonCancel]</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="Saving" OnClick="SubmitAsync">@L[DashboardText.CommonSave]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    /// <summary>Gets or sets the machine.</summary>
+    [Parameter, EditorRequired]
+    public MachineSettingsDto Machine { get; set; } = default!;
+
+    private IReadOnlyList<StationDto> _stations = [];
+    private string? _displayName;
+    private Guid? _stationId;
+    private bool _isActive = true;
+    private int? _noActivityHours;
+
+    protected override async Task OnInitializedAsync()
+    {
+        (_displayName, _stationId, _isActive, _noActivityHours) = (Machine.DisplayName, Machine.GasStationId, Machine.IsActive, Machine.NoActivityAfterHours);
+        _stations = await Runner.QueryAsync<IGasStationService, IReadOnlyList<StationDto>>((service, token) => service.ListAsync(token));
+    }
+
+    private static string StationLabel(StationDto station) =>
+        $"{station.Code} · {(CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft ? station.NameAr : station.Name)}";
+
+    private Task SubmitAsync() => SaveAsync<IMachineAdminService>((service, token) => service.UpdateAsync(
+        new UpdateMachineRequest
+        {
+            Id = Machine.Id,
+            DisplayName = _displayName,
+            GasStationId = _stationId,
+            IsActive = _isActive,
+            NoActivityAfterHours = _noActivityHours,
+            RowVersion = Machine.RowVersion,
+        },
+        token));
+}

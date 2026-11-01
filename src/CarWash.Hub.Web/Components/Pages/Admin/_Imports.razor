@@ -1,0 +1,3 @@
+@* Every page under Admin is for Super Admins. The services behind them check it again. *@
+@using CarWash.Hub.Web.Components.Admin
+@attribute [Authorize(Policy = DashboardPolicies.SuperAdmin)]

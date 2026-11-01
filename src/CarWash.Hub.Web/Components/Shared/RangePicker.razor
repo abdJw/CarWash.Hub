@@ -1,0 +1,45 @@
+@* The date-range filter: presets as one segmented row, above everything it scopes. *@
+@inject IStringLocalizer<DashboardResource> L
+
+<div class="cw-segmented" role="group" aria-label="@AriaLabel">
+    @foreach (var (range, key) in Options)
+    {
+        <button type="button" class="@(range == Value ? "is-selected" : null)" aria-pressed="@(range == Value ? "true" : "false")"
+                @onclick="() => SelectAsync(range)">
+            @if (range == Value)
+            {
+                <MudIcon Icon="@Icons.Material.Rounded.Check" Size="Size.Small" />
+            }
+            @L[key]
+        </button>
+    }
+</div>
+
+@code {
+    private static readonly (DashboardRange Range, string Key)[] Options =
+    [
+        (DashboardRange.Last24Hours, DashboardText.Range24Hours),
+        (DashboardRange.Last7Days, DashboardText.Range7Days),
+        (DashboardRange.Last30Days, DashboardText.Range30Days),
+    ];
+
+    /// <summary>Gets or sets the selected range.</summary>
+    [Parameter]
+    public DashboardRange Value { get; set; }
+
+    /// <summary>Gets or sets the callback when another range is chosen.</summary>
+    [Parameter]
+    public EventCallback<DashboardRange> ValueChanged { get; set; }
+
+    /// <summary>Gets or sets the group's accessible name.</summary>
+    [Parameter]
+    public string? AriaLabel { get; set; }
+
+    private async Task SelectAsync(DashboardRange range)
+    {
+        if (range != Value)
+        {
+            await ValueChanged.InvokeAsync(range);
+        }
+    }
+}

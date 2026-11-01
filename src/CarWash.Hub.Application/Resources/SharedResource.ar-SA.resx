@@ -55,6 +55,7 @@
   <data name="Validation_MaxLength" xml:space="preserve"><value>يجب ألا يتجاوز {0} {1} حرفاً.</value></data>
   <data name="Validation_MalformedRequest" xml:space="preserve"><value>تعذّرت قراءة الطلب. تأكد من أن كل معامل من النوع المتوقع.</value></data>
   <data name="Validation_DateRange" xml:space="preserve"><value>يجب ألا يكون {0} بعد {1}.</value></data>
+  <data name="Validation_RangeTooLong" xml:space="preserve"><value>يجب ألا تزيد المدة بين {0} و{1} على {2} يومًا.</value></data>
 
   <data name="Field_MachineId" xml:space="preserve"><value>معرّف الجهاز</value></data>
   <data name="Field_Data" xml:space="preserve"><value>البيانات</value></data>
@@ -68,4 +69,45 @@
 
   <data name="Ingestion_MachineIdInvalid" xml:space="preserve"><value>قيمة machineId '{0}' غير صالحة. استخدم من 1 إلى {1} من الحروف أو الأرقام أو '.' أو '_' أو ':' أو '-'، على أن تبدأ بحرف أو رقم.</value></data>
   <data name="Ingestion_DataTooLarge" xml:space="preserve"><value>يجب ألا يتجاوز حجم data {0} بايت.</value></data>
+
+  <data name="Validation_MinLength" xml:space="preserve"><value>يجب ألا يقل {0} عن {1} حرفًا.</value></data>
+  <data name="Validation_Range" xml:space="preserve"><value>يجب أن تكون قيمة {0} بين {1} و{2}.</value></data>
+  <data name="Validation_InvalidEmail" xml:space="preserve"><value>{0} ليس بريدًا إلكترونيًا صالحًا.</value></data>
+  <data name="Validation_InvalidCode" xml:space="preserve"><value>يجب أن يحتوي {0} على أحرف وأرقام و'-' و'_' فقط.</value></data>
+  <data name="Validation_StationRequired" xml:space="preserve"><value>يجب أن ينتمي مستخدم المحطة إلى محطة.</value></data>
+  <data name="Validation_StationNotAllowed" xml:space="preserve"><value>لا ينتمي المدير العام إلى محطة.</value></data>
+  <data name="Validation_StationInactive" xml:space="preserve"><value>اختر محطة فعّالة.</value></data>
+  <data name="Field_StationCode" xml:space="preserve"><value>رمز المحطة</value></data>
+  <data name="Field_Name" xml:space="preserve"><value>الاسم</value></data>
+  <data name="Field_NameAr" xml:space="preserve"><value>الاسم بالعربية</value></data>
+  <data name="Field_City" xml:space="preserve"><value>المدينة</value></data>
+  <data name="Field_Address" xml:space="preserve"><value>العنوان</value></data>
+  <data name="Field_DisplayName" xml:space="preserve"><value>الاسم الظاهر</value></data>
+  <data name="Field_UserName" xml:space="preserve"><value>اسم المستخدم</value></data>
+  <data name="Field_Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Field_Password" xml:space="preserve"><value>كلمة المرور</value></data>
+  <data name="Field_Station" xml:space="preserve"><value>المحطة</value></data>
+  <data name="Field_User" xml:space="preserve"><value>المستخدم</value></data>
+  <data name="Field_Service" xml:space="preserve"><value>الخدمة</value></data>
+  <data name="Field_DefaultCapacity" xml:space="preserve"><value>السعة الافتراضية</value></data>
+  <data name="Field_LowThresholdPercent" xml:space="preserve"><value>حد المستوى المنخفض</value></data>
+  <data name="Field_SortOrder" xml:space="preserve"><value>الترتيب</value></data>
+  <data name="Admin_SuperAdminOnly" xml:space="preserve"><value>هذا الإجراء متاح للمدير العام فقط.</value></data>
+  <data name="Admin_CannotChangeOwnAccess" xml:space="preserve"><value>لا يمكنك إيقاف حسابك أو تغيير دورك أو محطتك بنفسك.</value></data>
+  <data name="Admin_CurrentPasswordWrong" xml:space="preserve"><value>كلمة المرور الحالية غير صحيحة.</value></data>
+  <data name="Admin_PasswordUnchanged" xml:space="preserve"><value>اختر كلمة مرور مختلفة عن الحالية.</value></data>
+  <data name="Validation_RefillNoItems" xml:space="preserve"><value>اختر خدمة واحدة على الأقل لإعادة تعبئتها.</value></data>
+  <data name="Validation_RefillDuplicateService" xml:space="preserve"><value>لا يمكن تكرار الخدمة في عملية التعبئة نفسها.</value></data>
+  <data name="Validation_RefillServiceNotTracked" xml:space="preserve"><value>الخدمة {0} غير متتبَّعة لإعادة التعبئة.</value></data>
+  <data name="Validation_RefillTime" xml:space="preserve"><value>يجب أن يكون وقت التعبئة خلال آخر {0} يومًا وألا يكون في المستقبل.</value></data>
+  <data name="Field_Capacity" xml:space="preserve"><value>السعة</value></data>
+  <data name="Field_RefilledAt" xml:space="preserve"><value>وقت التعبئة</value></data>
+  <data name="Field_Notes" xml:space="preserve"><value>ملاحظات</value></data>
+  <data name="Field_VoidReason" xml:space="preserve"><value>السبب</value></data>
+  <data name="Field_Refill" xml:space="preserve"><value>عملية التعبئة</value></data>
+  <data name="Admin_VoidNotAllowed" xml:space="preserve"><value>يمكنك إلغاء عمليات التعبئة التي سجلتها فقط، وخلال 24 ساعة من تسجيلها.</value></data>
+  <data name="Admin_RefillAlreadyVoided" xml:space="preserve"><value>عملية التعبئة هذه ملغاة بالفعل.</value></data>
+  <data name="Validation_QuietHours" xml:space="preserve"><value>حدّد بداية الساعات الهادئة ونهايتها بوقتين مختلفين، أو اتركهما فارغين لمحطة تعمل على مدار 24 ساعة.</value></data>
+  <data name="Field_Alert" xml:space="preserve"><value>التنبيه</value></data>
+  <data name="Field_NoActivityAfterHours" xml:space="preserve"><value>ساعات بلا نشاط</value></data>
 </root>

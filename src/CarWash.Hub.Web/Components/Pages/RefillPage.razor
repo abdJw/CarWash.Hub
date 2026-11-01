@@ -1,0 +1,69 @@
+@* The page a machine's QR sticker opens: record a refill standing at the machine, phone in hand. A
+   station user sees only their station's machines, so a sticker on another station's machine
+   simply opens "not found". *@
+@page "/m/{Id:guid}/refill"
+@using CarWash.Hub.Application.Exceptions
+@using CarWash.Hub.Application.Features.Refills
+@inject DashboardOperationRunner Runner
+@inject IStringLocalizer<DashboardResource> L
+
+<PageTitle>@L[DashboardText.RefillTitle] · @L[DashboardText.AppName]</PageTitle>
+
+<div class="cw-refill-page">
+    @if (_notFound)
+    {
+        <div class="cw-empty">
+            <MudIcon Icon="@Icons.Material.Rounded.SearchOff" Size="Size.Large" />
+            <p>@L[DashboardText.MachineNotFound]</p>
+        </div>
+    }
+    else if (_form is null)
+    {
+        <MudProgressLinear Indeterminate="true" />
+    }
+    else if (_saved)
+    {
+        <div class="cw-empty cw-refill-done">
+            <MudIcon Icon="@Icons.Material.Rounded.TaskAlt" Size="Size.Large" Color="Color.Success" />
+            <h1 class="cw-h1">@L[DashboardText.RefillPageDone]</h1>
+            <p>@L[DashboardText.RefillSaved]</p>
+            <MudButton Href="@($"machines/{Id}")" Variant="Variant.Filled" Color="Color.Primary">@L[DashboardText.RefillPageOpenMachine]</MudButton>
+        </div>
+    }
+    else
+    {
+        <header class="cw-refill-page-head">
+            <span class="cw-muted">@L[DashboardText.RefillTitle]</span>
+            <h1 class="cw-h1"><bdi>@_form.Title</bdi></h1>
+            <span class="cw-muted">
+                <MudIcon Icon="@Icons.Material.Rounded.LocalGasStation" Size="Size.Small" />
+                @(_form.StationName ?? L[DashboardText.MachineUnassigned])
+            </span>
+        </header>
+        <RefillForm MachineId="Id" Services="_services" OnSaved="() => _saved = true" />
+    }
+</div>
+
+@code {
+    /// <summary>Gets or sets the machine, from the route.</summary>
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private RefillFormDto? _form;
+    private ServiceLookup _services = ServiceLookup.Empty;
+    private bool _notFound;
+    private bool _saved;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _services = new ServiceLookup(await Runner.QueryAsync<IFleetDashboardService, IReadOnlyList<ServiceInfoDto>>((service, token) => service.GetServicesAsync(token)));
+            _form = await Runner.QueryAsync<IRefillService, RefillFormDto>((service, token) => service.GetFormAsync(Id, token));
+        }
+        catch (NotFoundException)
+        {
+            _notFound = true;
+        }
+    }
+}

@@ -1,7 +1,8 @@
 namespace CarWash.Hub.Api.Middleware;
 
 /// <summary>
-/// Adds the security response headers appropriate to a JSON API.
+/// Adds the security response headers: strict for the JSON API, and fitted to each of the two kinds
+/// of HTML page the host also serves.
 /// </summary>
 /// <remarks>
 /// Layer: Api.
@@ -16,6 +17,16 @@ namespace CarWash.Hub.Api.Middleware;
 /// pages are HTML by design and bootstrap themselves with inline script and style, so they get
 /// a policy that permits same-origin assets and inline code while still forbidding framing and
 /// every third-party origin. The rest of the header set is identical for both.
+/// </para>
+/// <para>
+/// <b>The dashboard</b> - every path that is neither the API nor the documentation - gets a third
+/// policy. Scripts only from this origin and never inline: the dashboard renders no inline script,
+/// so an injected one cannot run. Inline styles are allowed, because MudBlazor sets style
+/// attributes and the charts size their marks with them; styles cannot run code. The Blazor
+/// connection's WebSocket is named explicitly in <c>connect-src</c>, because older Safari does not
+/// match <c>wss:</c> to <c>'self'</c>. Dashboard HTML is also marked <c>no-store</c>: it shows a
+/// signed-in user's data, which a shared or back-button cache must not keep. Static assets keep the
+/// long-lived caching their fingerprinted URLs allow.
 /// </para>
 /// <para>
 /// <c>X-XSS-Protection</c> is deliberately absent. It is obsolete, removed from modern browsers,
@@ -49,6 +60,9 @@ public sealed class SecurityHeadersMiddleware(RequestDelegate next, IHostEnviron
 
     private static readonly PathString[] DocumentationPaths = ["/swagger", "/scalar"];
 
+    // Machines and API clients: everything here is JSON (or the health probes).
+    private static readonly PathString[] ApiPaths = ["/api", "/health"];
+
     /// <summary>Processes a request.</summary>
     /// <param name="context">The HTTP context.</param>
     /// <returns>A task that completes when the request has been handled.</returns>
@@ -56,7 +70,11 @@ public sealed class SecurityHeadersMiddleware(RequestDelegate next, IHostEnviron
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        var contentSecurityPolicy = IsDocumentationUi(context.Request.Path) ? DocumentationPolicy : ApiPolicy;
+        var path = context.Request.Path;
+        var isDashboard = !StartsWithAny(path, ApiPaths) && !StartsWithAny(path, DocumentationPaths);
+        var contentSecurityPolicy = isDashboard
+            ? DashboardPolicy(context.Request)
+            : StartsWithAny(path, DocumentationPaths) ? DocumentationPolicy : ApiPolicy;
         var strictTransport = context.Request.IsHttps && !environment.IsDevelopment();
 
         // Registered before the response starts. Setting headers after that point throws,
@@ -74,6 +92,11 @@ public sealed class SecurityHeadersMiddleware(RequestDelegate next, IHostEnviron
             headers["X-Frame-Options"] = "DENY";
 
             headers["Content-Security-Policy"] = contentSecurityPolicy;
+
+            if (isDashboard && context.Response.ContentType?.StartsWith("text/html", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                headers.CacheControl = "no-store";
+            }
 
             if (strictTransport)
             {
@@ -99,9 +122,9 @@ public sealed class SecurityHeadersMiddleware(RequestDelegate next, IHostEnviron
     }
 
     // Segment-aware, so /swagger and /swagger/index.html match but /swaggerish would not.
-    private static bool IsDocumentationUi(PathString path)
+    private static bool StartsWithAny(PathString path, PathString[] prefixes)
     {
-        foreach (var prefix in DocumentationPaths)
+        foreach (var prefix in prefixes)
         {
             if (path.StartsWithSegments(prefix))
             {
@@ -110,5 +133,17 @@ public sealed class SecurityHeadersMiddleware(RequestDelegate next, IHostEnviron
         }
 
         return false;
+    }
+
+    // The WebSocket origin is this request's own host, over wss when the page is https. Development
+    // also allows the browser-refresh socket that `dotnet watch` opens on another local port.
+    private string DashboardPolicy(HttpRequest request)
+    {
+        var socket = $"{(request.IsHttps ? "wss" : "ws")}://{request.Host}";
+        var connect = environment.IsDevelopment() ? $"'self' {socket} ws://localhost:* wss://localhost:*" : $"'self' {socket}";
+
+        return "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; " +
+               "script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; " +
+               $"connect-src {connect}; worker-src 'self'; manifest-src 'self'; media-src 'self'";
     }
 }

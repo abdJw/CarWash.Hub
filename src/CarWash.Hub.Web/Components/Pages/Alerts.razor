@@ -1,0 +1,142 @@
+@* The alert centre: what needs attention now, or the whole history; refill a service or acknowledge
+   an alert in place. Live: it reloads as alerts are raised and resolved. *@
+@page "/alerts"
+@inherits LivePageBase
+@inject ISnackbar Snackbar
+
+<PageTitle>@L[DashboardText.AlertsTitle] · @L[DashboardText.AppName]</PageTitle>
+
+<header class="cw-page-head">
+    <h1 class="cw-h1">@L[DashboardText.AlertsTitle]</h1>
+    <LiveBadge At="LastRefreshedAt" Now="Now" />
+</header>
+<p class="cw-muted cw-intro">@L[DashboardText.AlertsIntro]</p>
+
+<div class="cw-filters cw-filters--wrap">
+    <div class="cw-segmented" role="group" aria-label="@L[DashboardText.AlertsTitle]">
+        <button type="button" class="@(_openOnly ? "is-selected" : null)" aria-pressed="@(_openOnly ? "true" : "false")" @onclick="() => SetOpenOnlyAsync(true)">
+            @L[DashboardText.AlertsFilterOpen]
+        </button>
+        <button type="button" class="@(_openOnly ? null : "is-selected")" aria-pressed="@(_openOnly ? "false" : "true")" @onclick="() => SetOpenOnlyAsync(false)">
+            @L[DashboardText.AlertsFilterAll]
+        </button>
+    </div>
+
+    <div class="cw-segmented" role="group" aria-label="@L[DashboardText.AlertsKindAll]">
+        @foreach (var (kind, key) in Kinds)
+        {
+            <button type="button" class="@(kind == _kind ? "is-selected" : null)" aria-pressed="@(kind == _kind ? "true" : "false")" @onclick="() => SetKindAsync(kind)">
+                @L[key]
+            </button>
+        }
+    </div>
+</div>
+
+@if (!_loaded)
+{
+    <div class="cw-alerts">
+        @for (var i = 0; i < 4; i++)
+        {
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="96px" Class="cw-skeleton" />
+        }
+    </div>
+}
+else if (_alerts.Count == 0)
+{
+    <div class="cw-empty">
+        <MudIcon Icon="@(_openOnly ? Icons.Material.Rounded.TaskAlt : Icons.Material.Rounded.NotificationsNone)" Size="Size.Large" />
+        <p>@(_openOnly ? L[DashboardText.AlertsNoneOpen] : L[DashboardText.AlertsNone])</p>
+    </div>
+}
+else
+{
+    <div class="cw-alerts @(IsRefreshing ? "is-refreshing" : null)">
+        @foreach (var alert in _alerts)
+        {
+            <AlertCard @key="alert.Id" Alert="alert" Now="Now" Busy="_busy.Contains(alert.Id)"
+                       OnRefill="RefillAsync" OnAcknowledge="AcknowledgeAsync" />
+        }
+    </div>
+
+    @if (_alerts.Count >= _take && _take < AlertQuery.MaxTake)
+    {
+        <div class="cw-load-more">
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Rounded.ExpandMore" OnClick="LoadMoreAsync">@L[DashboardText.AlertsLoadMore]</MudButton>
+        </div>
+    }
+}
+
+@code {
+    private const int PageSize = 50;
+
+    private static readonly (AlertKind Kind, string Key)[] Kinds =
+    [
+        (AlertKind.All, DashboardText.AlertsKindAll),
+        (AlertKind.Refill, DashboardText.AlertsKindRefill),
+        (AlertKind.NoActivity, DashboardText.AlertsKindNoActivity),
+    ];
+
+    private readonly HashSet<long> _busy = [];
+    private IReadOnlyList<AlertDto> _alerts = [];
+    private ServiceLookup _services = ServiceLookup.Empty;
+    private bool _loaded;
+    private bool _openOnly = true;
+    private AlertKind _kind = AlertKind.All;
+    private int _take = PageSize;
+
+    protected override bool IsRelevant(MachineActivityEvent activity) => false;
+
+    protected override bool IsRelevant(AlertsChangedEvent alerts) => true;
+
+    protected override async Task LoadAsync(CancellationToken cancellationToken)
+    {
+        if (_services.Ordered.Count == 0)
+        {
+            _services = new ServiceLookup(await Runner.QueryAsync<IFleetDashboardService, IReadOnlyList<ServiceInfoDto>>(
+                (service, token) => service.GetServicesAsync(token), cancellationToken));
+        }
+
+        var query = new AlertQuery { OpenOnly = _openOnly, Kind = _kind, Take = _take };
+        _alerts = await Runner.QueryAsync<IAlertService, IReadOnlyList<AlertDto>>((service, token) => service.ListAsync(query, token), cancellationToken);
+        _loaded = true;
+    }
+
+    private async Task SetOpenOnlyAsync(bool openOnly)
+    {
+        (_openOnly, _take) = (openOnly, PageSize);
+        await RefreshAsync();
+    }
+
+    private async Task SetKindAsync(AlertKind kind)
+    {
+        (_kind, _take) = (kind, PageSize);
+        await RefreshAsync();
+    }
+
+    private async Task LoadMoreAsync()
+    {
+        _take = Math.Min(_take + PageSize, AlertQuery.MaxTake);
+        await RefreshAsync();
+    }
+
+    private Task RefillAsync(AlertDto alert) => OpenRefillAsync(alert.MachineId, alert.MachineTitle, _services, alert.Service);
+
+    private async Task AcknowledgeAsync(AlertDto alert)
+    {
+        _busy.Add(alert.Id);
+        try
+        {
+            var result = await Runner.CommandAsync<IAlertService>((service, token) => service.AcknowledgeAsync(alert.Id, token));
+            if (!result.Succeeded)
+            {
+                Snackbar.Add(result.Message ?? L[DashboardText.ErrorBoundary], Severity.Error);
+            }
+
+            await RefreshAsync();
+        }
+        finally
+        {
+            _busy.Remove(alert.Id);
+        }
+    }
+}

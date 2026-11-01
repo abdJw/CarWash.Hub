@@ -1,0 +1,87 @@
+@page "/admin/services"
+@using CarWash.Hub.Application.Features.Catalog
+@inherits LivePageBase
+
+<PageTitle>@L[DashboardText.ServicesTitle] · @L[DashboardText.AppName]</PageTitle>
+
+<header class="cw-page-head">
+    <h1 class="cw-h1">@L[DashboardText.ServicesTitle]</h1>
+</header>
+<p class="cw-muted cw-intro">@L[DashboardText.ServicesIntro]</p>
+
+@if (_services is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else
+{
+    <div class="cw-admin-list">
+        @foreach (var service in _services)
+        {
+            <article class="cw-admin-item @(service.IsActive ? null : "is-inactive")">
+                <span class="cw-feed-icon @_palette.Css(service.Code)"><MudIcon Icon="@ServicePalette.Icon(service.Icon)" /></span>
+                <div class="cw-admin-item-main">
+                    <div class="cw-admin-item-title">
+                        <strong>@(IsArabic ? service.NameAr : service.Name)</strong>
+                        <span class="cw-mono cw-muted">@service.Code</span>
+                        @if (!service.IsConfigured)
+                        {
+                            <span class="cw-status cw-status--warning"><MudIcon Icon="@Icons.Material.Rounded.FiberNew" Size="Size.Small" /> @L[DashboardText.ServicesNeedsReview]</span>
+                        }
+                    </div>
+                    <div class="cw-admin-item-meta">
+                        @if (service.TracksRefill)
+                        {
+                            <span class="cw-status cw-status--good"><MudIcon Icon="@Icons.Material.Rounded.WaterDrop" Size="Size.Small" /> @L[DashboardText.ServicesTracked]</span>
+                            @if (service.DefaultCapacity is { } capacity)
+                            {
+                                <span>@L[DashboardText.ServicesCapacity, DashboardFormat.Number(capacity)]</span>
+                            }
+                            <span>@L[DashboardText.ServicesThreshold, service.LowThresholdPercent]</span>
+                        }
+                        else
+                        {
+                            <span class="cw-status cw-status--muted">@L[DashboardText.ServicesNotTracked]</span>
+                        }
+                        @if (!service.IsActive)
+                        {
+                            <span class="cw-status cw-status--muted">@L[DashboardText.CommonInactive]</span>
+                        }
+                    </div>
+                </div>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Rounded.Edit" OnClick="() => EditAsync(service)">
+                    @L[DashboardText.CommonEdit]
+                </MudButton>
+            </article>
+        }
+    </div>
+}
+
+@code {
+    private IReadOnlyList<ServiceDefinitionDto>? _services;
+    private ServiceLookup _palette = ServiceLookup.Empty;
+
+    private static bool IsArabic => CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
+
+    protected override bool IsRelevant(MachineActivityEvent activity) => false;
+
+    protected override async Task LoadAsync(CancellationToken cancellationToken)
+    {
+        _services = await Runner.QueryAsync<IServiceCatalogService, IReadOnlyList<ServiceDefinitionDto>>((service, token) => service.ListAsync(token), cancellationToken);
+        _palette = new ServiceLookup([.. _services.Select(service => new ServiceInfoDto(
+            service.Code, service.Name, service.Icon, null, service.TracksRefill, service.SortOrder, service.IsConfigured))]);
+    }
+
+    private async Task EditAsync(ServiceDefinitionDto service)
+    {
+        var dialog = await Dialogs.ShowAsync<ServiceDialog>(
+            L[DashboardText.ServicesEdit],
+            new DialogParameters<ServiceDialog> { { dialog => dialog.Service, service } },
+            AdminDialogs.Options);
+
+        if (await dialog.Result is { Canceled: false })
+        {
+            await RefreshAsync();
+        }
+    }
+}

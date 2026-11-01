@@ -1,0 +1,83 @@
+@using CarWash.Hub.Application.Features.Catalog
+@inherits AdminDialogBase
+
+<MudDialog>
+    <DialogContent>
+        @if (Message is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-3">@Message</MudAlert>
+        }
+        <div class="cw-form">
+            <div class="cw-form-fact">
+                <span class="cw-muted">@L[DashboardText.FieldCode]</span>
+                <span class="cw-mono">@Service.Code</span>
+            </div>
+            <MudTextField @bind-Value="_name" Label="@L[DashboardText.FieldNameEn]" Variant="Variant.Outlined" MaxLength="100"
+                          Error="@HasError(nameof(UpdateServiceRequest.Name))" ErrorText="@ErrorOf(nameof(UpdateServiceRequest.Name))" />
+            <MudTextField @bind-Value="_nameAr" Label="@L[DashboardText.FieldNameAr]" Variant="Variant.Outlined" MaxLength="100"
+                          Error="@HasError(nameof(UpdateServiceRequest.NameAr))" ErrorText="@ErrorOf(nameof(UpdateServiceRequest.NameAr))" />
+            <MudSelect T="string" @bind-Value="_icon" Label="@L[DashboardText.FieldIcon]" Variant="Variant.Outlined">
+                @foreach (var key in IconKeys)
+                {
+                    <MudSelectItem T="string" Value="key">
+                        <span class="cw-icon-option"><MudIcon Icon="@ServicePalette.Icon(key)" Size="Size.Small" /> @key</span>
+                    </MudSelectItem>
+                }
+            </MudSelect>
+            <MudSwitch @bind-Value="_tracksRefill" Label="@L[DashboardText.FieldTracksRefill]" Color="Color.Primary" />
+            <MudNumericField T="int?" @bind-Value="_defaultCapacity" Label="@L[DashboardText.FieldDefaultCapacity]" Variant="Variant.Outlined"
+                             Min="1" Max="UpdateServiceRequestValidator.MaxCapacity" Disabled="!_tracksRefill"
+                             Error="@HasError(nameof(UpdateServiceRequest.DefaultCapacity))" ErrorText="@ErrorOf(nameof(UpdateServiceRequest.DefaultCapacity))" />
+            <MudNumericField T="int" @bind-Value="_lowThreshold" Label="@L[DashboardText.FieldLowThreshold]" Variant="Variant.Outlined"
+                             Min="1" Max="99" Disabled="!_tracksRefill"
+                             Error="@HasError(nameof(UpdateServiceRequest.LowThresholdPercent))" ErrorText="@ErrorOf(nameof(UpdateServiceRequest.LowThresholdPercent))" />
+            <MudNumericField T="int" @bind-Value="_sortOrder" Label="@L[DashboardText.FieldSortOrder]" Variant="Variant.Outlined" Min="0" Max="10000"
+                             Error="@HasError(nameof(UpdateServiceRequest.SortOrder))" ErrorText="@ErrorOf(nameof(UpdateServiceRequest.SortOrder))" />
+            <MudSwitch @bind-Value="_isActive" Label="@L[DashboardText.FieldInService]" Color="Color.Primary" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L[DashboardText.CommonCancel]</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="Saving" OnClick="SubmitAsync">@L[DashboardText.CommonSave]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private static readonly string[] IconKeys = ["soap", "water", "vacuum", "other"];
+
+    /// <summary>Gets or sets the service.</summary>
+    [Parameter, EditorRequired]
+    public ServiceDefinitionDto Service { get; set; } = default!;
+
+    private string _name = string.Empty;
+    private string _nameAr = string.Empty;
+    private string _icon = "other";
+    private bool _tracksRefill;
+    private int? _defaultCapacity;
+    private int _lowThreshold;
+    private int _sortOrder;
+    private bool _isActive;
+
+    protected override void OnInitialized()
+    {
+        (_name, _nameAr, _tracksRefill, _defaultCapacity, _lowThreshold, _sortOrder, _isActive) =
+            (Service.Name, Service.NameAr, Service.TracksRefill, Service.DefaultCapacity, Service.LowThresholdPercent, Service.SortOrder, Service.IsActive);
+        _icon = Service.Icon is { } icon && IconKeys.Contains(icon) ? icon : "other";
+    }
+
+    private Task SubmitAsync() => SaveAsync<IServiceCatalogService>((service, token) => service.UpdateAsync(
+        new UpdateServiceRequest
+        {
+            Id = Service.Id,
+            Name = _name,
+            NameAr = _nameAr,
+            Icon = _icon,
+            TracksRefill = _tracksRefill,
+            DefaultCapacity = _defaultCapacity,
+            LowThresholdPercent = _lowThreshold,
+            SortOrder = _sortOrder,
+            IsActive = _isActive,
+            RowVersion = Service.RowVersion,
+        },
+        token));
+}

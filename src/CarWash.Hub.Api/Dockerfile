@@ -14,6 +14,7 @@ COPY src/CarWash.Hub.Domain/CarWash.Hub.Domain.csproj src/CarWash.Hub.Domain/pac
 COPY src/CarWash.Hub.Application/CarWash.Hub.Application.csproj src/CarWash.Hub.Application/packages.lock.json src/CarWash.Hub.Application/
 COPY src/CarWash.Hub.Infrastructure/CarWash.Hub.Infrastructure.csproj src/CarWash.Hub.Infrastructure/packages.lock.json src/CarWash.Hub.Infrastructure/
 COPY src/CarWash.Hub.Persistence/CarWash.Hub.Persistence.csproj src/CarWash.Hub.Persistence/packages.lock.json src/CarWash.Hub.Persistence/
+COPY src/CarWash.Hub.Web/CarWash.Hub.Web.csproj src/CarWash.Hub.Web/packages.lock.json src/CarWash.Hub.Web/
 COPY src/CarWash.Hub.Api/CarWash.Hub.Api.csproj src/CarWash.Hub.Api/packages.lock.json src/CarWash.Hub.Api/
 RUN dotnet restore src/CarWash.Hub.Api/CarWash.Hub.Api.csproj --locked-mode
 

@@ -1,0 +1,46 @@
+@* A machine's activity as an icon and a word, coloured by the reserved status palette. *@
+@inject IStringLocalizer<DashboardResource> L
+@inject DashboardFormat Format
+
+<span class="cw-status cw-status--@Kind" title="@Text">
+    <MudIcon Icon="@IconFor" Size="Size.Small" />
+    <span>@Text</span>
+</span>
+
+@code {
+    /// <summary>Gets or sets the activity.</summary>
+    [Parameter, EditorRequired]
+    public MachineActivity Activity { get; set; }
+
+    /// <summary>Gets or sets when the machine last sent a message.</summary>
+    [Parameter]
+    public DateTimeOffset? LastSeenAt { get; set; }
+
+    /// <summary>Gets or sets the current time.</summary>
+    [Parameter, EditorRequired]
+    public DateTimeOffset Now { get; set; }
+
+    private string Kind => Activity switch
+    {
+        MachineActivity.Busy => "good",
+        MachineActivity.Silent => "warning",
+        MachineActivity.Unknown => "muted",
+        _ => "neutral",
+    };
+
+    private string IconFor => Activity switch
+    {
+        MachineActivity.Busy => Icons.Material.Rounded.Bolt,
+        MachineActivity.Silent => Icons.Material.Rounded.PortableWifiOff,
+        MachineActivity.Unknown => Icons.Material.Rounded.HelpOutline,
+        _ => Icons.Material.Rounded.Schedule,
+    };
+
+    private string Text => Activity switch
+    {
+        MachineActivity.Busy => L[DashboardText.ActivityBusy],
+        MachineActivity.Silent when LastSeenAt is { } seen => L[DashboardText.ActivitySilent, Format.Duration(Now - seen)],
+        MachineActivity.Idle when LastSeenAt is { } seen => L[DashboardText.ActivityIdle, Format.Duration(Now - seen)],
+        _ => L[DashboardText.ActivityUnknown],
+    };
+}

@@ -1,4 +1,5 @@
 using CarWash.Hub.Domain.Common;
+using CarWash.Hub.Domain.Enums;
 
 namespace CarWash.Hub.Domain.Entities;
 
@@ -8,19 +9,23 @@ namespace CarWash.Hub.Domain.Entities;
 /// <remarks>
 /// Layer: Domain.
 /// <para>
-/// <b>Raw by design.</b> The engineers have not fixed the content of <c>data</c> yet, so Phase 1
-/// keeps it verbatim in <see cref="Payload"/>. Once the real format is known, Phase 2 parses these
-/// rows into a structured <c>MachineStatusLog</c> - and can re-parse the whole history whenever the
-/// parser changes, which is why nothing is ever thrown away here.
+/// <b>Raw by design.</b> <see cref="Payload"/> keeps <c>data</c> verbatim. The processing worker
+/// parses each row into <see cref="ServiceUsage"/> events and records the outcome in
+/// <see cref="ProcessingStatus"/>; because the raw text is never thrown away, a parser fix can
+/// re-parse the whole history by resetting that status to pending.
 /// </para>
 /// <para>
 /// Append-only, with a database-generated <c>bigint</c> key: rows are always read newest-first per
 /// machine, so a monotonic identity is the right clustering. Not soft-deletable and not
-/// row-versioned - a message is never edited.
+/// row-versioned. The payload is never edited; only the processing columns are written, and only by
+/// the worker.
 /// </para>
 /// </remarks>
 public class MachineMessage : BaseEntity<long>
 {
+    /// <summary>The longest processing error kept.</summary>
+    public const int ProcessingErrorMaxLength = 500;
+
     /// <summary>Gets or sets the machine that sent the message.</summary>
     public Guid MachineId { get; set; }
 
@@ -53,4 +58,13 @@ public class MachineMessage : BaseEntity<long>
 
     /// <summary>Gets or sets the request's correlation identifier, to find it in the logs.</summary>
     public string? CorrelationId { get; set; }
+
+    /// <summary>Gets or sets where the message is in the parsing pipeline.</summary>
+    public ProcessingStatus ProcessingStatus { get; set; }
+
+    /// <summary>Gets or sets when the worker last processed the message, in UTC; null while pending.</summary>
+    public DateTimeOffset? ProcessedAt { get; set; }
+
+    /// <summary>Gets or sets why processing failed or the message was ignored; null otherwise.</summary>
+    public string? ProcessingError { get; set; }
 }

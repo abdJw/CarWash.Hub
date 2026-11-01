@@ -1,0 +1,31 @@
+@using CarWash.Hub.Application.Features.Refills
+@inherits CarWash.Hub.Web.Components.Admin.AdminDialogBase
+
+<MudDialog>
+    <DialogContent>
+        @if (Message is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-3">@Message</MudAlert>
+        }
+        <div class="cw-form">
+            <p class="cw-muted">@L[DashboardText.RefillVoidHint]</p>
+            <MudTextField T="string" @bind-Value="_reason" Label="@L[DashboardText.RefillVoidReason]" Variant="Variant.Outlined" MaxLength="300" Lines="2" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L[DashboardText.CommonCancel]</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" Disabled="Saving" OnClick="SubmitAsync">@L[DashboardText.RefillVoidConfirm]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    /// <summary>Gets or sets the refill.</summary>
+    [Parameter, EditorRequired]
+    public Guid RefillId { get; set; }
+
+    private string? _reason;
+
+    private Task SubmitAsync() => SaveAsync<IRefillService>(
+        (service, token) => service.VoidAsync(new VoidRefillRequest(RefillId, _reason), token),
+        L[DashboardText.RefillVoidDone]);
+}

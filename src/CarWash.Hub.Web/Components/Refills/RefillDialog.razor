@@ -1,0 +1,32 @@
+@inject ISnackbar Snackbar
+@inject IStringLocalizer<DashboardResource> L
+
+<MudDialog>
+    <DialogContent>
+        <RefillForm MachineId="MachineId" Services="Services" Preselect="@Preselect" OnSaved="SavedAsync" />
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance Dialog { get; set; } = default!;
+
+    /// <summary>Gets or sets the machine.</summary>
+    [Parameter, EditorRequired]
+    public Guid MachineId { get; set; }
+
+    /// <summary>Gets or sets the service names and icons.</summary>
+    [Parameter, EditorRequired]
+    public ServiceLookup Services { get; set; } = ServiceLookup.Empty;
+
+    /// <summary>Gets or sets a service to start selected.</summary>
+    [Parameter]
+    public string? Preselect { get; set; }
+
+    private Task SavedAsync()
+    {
+        Snackbar.Add(L[DashboardText.RefillSaved], Severity.Success);
+        Dialog.Close(DialogResult.Ok(true));
+        return Task.CompletedTask;
+    }
+}

@@ -1,0 +1,111 @@
+@page "/admin/users"
+@using CarWash.Hub.Application.Features.Users
+@using CarWash.Hub.Domain.Enums
+@inherits LivePageBase
+
+<PageTitle>@L[DashboardText.UsersTitle] · @L[DashboardText.AppName]</PageTitle>
+
+<header class="cw-page-head">
+    <h1 class="cw-h1">@L[DashboardText.UsersTitle]</h1>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.PersonAdd" OnClick="() => EditAsync(null)">
+        @L[DashboardText.UsersAdd]
+    </MudButton>
+</header>
+
+@if (_users is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else
+{
+    <div class="cw-admin-list">
+        @foreach (var user in _users)
+        {
+            <article class="cw-admin-item @(user.IsActive ? null : "is-inactive")">
+                <div class="cw-admin-item-main">
+                    <div class="cw-admin-item-title">
+                        <strong>@user.DisplayName</strong>
+                        <span class="cw-mono cw-muted">@user.UserName</span>
+                        @if (user.Id == _myId)
+                        {
+                            <span class="cw-status cw-status--neutral">@L[DashboardText.UsersYou]</span>
+                        }
+                    </div>
+                    <div class="cw-admin-item-meta">
+                        <span class="cw-status cw-status--neutral">
+                            <MudIcon Icon="@(user.Role == UserRole.SuperAdmin ? Icons.Material.Rounded.AdminPanelSettings : Icons.Material.Rounded.LocalGasStation)" Size="Size.Small" />
+                            @(user.Role == UserRole.SuperAdmin ? L[DashboardText.RoleSuperAdmin] : user.StationName ?? L[DashboardText.RoleStationUser])
+                        </span>
+                        <span class="cw-ltr">@user.Email</span>
+                        @if (!user.IsActive)
+                        {
+                            <span class="cw-status cw-status--muted">@L[DashboardText.CommonInactive]</span>
+                        }
+                        @if (user.LockedOutUntil is { } until)
+                        {
+                            <span class="cw-status cw-status--critical"><MudIcon Icon="@Icons.Material.Rounded.Lock" Size="Size.Small" /> @L[DashboardText.UsersLocked, Format.DateTime(until)]</span>
+                        }
+                        @if (user.MustChangePassword)
+                        {
+                            <span class="cw-status cw-status--warning"><MudIcon Icon="@Icons.Material.Rounded.Key" Size="Size.Small" /> @L[DashboardText.UsersMustChange]</span>
+                        }
+                        <span class="cw-muted">@(user.LastSignInAt is { } at ? L[DashboardText.UsersLastSignIn, Format.Ago(at, Now)] : L[DashboardText.UsersNeverSignedIn])</span>
+                    </div>
+                </div>
+                <div class="cw-admin-item-actions">
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Rounded.Edit" OnClick="() => EditAsync(user)">
+                        @L[DashboardText.CommonEdit]
+                    </MudButton>
+                    <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Rounded.Key" OnClick="() => ResetAsync(user)">
+                        @L[DashboardText.UsersResetPassword]
+                    </MudButton>
+                </div>
+            </article>
+        }
+    </div>
+}
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
+    private IReadOnlyList<UserDto>? _users;
+    private Guid? _myId;
+
+    protected override bool IsRelevant(MachineActivityEvent activity) => false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _myId = Guid.TryParse((await AuthenticationState).User.FindFirst(CarWash.Hub.Domain.Constants.CustomClaimTypes.UserId)?.Value, out var id) ? id : null;
+        await base.OnInitializedAsync();
+    }
+
+    protected override async Task LoadAsync(CancellationToken cancellationToken) =>
+        _users = await Runner.QueryAsync<IUserService, IReadOnlyList<UserDto>>((service, token) => service.ListAsync(token), cancellationToken);
+
+    private async Task EditAsync(UserDto? user)
+    {
+        var dialog = await Dialogs.ShowAsync<UserDialog>(
+            user is null ? L[DashboardText.UsersNew] : L[DashboardText.UsersEdit],
+            new DialogParameters<UserDialog> { { dialog => dialog.User, user } },
+            AdminDialogs.Options);
+
+        if (await dialog.Result is { Canceled: false })
+        {
+            await RefreshAsync();
+        }
+    }
+
+    private async Task ResetAsync(UserDto user)
+    {
+        var dialog = await Dialogs.ShowAsync<ResetPasswordDialog>(
+            L[DashboardText.UsersResetPassword],
+            new DialogParameters<ResetPasswordDialog> { { dialog => dialog.User, user } },
+            AdminDialogs.Options);
+
+        if (await dialog.Result is { Canceled: false })
+        {
+            await RefreshAsync();
+        }
+    }
+}

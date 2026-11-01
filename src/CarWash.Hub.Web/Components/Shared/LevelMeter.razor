@@ -1,0 +1,63 @@
+@* A service's level as a meter: the fill carries the state (accent, warning, critical) on a lighter
+   track; the numbers and the words beside it say the same without colour. *@
+@using CarWash.Hub.Domain.Enums
+@inject IStringLocalizer<DashboardResource> L
+@inject DashboardFormat Format
+
+<div class="cw-meter cw-meter--@LevelPresentation.Kind(Level.Level, Level.ForecastEmptyAt, Now)">
+    <div class="cw-meter-head">
+        <span class="cw-meter-name">
+            <MudIcon Icon="@Services.Icon(Level.Service)" Size="Size.Small" />
+            @Services.Name(Level.Service)
+        </span>
+        <span class="cw-status cw-status--@StatusKind">
+            <MudIcon Icon="@LevelPresentation.Icon(Level.Level)" Size="Size.Small" />
+            @LevelPresentation.Word(Level.Level, L)
+        </span>
+    </div>
+
+    @if (Level.Capacity is { } capacity)
+    {
+        <div class="cw-meter-track" role="meter" aria-valuemin="0" aria-valuemax="@capacity" aria-valuenow="@Math.Max(0, Level.Remaining ?? 0)"
+             aria-label="@Services.Name(Level.Service)">
+            <span class="cw-meter-fill" style="inline-size: @(Level.PercentRemaining ?? 0)%"></span>
+        </div>
+        <div class="cw-meter-foot">
+            @if (Level.Remaining is < 0)
+            {
+                <strong>@L[DashboardText.LevelOverBy, -Level.Remaining.Value]</strong>
+            }
+            else
+            {
+                <strong>@L[DashboardText.LevelLeft, DashboardFormat.Number(Level.Remaining ?? 0), DashboardFormat.Number(capacity)]</strong>
+            }
+
+            @if (Level.ForecastEmptyAt is { } at && at > Now && Level.Level is ServiceLevel.Ok or ServiceLevel.Low)
+            {
+                <span>@L[DashboardText.LevelRunsOutIn, Format.Duration(at - Now)] <span class="cw-muted">(@L[DashboardText.LevelRunsOutAt, Format.DateTime(at)])</span></span>
+            }
+
+            @if (Level.RefilledAt is { } refilled)
+            {
+                <span class="cw-muted">@L[DashboardText.LevelRefilledAgo, Format.Ago(refilled, Now)]</span>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>Gets or sets the level.</summary>
+    [Parameter, EditorRequired]
+    public ServiceLevelDto Level { get; set; } = default!;
+
+    /// <summary>Gets or sets the service names and icons.</summary>
+    [Parameter, EditorRequired]
+    public ServiceLookup Services { get; set; } = ServiceLookup.Empty;
+
+    /// <summary>Gets or sets the current time.</summary>
+    [Parameter, EditorRequired]
+    public DateTimeOffset Now { get; set; }
+
+    // The chip states the level itself; a run-out forecast shows in the meter's colour and text.
+    private string StatusKind => LevelPresentation.Kind(Level.Level, null, Now);
+}

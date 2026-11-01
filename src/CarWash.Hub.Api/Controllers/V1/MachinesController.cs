@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using CarWash.Hub.Application.Common.Models;
 using CarWash.Hub.Application.Features.Machines;
+using CarWash.Hub.Application.Features.Usage;
 using CarWash.Hub.Infrastructure.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,13 +16,14 @@ namespace CarWash.Hub.Api.Controllers.V1;
 /// <c>{machineId}</c> is the identifier the machine sends, matched case-insensitively.
 /// </remarks>
 /// <param name="machineService">Reads machines and messages.</param>
+/// <param name="usageService">Reads the parsed usage history.</param>
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/machines")]
 [Authorize(Policy = AuthorizationPolicies.Read)]
 [Produces("application/json")]
 [Tags("Machines")]
-public sealed class MachinesController(IMachineService machineService) : ControllerBase
+public sealed class MachinesController(IMachineService machineService, IUsageService usageService) : ControllerBase
 {
     /// <summary>Lists the machines that have sent at least one message.</summary>
     /// <param name="query">Search (machine id or name), sort (<c>machineId</c>, <c>firstSeenAt</c>, <c>lastSeenAt</c>) and page.</param>
@@ -85,4 +87,31 @@ public sealed class MachinesController(IMachineService machineService) : Control
         [FromQuery] MachineHistoryQuery query,
         CancellationToken cancellationToken) =>
         Ok(await machineService.GetHistoryAsync(machineId, query, cancellationToken).ConfigureAwait(false));
+
+    /// <summary>Returns how a machine was used: uses per service, in total and per hour.</summary>
+    /// <param name="machineId">The identifier the machine sends.</param>
+    /// <param name="query">
+    /// An optional window (<c>from</c>, <c>to</c>, ISO 8601): the last 24 hours by default, at most 31
+    /// days. Counts are per whole UTC hour.
+    /// </param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Totals per service, busiest first, and counts per hour, oldest first.</returns>
+    /// <remarks>
+    /// Usage is parsed from the stored messages by a background worker, normally within a second of
+    /// arrival; <c>GET /api/v1/processing/status</c> shows any backlog.
+    /// </remarks>
+    /// <response code="200">The usage.</response>
+    /// <response code="400">The window is backwards or longer than 31 days.</response>
+    /// <response code="401">The <c>client-read-key</c> header is missing or wrong.</response>
+    /// <response code="404">No such machine.</response>
+    [HttpGet("{machineId}/usage")]
+    [ProducesResponseType<ApiResponse<MachineUsageDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<MachineUsageDto>> GetUsage(
+        string machineId,
+        [FromQuery] UsageQuery query,
+        CancellationToken cancellationToken) =>
+        Ok(await usageService.GetMachineUsageAsync(machineId, query, cancellationToken).ConfigureAwait(false));
 }

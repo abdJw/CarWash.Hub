@@ -1,0 +1,90 @@
+@page "/admin/stations"
+@using CarWash.Hub.Application.Features.Stations
+@inherits LivePageBase
+
+<PageTitle>@L[DashboardText.StationsTitle] · @L[DashboardText.AppName]</PageTitle>
+
+<header class="cw-page-head">
+    <h1 class="cw-h1">@L[DashboardText.StationsTitle]</h1>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.Add" OnClick="() => EditAsync(null)">
+        @L[DashboardText.StationsAdd]
+    </MudButton>
+</header>
+
+@if (_stations is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_stations.Count == 0)
+{
+    <div class="cw-empty">
+        <MudIcon Icon="@Icons.Material.Rounded.LocalGasStation" Size="Size.Large" />
+        <p>@L[DashboardText.StationsEmpty]</p>
+    </div>
+}
+else
+{
+    <div class="cw-admin-list">
+        @foreach (var station in _stations)
+        {
+            <article class="cw-admin-item @(station.IsActive ? null : "is-inactive")">
+                <div class="cw-admin-item-main">
+                    <div class="cw-admin-item-title">
+                        <span class="cw-code-chip">@station.Code</span>
+                        <strong>@(IsArabic ? station.NameAr : station.Name)</strong>
+                    </div>
+                    <div class="cw-admin-item-meta">
+                        @if (station.City is { } city)
+                        {
+                            <span><MudIcon Icon="@Icons.Material.Rounded.Place" Size="Size.Small" /> @city</span>
+                        }
+                        <span><MudIcon Icon="@Icons.Material.Rounded.LocalCarWash" Size="Size.Small" /> @L[DashboardText.StationsMachines, station.MachineCount]</span>
+                        <span><MudIcon Icon="@Icons.Material.Rounded.Group" Size="Size.Small" /> @L[DashboardText.StationsUsers, station.UserCount]</span>
+                        <span>
+                            <MudIcon Icon="@Icons.Material.Rounded.Bedtime" Size="Size.Small" />
+                            @if (station is { QuietHoursStart: { } from, QuietHoursEnd: { } to })
+                            {
+                                <span class="cw-ltr">@L[DashboardText.StationsQuietHours, from.ToString("HH:mm", CultureInfo.InvariantCulture), to.ToString("HH:mm", CultureInfo.InvariantCulture)]</span>
+                            }
+                            else
+                            {
+                                @L[DashboardText.StationsOpen24]
+                            }
+                        </span>
+                        @if (!station.IsActive)
+                        {
+                            <span class="cw-status cw-status--muted">@L[DashboardText.CommonInactive]</span>
+                        }
+                    </div>
+                </div>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Rounded.Edit" OnClick="() => EditAsync(station)">
+                    @L[DashboardText.CommonEdit]
+                </MudButton>
+            </article>
+        }
+    </div>
+}
+
+@code {
+    private IReadOnlyList<StationDto>? _stations;
+
+    private static bool IsArabic => CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
+
+    protected override bool IsRelevant(MachineActivityEvent activity) => false;
+
+    protected override async Task LoadAsync(CancellationToken cancellationToken) =>
+        _stations = await Runner.QueryAsync<IGasStationService, IReadOnlyList<StationDto>>((service, token) => service.ListAsync(token), cancellationToken);
+
+    private async Task EditAsync(StationDto? station)
+    {
+        var dialog = await Dialogs.ShowAsync<StationDialog>(
+            station is null ? L[DashboardText.StationsNew] : L[DashboardText.StationsEdit],
+            new DialogParameters<StationDialog> { { dialog => dialog.Station, station } },
+            AdminDialogs.Options);
+
+        if (await dialog.Result is { Canceled: false })
+        {
+            await RefreshAsync();
+        }
+    }
+}

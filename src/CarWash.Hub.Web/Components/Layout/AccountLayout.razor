@@ -1,0 +1,32 @@
+@* The static layout of the account pages: no circuit, no MudBlazor runtime, just a card on the
+   page plane. It follows the system's light or dark theme through CSS alone. *@
+@inherits LayoutComponentBase
+@inject IStringLocalizer<DashboardResource> L
+
+<div class="cw-auth">
+    <main class="cw-auth-card">
+        <div class="cw-auth-brand">
+            <svg viewBox="0 0 48 48" aria-hidden="true"><use href="#cw-logo" /></svg>
+            <span>@L[DashboardText.AppName]</span>
+        </div>
+        @Body
+    </main>
+    <footer class="cw-auth-footer">
+        @if (CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft)
+        {
+            <a href="@CultureLink("en-US")" lang="en">English</a>
+        }
+        else
+        {
+            <a href="@CultureLink("ar-SA")" lang="ar">العربية</a>
+        }
+    </footer>
+</div>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    private string CultureLink(string culture) =>
+        $"{AccountEndpoints.CulturePath}?culture={culture}&returnUrl={Uri.EscapeDataString(HttpContext.Request.Path + HttpContext.Request.QueryString)}";
+}

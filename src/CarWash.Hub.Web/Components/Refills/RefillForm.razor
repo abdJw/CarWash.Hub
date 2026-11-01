@@ -1,0 +1,196 @@
+@* The refill form, shared by the dialog and the phone page a QR sticker opens. Big touch targets:
+   one tap per service to include it, its capacity prefilled from the last refill, "all services"
+   in one tap, and the time defaulting to now. *@
+@using CarWash.Hub.Application.Features.Refills
+@using CarWash.Hub.Domain.Enums
+@inject DashboardOperationRunner Runner
+@inject IStringLocalizer<DashboardResource> L
+@inject IBusinessTimeZone TimeZone
+@inject IDateTimeProvider Clock
+
+@if (_form is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_form.Services.Count == 0)
+{
+    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">@L[DashboardText.RefillNoneTracked]</MudAlert>
+}
+else
+{
+    @if (_message is not null)
+    {
+        <MudAlert Severity="Severity.Error" Dense="true" Class="mb-3">@_message</MudAlert>
+    }
+
+    <div class="cw-refill">
+        <div class="cw-refill-head">
+            <span class="cw-refill-label">@L[DashboardText.RefillServices]</span>
+            <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Rounded.DoneAll" OnClick="SelectAll">@L[DashboardText.RefillSelectAll]</MudButton>
+        </div>
+
+        @foreach (var line in _lines)
+        {
+            <div class="cw-refill-line @(line.Selected ? "is-selected" : null)">
+                <button type="button" class="cw-refill-toggle" aria-pressed="@(line.Selected ? "true" : "false")" @onclick="() => line.Selected = !line.Selected">
+                    <span class="cw-refill-check"><MudIcon Icon="@(line.Selected ? Icons.Material.Rounded.CheckBox : Icons.Material.Rounded.CheckBoxOutlineBlank)" /></span>
+                    <MudIcon Icon="@Services.Icon(line.Service.Service)" />
+                    <span class="cw-refill-name">
+                        <strong>@Services.Name(line.Service.Service)</strong>
+                        <span class="cw-muted">@CurrentLevel(line.Service)</span>
+                    </span>
+                </button>
+                @if (line.Selected)
+                {
+                    <MudNumericField T="int?" @bind-Value="line.Capacity" Label="@L[DashboardText.RefillCapacity]" Variant="Variant.Outlined"
+                                     Min="1" Max="100000" Margin="Margin.Dense" Class="cw-refill-capacity" />
+                }
+            </div>
+        }
+        @if (ErrorOf(nameof(RecordRefillRequest.Items)) is { } itemsError)
+        {
+            <p class="cw-field-error">@itemsError</p>
+        }
+
+        <div class="cw-refill-when">
+            <span class="cw-refill-label">@L[DashboardText.RefillWhen]</span>
+            <div class="cw-segmented" role="group">
+                <button type="button" class="@(_earlier ? null : "is-selected")" aria-pressed="@(_earlier ? "false" : "true")" @onclick="() => _earlier = false">@L[DashboardText.RefillNow]</button>
+                <button type="button" class="@(_earlier ? "is-selected" : null)" aria-pressed="@(_earlier ? "true" : "false")" @onclick="() => _earlier = true">@L[DashboardText.RefillEarlier]</button>
+            </div>
+            @if (_earlier)
+            {
+                <div class="cw-refill-datetime">
+                    <MudDatePicker @bind-Date="_date" Label="@L[DashboardText.RefillDate]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                   MaxDate="@LocalNow.Date" MinDate="@LocalNow.Date.AddDays(-RefillService.MaxBackdateDays)" />
+                    <MudTimePicker @bind-Time="_time" Label="@L[DashboardText.RefillTime]" Variant="Variant.Outlined" Margin="Margin.Dense" AmPm="false" />
+                </div>
+                @if (ErrorOf(nameof(RecordRefillRequest.RefilledAt)) is { } timeError)
+                {
+                    <p class="cw-field-error">@timeError</p>
+                }
+            }
+        </div>
+
+        <MudTextField T="string" @bind-Value="_notes" Label="@L[DashboardText.RefillNotes]" Variant="Variant.Outlined" Lines="2" MaxLength="500" />
+
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true" Disabled="_saving || !_lines.Any(line => line.Selected)"
+                   StartIcon="@Icons.Material.Rounded.WaterDrop" OnClick="SaveAsync" Class="cw-refill-save">
+            @L[DashboardText.RefillSave]
+        </MudButton>
+    </div>
+}
+
+@code {
+    /// <summary>Gets or sets the machine.</summary>
+    [Parameter, EditorRequired]
+    public Guid MachineId { get; set; }
+
+    /// <summary>Gets or sets the service names and icons.</summary>
+    [Parameter, EditorRequired]
+    public ServiceLookup Services { get; set; } = ServiceLookup.Empty;
+
+    /// <summary>Gets or sets a service to start selected - the one whose chip was tapped.</summary>
+    [Parameter]
+    public string? Preselect { get; set; }
+
+    /// <summary>Gets or sets what happens once the refill is saved.</summary>
+    [Parameter]
+    public EventCallback OnSaved { get; set; }
+
+    private RefillFormDto? _form;
+    private List<Line> _lines = [];
+    private bool _earlier;
+    private DateTime? _date;
+    private TimeSpan? _time;
+    private string? _notes;
+    private bool _saving;
+    private string? _message;
+    private IReadOnlyDictionary<string, string[]>? _errors;
+
+    private DateTimeOffset LocalNow => TimeZone.ToLocal(Clock.UtcNow);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _form = await Runner.QueryAsync<IRefillService, RefillFormDto>((service, token) => service.GetFormAsync(MachineId, token));
+        _lines = [.. _form.Services
+            .OrderBy(service => Services.Order(service.Service))
+            .ThenBy(service => service.Service, StringComparer.Ordinal)
+            .Select(service => new Line(service)
+            {
+                Capacity = service.SuggestedCapacity,
+                Selected = string.Equals(service.Service, Preselect, StringComparison.OrdinalIgnoreCase)
+                           || service.Level is ServiceLevel.Low or ServiceLevel.Empty or ServiceLevel.Overused,
+            })];
+
+        _date = LocalNow.Date;
+        _time = LocalNow.TimeOfDay;
+    }
+
+    private void SelectAll()
+    {
+        var all = !_lines.TrueForAll(line => line.Selected);
+        _lines.ForEach(line => line.Selected = all);
+    }
+
+    private string CurrentLevel(RefillFormServiceDto service) => service.Capacity is { } capacity
+        ? L[DashboardText.RefillNowLevel, $"{Math.Max(0, capacity - service.Used)} / {capacity}"]
+        : L[DashboardText.LevelNeverRefilled];
+
+    private string? ErrorOf(string field) =>
+        _errors is not null && _errors.TryGetValue(field, out var messages) ? string.Join(' ', messages) : null;
+
+    private async Task SaveAsync()
+    {
+        _saving = true;
+        _message = null;
+        _errors = null;
+
+        DateTimeOffset? refilledAt = null;
+        if (_earlier && _date is { } date)
+        {
+            var local = date.Date + (_time ?? TimeSpan.Zero);
+            refilledAt = new DateTimeOffset(local, TimeZone.Zone.GetUtcOffset(local));
+        }
+
+        var request = new RecordRefillRequest
+        {
+            MachineId = MachineId,
+            RefilledAt = refilledAt,
+            Notes = _notes,
+            Items = [.. _lines.Where(line => line.Selected).Select(line => new RefillLineDto(line.Service.Service, line.Capacity ?? 0))],
+        };
+
+        try
+        {
+            var result = await Runner.CommandAsync<IRefillService>((service, token) => service.RecordAsync(request, token));
+            if (result.Succeeded)
+            {
+                await OnSaved.InvokeAsync();
+                return;
+            }
+
+            // Errors with a place on the form show there; the rest (a capacity, a note) go above it.
+            _errors = result.Errors;
+            _message = result.Errors is { Count: > 0 } errors
+                ? string.Join(' ', errors
+                    .Where(pair => pair.Key is not (nameof(RecordRefillRequest.Items) or nameof(RecordRefillRequest.RefilledAt)))
+                    .SelectMany(pair => pair.Value)
+                    .Distinct()) is { Length: > 0 } rest ? rest : null
+                : result.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private sealed class Line(RefillFormServiceDto service)
+    {
+        public RefillFormServiceDto Service { get; } = service;
+
+        public bool Selected { get; set; }
+
+        public int? Capacity { get; set; }
+    }
+}

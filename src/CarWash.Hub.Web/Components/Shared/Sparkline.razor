@@ -1,0 +1,35 @@
+@* A 12-point trend in the de-emphasis grey, the current period marked in the accent. Fixed pixel
+   size with a matching viewBox, so the 2px line and the 8px end dot never stretch. *@
+
+@if (Values.Count > 1)
+{
+    <svg class="cw-spark" width="@Width" height="@Height" viewBox="0 0 @Width @Height" role="img" aria-label="@Label">
+        <title>@Label</title>
+        <polyline class="cw-spark-line" points="@Points" />
+        <circle class="cw-spark-dot" cx="@Fmt(X(Values.Count - 1))" cy="@Fmt(Y(Values[^1]))" r="4" />
+    </svg>
+}
+
+@code {
+    private const int Width = 112;
+    private const int Height = 32;
+    private const double Pad = 5;
+
+    /// <summary>Gets or sets the values, oldest first.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<int> Values { get; set; } = [];
+
+    /// <summary>Gets or sets what the line shows, for screen readers.</summary>
+    [Parameter]
+    public string? Label { get; set; }
+
+    private double Max => Math.Max(1, Values.Max());
+
+    private string Points => string.Join(' ', Values.Select((value, index) => $"{Fmt(X(index))},{Fmt(Y(value))}"));
+
+    private double X(int index) => Pad + index * (Width - 2 * Pad) / (Values.Count - 1);
+
+    private double Y(int value) => Height - Pad - value / Max * (Height - 2 * Pad);
+
+    private static string Fmt(double value) => value.ToString("0.#", CultureInfo.InvariantCulture);
+}

@@ -1,0 +1,75 @@
+@page "/admin/inbox"
+@using CarWash.Hub.Application.Features.Machines
+@inherits LivePageBase
+
+<PageTitle>@L[DashboardText.InboxTitle] · @L[DashboardText.AppName]</PageTitle>
+
+<header class="cw-page-head">
+    <h1 class="cw-h1">@L[DashboardText.InboxTitle]</h1>
+    <LiveBadge At="LastRefreshedAt" Now="Now" />
+</header>
+<p class="cw-muted cw-intro">@L[DashboardText.InboxIntro]</p>
+
+@if (_machines is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_machines.Count == 0)
+{
+    <div class="cw-empty">
+        <MudIcon Icon="@Icons.Material.Rounded.TaskAlt" Size="Size.Large" />
+        <p>@L[DashboardText.InboxEmpty]</p>
+    </div>
+}
+else
+{
+    <div class="cw-admin-list">
+        @foreach (var machine in _machines)
+        {
+            <article class="cw-admin-item @(IsPulsing(machine.Id) ? "is-pulsing" : null)">
+                <div class="cw-admin-item-main">
+                    <div class="cw-admin-item-title">
+                        <strong class="cw-mono">@machine.Code</strong>
+                        @if (machine.DisplayName is { } name)
+                        {
+                            <span>@name</span>
+                        }
+                    </div>
+                    <div class="cw-admin-item-meta">
+                        <span>@L[DashboardText.InboxFirstSeen, Format.DateTime(machine.FirstSeenAt)]</span>
+                        @if (machine.LastSeenAt is { } seen)
+                        {
+                            <span><MudIcon Icon="@Icons.Material.Rounded.Sensors" Size="Size.Small" /> @Format.Ago(seen, Now)</span>
+                        }
+                        <span><MudIcon Icon="@Icons.Material.Rounded.TouchApp" Size="Size.Small" /> @L[DashboardText.ChartUses, DashboardFormat.Number(machine.TotalUses)]</span>
+                    </div>
+                </div>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Rounded.AddLocationAlt"
+                           OnClick="() => AssignAsync(machine)">
+                    @L[DashboardText.InboxAssign]
+                </MudButton>
+            </article>
+        }
+    </div>
+}
+
+@code {
+    private IReadOnlyList<MachineSettingsDto>? _machines;
+
+    protected override async Task LoadAsync(CancellationToken cancellationToken) =>
+        _machines = await Runner.QueryAsync<IMachineAdminService, IReadOnlyList<MachineSettingsDto>>(
+            (service, token) => service.ListUnassignedAsync(token), cancellationToken);
+
+    private async Task AssignAsync(MachineSettingsDto machine)
+    {
+        var dialog = await Dialogs.ShowAsync<MachineDialog>(
+            L[DashboardText.MachineEdit],
+            new DialogParameters<MachineDialog> { { dialog => dialog.Machine, machine } },
+            AdminDialogs.Options);
+
+        if (await dialog.Result is { Canceled: false })
+        {
+            await RefreshAsync();
+        }
+    }
+}

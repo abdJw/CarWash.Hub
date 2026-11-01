@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="App_Name" xml:space="preserve"><value>CarWash Hub</value></data>
+  <data name="App_Loading" xml:space="preserve"><value>جارٍ تحميل لوحة التحكم…</value></data>
+  <data name="Nav_Overview" xml:space="preserve"><value>نظرة عامة</value></data>
+  <data name="Nav_Machines" xml:space="preserve"><value>الأجهزة</value></data>
+  <data name="Nav_Menu" xml:space="preserve"><value>القائمة</value></data>
+  <data name="Nav_SignOut" xml:space="preserve"><value>تسجيل الخروج</value></data>
+  <data name="Nav_DarkMode" xml:space="preserve"><value>الوضع الداكن</value></data>
+  <data name="Nav_LightMode" xml:space="preserve"><value>الوضع الفاتح</value></data>
+  <data name="Nav_Language" xml:space="preserve"><value>اللغة</value></data>
+  <data name="Role_SuperAdmin" xml:space="preserve"><value>مدير عام</value></data>
+  <data name="Role_StationUser" xml:space="preserve"><value>مستخدم محطة</value></data>
+  <data name="Login_Title" xml:space="preserve"><value>تسجيل الدخول</value></data>
+  <data name="Login_Subtitle" xml:space="preserve"><value>الأجهزة والاستخدام وإعادة التعبئة في مكان واحد.</value></data>
+  <data name="Login_UserName" xml:space="preserve"><value>اسم المستخدم أو البريد الإلكتروني</value></data>
+  <data name="Login_Password" xml:space="preserve"><value>كلمة المرور</value></data>
+  <data name="Login_RememberMe" xml:space="preserve"><value>إبقائي مسجلاً على هذا الجهاز</value></data>
+  <data name="Login_Submit" xml:space="preserve"><value>دخول</value></data>
+  <data name="Login_Required" xml:space="preserve"><value>أدخل اسم المستخدم وكلمة المرور.</value></data>
+  <data name="Login_Failed" xml:space="preserve"><value>اسم المستخدم أو كلمة المرور غير صحيحة.</value></data>
+  <data name="Login_LockedOut" xml:space="preserve"><value>محاولات فاشلة كثيرة. حاول مرة أخرى بعد {0} دقيقة.</value></data>
+  <data name="Logout_Prompt" xml:space="preserve"><value>هل تريد تسجيل الخروج من CarWash Hub على هذا الجهاز؟</value></data>
+  <data name="Logout_Confirm" xml:space="preserve"><value>خروج</value></data>
+  <data name="Logout_Done" xml:space="preserve"><value>تم تسجيل خروجك.</value></data>
+  <data name="Logout_SignInAgain" xml:space="preserve"><value>تسجيل الدخول مجددًا</value></data>
+  <data name="Common_Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Common_Back" xml:space="preserve"><value>رجوع</value></data>
+  <data name="Common_BackToOverview" xml:space="preserve"><value>العودة إلى النظرة العامة</value></data>
+  <data name="AccessDenied_Title" xml:space="preserve"><value>لا تملك صلاحية</value></data>
+  <data name="AccessDenied_Text" xml:space="preserve"><value>لا يملك حسابك صلاحية فتح هذه الصفحة.</value></data>
+  <data name="NotFound_Title" xml:space="preserve"><value>الصفحة غير موجودة</value></data>
+  <data name="NotFound_Text" xml:space="preserve"><value>هذه الصفحة غير موجودة أو غير متاحة لك.</value></data>
+  <data name="Error_Title" xml:space="preserve"><value>حدث خطأ</value></data>
+  <data name="Error_Text" xml:space="preserve"><value>تعذّر عرض الصفحة. الرقم المرجعي: {0}</value></data>
+  <data name="Error_Boundary" xml:space="preserve"><value>تعذّر تحميل هذا الجزء من الصفحة.</value></data>
+  <data name="Error_Reload" xml:space="preserve"><value>إعادة التحميل</value></data>
+  <data name="Live_Label" xml:space="preserve"><value>مباشر</value></data>
+  <data name="Live_Updated" xml:space="preserve"><value>آخر تحديث {0}</value></data>
+  <data name="Range_24Hours" xml:space="preserve"><value>24 ساعة</value></data>
+  <data name="Range_7Days" xml:space="preserve"><value>7 أيام</value></data>
+  <data name="Range_30Days" xml:space="preserve"><value>30 يومًا</value></data>
+  <data name="Kpi_UsesToday" xml:space="preserve"><value>الاستخدامات اليوم</value></data>
+  <data name="Kpi_VsYesterday" xml:space="preserve"><value>مقارنةً بالأمس في مثل هذا الوقت</value></data>
+  <data name="Kpi_SameAsYesterday" xml:space="preserve"><value>مثل الأمس في مثل هذا الوقت</value></data>
+  <data name="Kpi_Machines" xml:space="preserve"><value>الأجهزة في الخدمة</value></data>
+  <data name="Kpi_BusyNow" xml:space="preserve"><value>{0} قيد الاستخدام الآن</value></data>
+  <data name="Kpi_Silent" xml:space="preserve"><value>أجهزة صامتة</value></data>
+  <data name="Kpi_SilentHint" xml:space="preserve"><value>لا رسائل منذ {0} ساعات أو أكثر</value></data>
+  <data name="Kpi_AllReporting" xml:space="preserve"><value>جميع الأجهزة ترسل بياناتها</value></data>
+  <data name="Kpi_Unassigned" xml:space="preserve"><value>أجهزة غير مخصصة</value></data>
+  <data name="Kpi_UnassignedHint" xml:space="preserve"><value>بانتظار تخصيصها لمحطة</value></data>
+  <data name="Kpi_Last12Hours" xml:space="preserve"><value>الاستخدامات لكل ساعة خلال آخر 12 ساعة</value></data>
+  <data name="Chart_UsageTitle" xml:space="preserve"><value>الاستخدامات حسب الخدمة</value></data>
+  <data name="Chart_ShowTable" xml:space="preserve"><value>عرض كجدول</value></data>
+  <data name="Chart_ShowChart" xml:space="preserve"><value>عرض كرسم بياني</value></data>
+  <data name="Chart_Total" xml:space="preserve"><value>الإجمالي</value></data>
+  <data name="Chart_Time" xml:space="preserve"><value>الوقت</value></data>
+  <data name="Chart_NoData" xml:space="preserve"><value>لا توجد استخدامات في هذه الفترة.</value></data>
+  <data name="Chart_Summary" xml:space="preserve"><value>{0} استخدام من {1} إلى {2}</value></data>
+  <data name="Chart_Uses" xml:space="preserve"><value>{0} استخدام</value></data>
+  <data name="Overview_Title" xml:space="preserve"><value>نظرة عامة</value></data>
+  <data name="Overview_TodayByService" xml:space="preserve"><value>اليوم حسب الخدمة</value></data>
+  <data name="Overview_Busiest" xml:space="preserve"><value>الأجهزة الأكثر استخدامًا اليوم</value></data>
+  <data name="Overview_AllMachines" xml:space="preserve"><value>جميع الأجهزة</value></data>
+  <data name="Overview_NoUsesToday" xml:space="preserve"><value>لا توجد استخدامات اليوم بعد.</value></data>
+  <data name="Machines_Title" xml:space="preserve"><value>الأجهزة</value></data>
+  <data name="Machines_Search" xml:space="preserve"><value>ابحث بالاسم أو عنوان MAC أو المحطة</value></data>
+  <data name="Machines_Empty" xml:space="preserve"><value>لا يوجد جهاز مطابق.</value></data>
+  <data name="Machines_NoneYet" xml:space="preserve"><value>لم يرسل أي جهاز رسالة بعد. تظهر الأجهزة هنا تلقائيًا فور إرسالها.</value></data>
+  <data name="Machines_Count" xml:space="preserve"><value>{0} من {1} جهاز</value></data>
+  <data name="Filter_All" xml:space="preserve"><value>الكل</value></data>
+  <data name="Filter_Busy" xml:space="preserve"><value>قيد الاستخدام</value></data>
+  <data name="Filter_Idle" xml:space="preserve"><value>خاملة</value></data>
+  <data name="Filter_Silent" xml:space="preserve"><value>صامتة</value></data>
+  <data name="Filter_Unassigned" xml:space="preserve"><value>غير مخصصة</value></data>
+  <data name="Sort_Label" xml:space="preserve"><value>الترتيب حسب</value></data>
+  <data name="Sort_Name" xml:space="preserve"><value>الاسم</value></data>
+  <data name="Sort_LastSeen" xml:space="preserve"><value>آخر ظهور</value></data>
+  <data name="Sort_UsesToday" xml:space="preserve"><value>استخدامات اليوم</value></data>
+  <data name="Activity_Busy" xml:space="preserve"><value>قيد الاستخدام الآن</value></data>
+  <data name="Activity_Idle" xml:space="preserve"><value>خامل · {0}</value></data>
+  <data name="Activity_Silent" xml:space="preserve"><value>صامت · {0}</value></data>
+  <data name="Activity_Unknown" xml:space="preserve"><value>لم يرسل بعد</value></data>
+  <data name="Machine_Unassigned" xml:space="preserve"><value>بدون محطة</value></data>
+  <data name="Machine_Inactive" xml:space="preserve"><value>خارج الخدمة</value></data>
+  <data name="Machine_UsesToday" xml:space="preserve"><value>استخدامات اليوم</value></data>
+  <data name="Machine_NoUsesToday" xml:space="preserve"><value>لا استخدامات اليوم</value></data>
+  <data name="Machine_LastUse" xml:space="preserve"><value>آخر استخدام {0}</value></data>
+  <data name="Machine_Mac" xml:space="preserve"><value>عنوان MAC</value></data>
+  <data name="Machine_Station" xml:space="preserve"><value>المحطة</value></data>
+  <data name="Machine_FirstSeen" xml:space="preserve"><value>أول ظهور</value></data>
+  <data name="Machine_LastSeen" xml:space="preserve"><value>آخر رسالة</value></data>
+  <data name="Machine_TotalUses" xml:space="preserve"><value>الاستخدامات منذ أول ظهور</value></data>
+  <data name="Machine_UsesInRange" xml:space="preserve"><value>الاستخدامات في هذه الفترة</value></data>
+  <data name="Machine_RecentUses" xml:space="preserve"><value>أحدث الاستخدامات</value></data>
+  <data name="Machine_RecentMessages" xml:space="preserve"><value>أحدث الرسائل</value></data>
+  <data name="Machine_NoUses" xml:space="preserve"><value>لا توجد استخدامات بعد.</value></data>
+  <data name="Machine_NoMessages" xml:space="preserve"><value>لا توجد رسائل بعد.</value></data>
+  <data name="Machine_NotFound" xml:space="preserve"><value>هذا الجهاز غير موجود أو لا يتبع محطتك.</value></data>
+  <data name="Machine_Open" xml:space="preserve"><value>فتح {0}</value></data>
+  <data name="MessageStatus_Pending" xml:space="preserve"><value>قيد الانتظار</value></data>
+  <data name="MessageStatus_Processed" xml:space="preserve"><value>محتسبة</value></data>
+  <data name="MessageStatus_Ignored" xml:space="preserve"><value>ليست استخدامًا</value></data>
+  <data name="MessageStatus_Failed" xml:space="preserve"><value>فشلت</value></data>
+  <data name="Time_JustNow" xml:space="preserve"><value>الآن</value></data>
+  <data name="Time_MinutesAgo" xml:space="preserve"><value>منذ {0} د</value></data>
+  <data name="Time_HoursAgo" xml:space="preserve"><value>منذ {0} س</value></data>
+  <data name="Time_DaysAgo" xml:space="preserve"><value>منذ {0} ي</value></data>
+  <data name="Duration_Minutes" xml:space="preserve"><value>{0} د</value></data>
+  <data name="Duration_Hours" xml:space="preserve"><value>{0} س</value></data>
+  <data name="Duration_Days" xml:space="preserve"><value>{0} ي</value></data>
+  <data name="Nav_Admin" xml:space="preserve"><value>الإدارة</value></data>
+  <data name="Nav_Stations" xml:space="preserve"><value>المحطات</value></data>
+  <data name="Nav_Inbox" xml:space="preserve"><value>أجهزة جديدة</value></data>
+  <data name="Nav_Users" xml:space="preserve"><value>المستخدمون</value></data>
+  <data name="Nav_Services" xml:space="preserve"><value>الخدمات</value></data>
+  <data name="Nav_ChangePassword" xml:space="preserve"><value>تغيير كلمة المرور</value></data>
+  <data name="Common_Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Common_Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Common_Saved" xml:space="preserve"><value>تم الحفظ.</value></data>
+  <data name="Common_Active" xml:space="preserve"><value>في الخدمة</value></data>
+  <data name="Common_Inactive" xml:space="preserve"><value>خارج الخدمة</value></data>
+  <data name="Admin_Title" xml:space="preserve"><value>الإدارة</value></data>
+  <data name="Admin_InboxHint" xml:space="preserve"><value>أجهزة أرسلت بياناتها ولم تُخصّص لمحطة بعد</value></data>
+  <data name="Admin_StationsHint" xml:space="preserve"><value>المحطات، وموقع تركيب كل جهاز</value></data>
+  <data name="Admin_UsersHint" xml:space="preserve"><value>من يمكنه تسجيل الدخول، وما الذي يراه</value></data>
+  <data name="Admin_ServicesHint" xml:space="preserve"><value>الأسماء وتتبّع إعادة التعبئة وحدود المستوى المنخفض</value></data>
+  <data name="Field_Code" xml:space="preserve"><value>الرمز</value></data>
+  <data name="Field_NameEn" xml:space="preserve"><value>الاسم بالإنجليزية</value></data>
+  <data name="Field_NameAr" xml:space="preserve"><value>الاسم بالعربية</value></data>
+  <data name="Field_City" xml:space="preserve"><value>المدينة</value></data>
+  <data name="Field_Address" xml:space="preserve"><value>العنوان</value></data>
+  <data name="Field_InService" xml:space="preserve"><value>في الخدمة</value></data>
+  <data name="Field_MachineName" xml:space="preserve"><value>اسم الجهاز</value></data>
+  <data name="Field_MachineNameHint" xml:space="preserve"><value>مثل "الخط 2 – شفط". اتركه فارغًا لعرض عنوان MAC.</value></data>
+  <data name="Field_Station" xml:space="preserve"><value>المحطة</value></data>
+  <data name="Field_NoStation" xml:space="preserve"><value>بدون محطة (يبقى في الأجهزة الجديدة)</value></data>
+  <data name="Field_UserName" xml:space="preserve"><value>اسم المستخدم</value></data>
+  <data name="Field_Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Field_DisplayName" xml:space="preserve"><value>الاسم الكامل</value></data>
+  <data name="Field_Role" xml:space="preserve"><value>الدور</value></data>
+  <data name="Field_CanSignIn" xml:space="preserve"><value>يمكنه تسجيل الدخول</value></data>
+  <data name="Field_TemporaryPassword" xml:space="preserve"><value>كلمة مرور مؤقتة</value></data>
+  <data name="Field_TemporaryPasswordHint" xml:space="preserve"><value>8 أحرف على الأقل. سيختار كلمة مروره عند أول تسجيل دخول.</value></data>
+  <data name="Field_TracksRefill" xml:space="preserve"><value>تتبّع إعادة التعبئة</value></data>
+  <data name="Field_DefaultCapacity" xml:space="preserve"><value>السعة الافتراضية (استخدامات)</value></data>
+  <data name="Field_LowThreshold" xml:space="preserve"><value>المستوى المنخفض عند (%)</value></data>
+  <data name="Field_SortOrder" xml:space="preserve"><value>الترتيب</value></data>
+  <data name="Field_Icon" xml:space="preserve"><value>الأيقونة</value></data>
+  <data name="Stations_Title" xml:space="preserve"><value>المحطات</value></data>
+  <data name="Stations_Add" xml:space="preserve"><value>إضافة محطة</value></data>
+  <data name="Stations_Empty" xml:space="preserve"><value>لا توجد محطات بعد. أضف الأولى ثم خصّص لها الأجهزة.</value></data>
+  <data name="Stations_New" xml:space="preserve"><value>محطة جديدة</value></data>
+  <data name="Stations_Edit" xml:space="preserve"><value>تعديل المحطة</value></data>
+  <data name="Stations_Machines" xml:space="preserve"><value>{0} جهاز</value></data>
+  <data name="Stations_Users" xml:space="preserve"><value>{0} مستخدم</value></data>
+  <data name="Inbox_Title" xml:space="preserve"><value>أجهزة جديدة</value></data>
+  <data name="Inbox_Intro" xml:space="preserve"><value>أرسلت هذه الأجهزة رسائل لكنها لا تتبع أي محطة. سمِّ كل جهاز وخصّصه لمحطته؛ وحتى ذلك الحين لا يراه مستخدمو المحطات.</value></data>
+  <data name="Inbox_Empty" xml:space="preserve"><value>لا توجد أجهزة جديدة: كل جهاز مخصص لمحطة.</value></data>
+  <data name="Inbox_Assign" xml:space="preserve"><value>تسمية وتخصيص</value></data>
+  <data name="Inbox_FirstSeen" xml:space="preserve"><value>أول ظهور {0}</value></data>
+  <data name="Machine_Edit" xml:space="preserve"><value>إعدادات الجهاز</value></data>
+  <data name="Users_Title" xml:space="preserve"><value>المستخدمون</value></data>
+  <data name="Users_Add" xml:space="preserve"><value>إضافة مستخدم</value></data>
+  <data name="Users_New" xml:space="preserve"><value>مستخدم جديد</value></data>
+  <data name="Users_Edit" xml:space="preserve"><value>تعديل المستخدم</value></data>
+  <data name="Users_ResetPassword" xml:space="preserve"><value>إعادة تعيين كلمة المرور</value></data>
+  <data name="Users_ResetDone" xml:space="preserve"><value>تمت إعادة التعيين. سلّمها إلى {0}: عليه تغييرها عند تسجيل الدخول التالي.</value></data>
+  <data name="Users_Locked" xml:space="preserve"><value>مقفل حتى {0}</value></data>
+  <data name="Users_MustChange" xml:space="preserve"><value>يجب اختيار كلمة مرور</value></data>
+  <data name="Users_LastSignIn" xml:space="preserve"><value>آخر دخول {0}</value></data>
+  <data name="Users_NeverSignedIn" xml:space="preserve"><value>لم يسجّل الدخول بعد</value></data>
+  <data name="Users_You" xml:space="preserve"><value>أنت</value></data>
+  <data name="Services_Title" xml:space="preserve"><value>الخدمات</value></data>
+  <data name="Services_Intro" xml:space="preserve"><value>تظهر الخدمات هنا تلقائيًا أول مرة يرسلها جهاز. راجع الجديدة منها وحدّد كيفية تتبّع إعادة التعبئة.</value></data>
+  <data name="Services_NeedsReview" xml:space="preserve"><value>جديدة – للمراجعة</value></data>
+  <data name="Services_Tracked" xml:space="preserve"><value>إعادة التعبئة متتبَّعة</value></data>
+  <data name="Services_NotTracked" xml:space="preserve"><value>إعادة التعبئة غير متتبَّعة</value></data>
+  <data name="Services_Capacity" xml:space="preserve"><value>افتراضيًا {0} استخدام</value></data>
+  <data name="Services_Threshold" xml:space="preserve"><value>منخفض عند {0}%</value></data>
+  <data name="Services_Edit" xml:space="preserve"><value>تعديل الخدمة</value></data>
+  <data name="Password_Title" xml:space="preserve"><value>تغيير كلمة المرور</value></data>
+  <data name="Password_Intro" xml:space="preserve"><value>8 أحرف على الأقل. سيُسجَّل خروجك من أجهزتك الأخرى.</value></data>
+  <data name="Password_MustChange" xml:space="preserve"><value>اختر كلمة مرورك قبل المتابعة.</value></data>
+  <data name="Password_Current" xml:space="preserve"><value>كلمة المرور الحالية</value></data>
+  <data name="Password_New" xml:space="preserve"><value>كلمة المرور الجديدة</value></data>
+  <data name="Password_Confirm" xml:space="preserve"><value>تأكيد كلمة المرور الجديدة</value></data>
+  <data name="Password_Mismatch" xml:space="preserve"><value>كلمتا المرور الجديدتان غير متطابقتين.</value></data>
+  <data name="Password_Changed" xml:space="preserve"><value>تم تغيير كلمة المرور.</value></data>
+  <data name="Password_Continue" xml:space="preserve"><value>متابعة</value></data>
+  <data name="Levels_Title" xml:space="preserve"><value>المستويات</value></data>
+  <data name="Levels_NoneTracked" xml:space="preserve"><value>لا توجد خدمة متتبَّعة لإعادة التعبئة على هذا الجهاز.</value></data>
+  <data name="Level_Ok" xml:space="preserve"><value>جيد</value></data>
+  <data name="Level_Low" xml:space="preserve"><value>منخفض</value></data>
+  <data name="Level_Empty" xml:space="preserve"><value>فارغ</value></data>
+  <data name="Level_Overused" xml:space="preserve"><value>استُخدم بعد النفاد</value></data>
+  <data name="Level_NeverRefilled" xml:space="preserve"><value>لا تعبئة مسجلة</value></data>
+  <data name="Level_Left" xml:space="preserve"><value>متبقٍ {0} من {1} استخدام</value></data>
+  <data name="Level_OverBy" xml:space="preserve"><value>{0} استخدام بعد النفاد</value></data>
+  <data name="Level_RunsOutIn" xml:space="preserve"><value>ينفد خلال ~{0}</value></data>
+  <data name="Level_RunsOutAt" xml:space="preserve"><value>متوقع {0}</value></data>
+  <data name="Level_RefilledAgo" xml:space="preserve"><value>عُبّئ {0}</value></data>
+  <data name="Refill_Action" xml:space="preserve"><value>تعبئة</value></data>
+  <data name="Refill_Title" xml:space="preserve"><value>تسجيل تعبئة</value></data>
+  <data name="Refill_Services" xml:space="preserve"><value>الخدمات المعبّأة</value></data>
+  <data name="Refill_SelectAll" xml:space="preserve"><value>كل الخدمات</value></data>
+  <data name="Refill_Capacity" xml:space="preserve"><value>عدد الاستخدامات حتى التعبئة التالية</value></data>
+  <data name="Refill_Now" xml:space="preserve"><value>الآن</value></data>
+  <data name="Refill_Earlier" xml:space="preserve"><value>في وقت سابق</value></data>
+  <data name="Refill_When" xml:space="preserve"><value>متى تمت التعبئة؟</value></data>
+  <data name="Refill_Date" xml:space="preserve"><value>التاريخ</value></data>
+  <data name="Refill_Time" xml:space="preserve"><value>الوقت</value></data>
+  <data name="Refill_Notes" xml:space="preserve"><value>ملاحظات (اختياري)</value></data>
+  <data name="Refill_Save" xml:space="preserve"><value>حفظ التعبئة</value></data>
+  <data name="Refill_Saved" xml:space="preserve"><value>تم حفظ التعبئة. ستتحدث المستويات خلال لحظات.</value></data>
+  <data name="Refill_NoneTracked" xml:space="preserve"><value>لا توجد خدمة متتبَّعة لإعادة التعبئة بعد. يمكن للمدير العام تفعيل التتبع من صفحة الخدمات.</value></data>
+  <data name="Refill_NowLevel" xml:space="preserve"><value>الآن: {0}</value></data>
+  <data name="RefillHistory_Title" xml:space="preserve"><value>سجل التعبئة</value></data>
+  <data name="RefillHistory_Empty" xml:space="preserve"><value>لم تُسجَّل أي تعبئة بعد.</value></data>
+  <data name="Refill_By" xml:space="preserve"><value>بواسطة {0}</value></data>
+  <data name="Refill_Void" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Refill_Voided" xml:space="preserve"><value>ملغاة</value></data>
+  <data name="Refill_VoidedBy" xml:space="preserve"><value>ألغاها {0}</value></data>
+  <data name="Refill_VoidTitle" xml:space="preserve"><value>إلغاء هذه التعبئة؟</value></data>
+  <data name="Refill_VoidHint" xml:space="preserve"><value>تُعاد حساب المستويات كأنها لم تُسجَّل، وتبقى في السجل مشطوبة.</value></data>
+  <data name="Refill_VoidReason" xml:space="preserve"><value>السبب</value></data>
+  <data name="Refill_VoidConfirm" xml:space="preserve"><value>إلغاء التعبئة</value></data>
+  <data name="Refill_VoidDone" xml:space="preserve"><value>تم إلغاء التعبئة.</value></data>
+  <data name="RefillPage_Done" xml:space="preserve"><value>تم حفظ التعبئة</value></data>
+  <data name="RefillPage_OpenMachine" xml:space="preserve"><value>فتح صفحة الجهاز</value></data>
+  <data name="Sticker_Title" xml:space="preserve"><value>ملصق QR</value></data>
+  <data name="Sticker_Scan" xml:space="preserve"><value>امسح الرمز لتسجيل تعبئة</value></data>
+  <data name="Sticker_Print" xml:space="preserve"><value>طباعة</value></data>
+  <data name="Sticker_Hint" xml:space="preserve"><value>اطبع الملصق وألصقه على الجهاز. مسحه بكاميرا الهاتف يفتح صفحة تعبئة هذا الجهاز.</value></data>
+  <data name="Kpi_NeedsRefill" xml:space="preserve"><value>بحاجة إلى تعبئة</value></data>
+  <data name="Kpi_NeedsRefillHint" xml:space="preserve"><value>منخفضة أو فارغة أو استُخدمت بعد النفاد</value></data>
+  <data name="Kpi_RunsOutSoon" xml:space="preserve"><value>تنفد خلال 24 ساعة</value></data>
+  <data name="Kpi_RunsOutSoonHint" xml:space="preserve"><value>بوتيرة الاستخدام المعتادة</value></data>
+  <data name="Overview_Attention" xml:space="preserve"><value>تحتاج إلى متابعة</value></data>
+  <data name="Overview_AllGood" xml:space="preserve"><value>لا شيء يحتاج إلى متابعة الآن.</value></data>
+  <data name="Filter_NeedsRefill" xml:space="preserve"><value>بحاجة إلى تعبئة</value></data>
+  <data name="Nav_Alerts" xml:space="preserve"><value>التنبيهات</value></data>
+  <data name="Alerts_Title" xml:space="preserve"><value>التنبيهات</value></data>
+  <data name="Alerts_Intro" xml:space="preserve"><value>تظهر عندما ينخفض مخزون خدمة أو ينفد، أو يتوقف جهاز عن الإرسال. تسجيل التعبئة يغلق تنبيهات التعبئة تلقائيًا.</value></data>
+  <data name="Alerts_FilterOpen" xml:space="preserve"><value>المفتوحة</value></data>
+  <data name="Alerts_FilterAll" xml:space="preserve"><value>الكل</value></data>
+  <data name="Alerts_KindAll" xml:space="preserve"><value>كل الأنواع</value></data>
+  <data name="Alerts_KindRefill" xml:space="preserve"><value>التعبئة</value></data>
+  <data name="Alerts_KindNoActivity" xml:space="preserve"><value>بلا نشاط</value></data>
+  <data name="Alerts_NoneOpen" xml:space="preserve"><value>لا توجد تنبيهات مفتوحة. كل الأجهزة بخير.</value></data>
+  <data name="Alerts_None" xml:space="preserve"><value>لا توجد تنبيهات بعد.</value></data>
+  <data name="Alerts_LoadMore" xml:space="preserve"><value>عرض المزيد</value></data>
+  <data name="Alerts_ViewAll" xml:space="preserve"><value>عرض كل التنبيهات</value></data>
+  <data name="Alerts_OpenCount" xml:space="preserve"><value>{0} مفتوحة</value></data>
+  <data name="Alerts_BellLabel" xml:space="preserve"><value>التنبيهات: {0} بحاجة إلى متابعة</value></data>
+  <data name="Alerts_AllGood" xml:space="preserve"><value>لا توجد تنبيهات مفتوحة</value></data>
+  <data name="Alerts_SoundOn" xml:space="preserve"><value>صوت التنبيه: مفعّل</value></data>
+  <data name="Alerts_SoundOff" xml:space="preserve"><value>صوت التنبيه: متوقف</value></data>
+  <data name="Alerts_New" xml:space="preserve"><value>{0} تنبيهات جديدة</value></data>
+  <data name="Alerts_OpenAction" xml:space="preserve"><value>فتح</value></data>
+  <data name="Alerts_ViewAction" xml:space="preserve"><value>عرض</value></data>
+  <data name="Alert_Acknowledge" xml:space="preserve"><value>تأكيد الاطلاع</value></data>
+  <data name="Alert_AcknowledgedBy" xml:space="preserve"><value>اطّلع عليه {0} · {1}</value></data>
+  <data name="Alert_Acknowledged" xml:space="preserve"><value>تم الاطلاع · {0}</value></data>
+  <data name="AlertType_RunsOutSoon" xml:space="preserve"><value>ينفد قريبًا</value></data>
+  <data name="AlertType_Low" xml:space="preserve"><value>منخفض</value></data>
+  <data name="AlertType_Empty" xml:space="preserve"><value>نفد</value></data>
+  <data name="AlertType_UsedAfterEmpty" xml:space="preserve"><value>استُخدم بعد النفاد</value></data>
+  <data name="AlertType_NoActivity" xml:space="preserve"><value>بلا نشاط</value></data>
+  <data name="AlertText_RunsOutSoon" xml:space="preserve"><value>{0} في {1}: النفاد متوقع خلال {2} تقريبًا.</value></data>
+  <data name="AlertText_RunsOutSoonAt" xml:space="preserve"><value>{0} في {1}: كان النفاد متوقعًا نحو {2}.</value></data>
+  <data name="AlertText_Low" xml:space="preserve"><value>مستوى {0} في {1} منخفض: بقي {2} من {3} استخدام.</value></data>
+  <data name="AlertText_Empty" xml:space="preserve"><value>نفد مخزون {0} في {1}.</value></data>
+  <data name="AlertText_UsedAfterEmpty" xml:space="preserve"><value>استخدامات {0} في {1} مستمرة بعد نفاد المخزون.</value></data>
+  <data name="AlertText_NoActivity" xml:space="preserve"><value>لم يصل شيء من {0} منذ {1}.</value></data>
+  <data name="AlertResolution_Refilled" xml:space="preserve"><value>أُغلق: تمت التعبئة</value></data>
+  <data name="AlertResolution_Escalated" xml:space="preserve"><value>أُغلق: حلّ محله تنبيه أهم</value></data>
+  <data name="AlertResolution_Cleared" xml:space="preserve"><value>أُغلق: لم يعد قائمًا</value></data>
+  <data name="AlertResolution_ActivityResumed" xml:space="preserve"><value>أُغلق: عاد الجهاز إلى الإرسال</value></data>
+  <data name="AlertResolution_NotEligible" xml:space="preserve"><value>أُغلق: الجهاز خارج الخدمة أو غير مخصص</value></data>
+  <data name="Machine_Alerts" xml:space="preserve"><value>التنبيهات</value></data>
+  <data name="Machine_AlertsNone" xml:space="preserve"><value>لا توجد تنبيهات لهذا الجهاز.</value></data>
+  <data name="Field_NoActivityHours" xml:space="preserve"><value>التنبيه بعد ساعات بلا نشاط</value></data>
+  <data name="Field_NoActivityHoursHint" xml:space="preserve"><value>اتركه فارغًا لاستخدام الافتراضي: {0} ساعات، دون احتساب الساعات الهادئة للمحطة.</value></data>
+  <data name="Field_Open24Hours" xml:space="preserve"><value>تعمل على مدار 24 ساعة</value></data>
+  <data name="Field_QuietFrom" xml:space="preserve"><value>الساعات الهادئة من</value></data>
+  <data name="Field_QuietTo" xml:space="preserve"><value>حتى</value></data>
+  <data name="Field_QuietHint" xml:space="preserve"><value>لا يؤدي توقف الأجهزة خلال الساعات الهادئة، عادة أثناء إغلاق المحطة، إلى تنبيه بعدم النشاط.</value></data>
+  <data name="Stations_QuietHours" xml:space="preserve"><value>هادئة {0}–{1}</value></data>
+  <data name="Stations_Open24" xml:space="preserve"><value>على مدار 24 ساعة</value></data>
+</root>

@@ -13,7 +13,11 @@ public sealed class GasStationConfiguration : IEntityTypeConfiguration<GasStatio
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        builder.ToTable("gas_stations");
+        // Quiet hours are a pair: both set, or neither (open 24 hours). No database default - a null
+        // pair is a real choice - so existing stations get theirs from the migration.
+        builder.ToTable("gas_stations", table => table.HasCheckConstraint(
+            "ck_gas_stations_quiet_hours",
+            "(quiet_hours_start IS NULL AND quiet_hours_end IS NULL) OR (quiet_hours_start IS NOT NULL AND quiet_hours_end IS NOT NULL AND quiet_hours_start <> quiet_hours_end)"));
         builder.HasKey(s => s.Id);
         builder.Property(s => s.Id).ValueGeneratedNever();
 

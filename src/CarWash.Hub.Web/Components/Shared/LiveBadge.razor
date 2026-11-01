@@ -1,0 +1,22 @@
+@* "Live · updated 12 s ago": the dashboard updates itself, and says so. *@
+@inject IStringLocalizer<DashboardResource> L
+@inject DashboardFormat Format
+
+<span class="cw-live" role="status">
+    <span class="cw-live-dot" aria-hidden="true"></span>
+    <strong>@L[DashboardText.LiveLabel]</strong>
+    @if (At is { } at)
+    {
+        <span>· @L[DashboardText.LiveUpdated, Format.Ago(at, Now)]</span>
+    }
+</span>
+
+@code {
+    /// <summary>Gets or sets when the data on screen was read.</summary>
+    [Parameter]
+    public DateTimeOffset? At { get; set; }
+
+    /// <summary>Gets or sets the current time.</summary>
+    [Parameter, EditorRequired]
+    public DateTimeOffset Now { get; set; }
+}

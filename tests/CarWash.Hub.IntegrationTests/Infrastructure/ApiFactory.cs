@@ -48,6 +48,14 @@ public sealed class ApiFactory(
                 ["Serilog:MinimumLevel:Override:CarWash.Hub"] = "Error",
                 ["Serilog:WriteTo:1:Name"] = "Console",
                 ["RequestLogging:Enabled"] = "false",
+
+                // Tests drive the processor themselves (ProcessAllPendingAsync), so each one sees
+                // exactly the batches it ran rather than racing a worker.
+                ["BackgroundWorkers:Enabled"] = "false",
+
+                // A retry is told from a second use by arriving this much later; shortened so a test
+                // can stage one without waiting the production two seconds.
+                ["Processing:RetryMinDelay"] = "00:00:00.500",
             };
 
             if (withDefaultKeys)

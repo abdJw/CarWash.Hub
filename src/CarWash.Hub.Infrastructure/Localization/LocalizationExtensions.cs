@@ -1,5 +1,6 @@
 using System.Globalization;
 using CarWash.Hub.Application.Abstractions.Services;
+using CarWash.Hub.Application.Common.Options;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,11 +21,20 @@ public static class LocalizationExtensions
     public const string ArabicCulture = "ar-SA";
 
     /// <summary>Gets the cultures the application supports, in preference order.</summary>
+    /// <remarks>
+    /// The Arabic culture is <c>ar-SA</c> with the Gregorian calendar. .NET's <c>ar-SA</c> defaults to
+    /// the Um Al Qura (Hijri) calendar, which would put every date in the dashboard - and every
+    /// date picker - in Hijri years. The request localization middleware hands out these very
+    /// instances, so the calendar choice reaches every request.
+    /// </remarks>
     public static IReadOnlyList<CultureInfo> SupportedCultures { get; } =
     [
         new CultureInfo(DefaultCulture),
-        new CultureInfo(ArabicCulture),
+        CreateArabicCulture(),
     ];
+
+    /// <summary>The name of the cookie that remembers a dashboard user's language.</summary>
+    public static string CultureCookieName => CookieRequestCultureProvider.DefaultCookieName;
 
     /// <summary>
     /// Registers request-localization options and the culture resolution service.
@@ -43,7 +53,7 @@ public static class LocalizationExtensions
 
         services.AddScoped<ILocalizationService, LocalizationService>();
 
-        services.Configure<RequestLocalizationOptions>(options =>
+        services.AddOptions<RequestLocalizationOptions>().Configure<IOptions<DashboardOptions>>((options, dashboard) =>
         {
             options.DefaultRequestCulture = new RequestCulture(DefaultCulture, DefaultCulture);
             options.SupportedCultures = [.. SupportedCultures];
@@ -58,16 +68,40 @@ public static class LocalizationExtensions
             // return a result wins, so putting the X-Lang provider first is precisely what makes
             // the custom header beat Accept-Language. Reordering these silently inverts the
             // documented behaviour.
+            //   1. X-Lang - an API client's explicit choice. Browsers never send it.
+            //   2. The culture cookie - a dashboard user's explicit choice.
+            //   3. ?culture=
+            //   4. The dashboard's default language, for dashboard pages only.
+            //   5. Accept-Language - so an API client without X-Lang behaves as it always has.
             options.RequestCultureProviders =
             [
                 new CustomHeaderRequestCultureProvider(SupportedCultures),
+                new CookieRequestCultureProvider(),
                 new QueryStringRequestCultureProvider(),
+                new DashboardDefaultCultureProvider(ResolveSupportedName(dashboard.Value.DefaultCulture)),
                 new AcceptLanguageHeaderRequestCultureProvider(),
             ];
         });
 
         return services;
     }
+
+    private static CultureInfo CreateArabicCulture()
+    {
+        var culture = new CultureInfo(ArabicCulture);
+        var gregorian = culture.OptionalCalendars.OfType<GregorianCalendar>().FirstOrDefault();
+        if (gregorian is not null)
+        {
+            culture.DateTimeFormat.Calendar = gregorian;
+        }
+
+        return culture;
+    }
+
+    // An unsupported name would make the provider's result be discarded; fall back to English.
+    private static string ResolveSupportedName(string? name) =>
+        SupportedCultures.FirstOrDefault(culture => string.Equals(culture.Name, name, StringComparison.OrdinalIgnoreCase))?.Name
+        ?? DefaultCulture;
 
     /// <summary>
     /// Adds the request-localization middleware using the registered options.

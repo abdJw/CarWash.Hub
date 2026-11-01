@@ -35,6 +35,33 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     /// <summary>Gets the raw machine messages.</summary>
     public DbSet<MachineMessage> MachineMessages => Set<MachineMessage>();
 
+    /// <summary>Gets the service catalog.</summary>
+    public DbSet<ServiceDefinition> ServiceDefinitions => Set<ServiceDefinition>();
+
+    /// <summary>Gets the usage events parsed from the messages.</summary>
+    public DbSet<ServiceUsage> ServiceUsages => Set<ServiceUsage>();
+
+    /// <summary>Gets the hourly usage rollup.</summary>
+    public DbSet<ServiceUsageHourly> ServiceUsageHourly => Set<ServiceUsageHourly>();
+
+    /// <summary>Gets each machine's processed state.</summary>
+    public DbSet<MachineState> MachineStates => Set<MachineState>();
+
+    /// <summary>Gets the dashboard users.</summary>
+    public DbSet<User> Users => Set<User>();
+
+    /// <summary>Gets the refill transactions.</summary>
+    public DbSet<Refill> Refills => Set<Refill>();
+
+    /// <summary>Gets each machine's level per service.</summary>
+    public DbSet<MachineServiceState> MachineServiceStates => Set<MachineServiceState>();
+
+    /// <summary>Gets the pending recompute requests.</summary>
+    public DbSet<StateRebuildRequest> StateRebuildRequests => Set<StateRebuildRequest>();
+
+    /// <summary>Gets the alerts, open and resolved.</summary>
+    public DbSet<Alert> Alerts => Set<Alert>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

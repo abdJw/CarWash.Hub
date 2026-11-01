@@ -91,6 +91,45 @@ public static class ResourceKeys
 
         /// <summary>A range was given backwards. {0} = the start field, {1} = the end field.</summary>
         public const string DateRange = "Validation_DateRange";
+
+        /// <summary>A range was longer than allowed. {0} = the start field, {1} = the end field, {2} = the maximum in days.</summary>
+        public const string RangeTooLong = "Validation_RangeTooLong";
+
+        /// <summary>{0} must be at least {1} characters.</summary>
+        public const string MinLength = "Validation_MinLength";
+
+        /// <summary>{0} must be between {1} and {2}.</summary>
+        public const string Range = "Validation_Range";
+
+        /// <summary>{0} is not a valid e-mail address.</summary>
+        public const string InvalidEmail = "Validation_InvalidEmail";
+
+        /// <summary>{0} may contain only letters, digits, '-' and '_'.</summary>
+        public const string InvalidCode = "Validation_InvalidCode";
+
+        /// <summary>A station user must belong to a station.</summary>
+        public const string StationRequired = "Validation_StationRequired";
+
+        /// <summary>A Super Admin does not belong to a station.</summary>
+        public const string StationNotAllowed = "Validation_StationNotAllowed";
+
+        /// <summary>Choose an active station.</summary>
+        public const string StationInactive = "Validation_StationInactive";
+
+        /// <summary>Choose at least one service to refill.</summary>
+        public const string RefillNoItems = "Validation_RefillNoItems";
+
+        /// <summary>Each service can appear only once in a refill.</summary>
+        public const string RefillDuplicateService = "Validation_RefillDuplicateService";
+
+        /// <summary>{0} is not tracked for refills.</summary>
+        public const string RefillServiceNotTracked = "Validation_RefillServiceNotTracked";
+
+        /// <summary>The refill time must be within the last {0} days and not in the future.</summary>
+        public const string RefillTime = "Validation_RefillTime";
+
+        /// <summary>Set both the start and the end of quiet hours, at different times, or neither for a station open 24 hours.</summary>
+        public const string QuietHours = "Validation_QuietHours";
     }
 
     /// <summary>Localized names of fields and things, substituted into other messages.</summary>
@@ -113,6 +152,72 @@ public static class ResourceKeys
 
         /// <summary>A machine message, as named in "not found" messages.</summary>
         public const string MachineMessage = "Field_MachineMessage";
+
+        /// <summary>Station code</summary>
+        public const string StationCode = "Field_StationCode";
+
+        /// <summary>Name</summary>
+        public const string Name = "Field_Name";
+
+        /// <summary>Arabic name</summary>
+        public const string NameAr = "Field_NameAr";
+
+        /// <summary>City</summary>
+        public const string City = "Field_City";
+
+        /// <summary>Address</summary>
+        public const string Address = "Field_Address";
+
+        /// <summary>Display name</summary>
+        public const string DisplayName = "Field_DisplayName";
+
+        /// <summary>User name</summary>
+        public const string UserName = "Field_UserName";
+
+        /// <summary>E-mail</summary>
+        public const string Email = "Field_Email";
+
+        /// <summary>Password</summary>
+        public const string Password = "Field_Password";
+
+        /// <summary>Station</summary>
+        public const string Station = "Field_Station";
+
+        /// <summary>User</summary>
+        public const string User = "Field_User";
+
+        /// <summary>Service</summary>
+        public const string Service = "Field_Service";
+
+        /// <summary>Default capacity</summary>
+        public const string DefaultCapacity = "Field_DefaultCapacity";
+
+        /// <summary>Low level threshold</summary>
+        public const string LowThresholdPercent = "Field_LowThresholdPercent";
+
+        /// <summary>Order</summary>
+        public const string SortOrder = "Field_SortOrder";
+
+        /// <summary>Capacity</summary>
+        public const string Capacity = "Field_Capacity";
+
+        /// <summary>Refill time</summary>
+        public const string RefilledAt = "Field_RefilledAt";
+
+        /// <summary>Notes</summary>
+        public const string Notes = "Field_Notes";
+
+        /// <summary>Reason</summary>
+        public const string VoidReason = "Field_VoidReason";
+
+        /// <summary>Refill</summary>
+        public const string Refill = "Field_Refill";
+
+        /// <summary>Alert</summary>
+        public const string Alert = "Field_Alert";
+
+        /// <summary>Hours without activity</summary>
+        public const string NoActivityAfterHours = "Field_NoActivityAfterHours";
     }
 
     /// <summary>Success messages carried in the <c>ApiResponse</c> envelope.</summary>
@@ -133,5 +238,27 @@ public static class ResourceKeys
 
         /// <summary>The data is larger than accepted. {0} = the limit in bytes.</summary>
         public const string DataTooLarge = "Ingestion_DataTooLarge";
+    }
+
+    /// <summary>Why an administrative change was refused.</summary>
+    public static class Admin
+    {
+        /// <summary>Only a Super Admin can do this.</summary>
+        public const string SuperAdminOnly = "Admin_SuperAdminOnly";
+
+        /// <summary>You cannot deactivate yourself or change your own role or station.</summary>
+        public const string CannotChangeOwnAccess = "Admin_CannotChangeOwnAccess";
+
+        /// <summary>The current password is not correct.</summary>
+        public const string CurrentPasswordWrong = "Admin_CurrentPasswordWrong";
+
+        /// <summary>Choose a password different from the current one.</summary>
+        public const string PasswordUnchanged = "Admin_PasswordUnchanged";
+
+        /// <summary>You can only void your own refills, within 24 hours of recording them.</summary>
+        public const string VoidNotAllowed = "Admin_VoidNotAllowed";
+
+        /// <summary>This refill is already voided.</summary>
+        public const string RefillAlreadyVoided = "Admin_RefillAlreadyVoided";
     }
 }
