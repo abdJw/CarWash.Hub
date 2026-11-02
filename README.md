@@ -86,6 +86,7 @@ docker compose up --build # API on http://localhost:8080, Swagger at /swagger (S
 | `GET /api/v1/machines/{machineId}/messages?from&to&pageNumber&pageSize` | `client-read-key` | History, newest first |
 | `GET /api/v1/machines/{machineId}/usage?from&to` | `client-read-key` | Uses per service, in total and per UTC hour (default last 24 h, at most 31 days) |
 | `GET /api/v1/processing/status` | `client-read-key` | Processing backlog (pending and failed messages) and the worker's state |
+| `GET /api/v1/reports/finance?from&to&stationIds&services&machineId&grain&includeDetail` | `client-read-key` | Revenue: each use valued at its station's price that day. Totals and the period before, a timeline (`Auto`, `Day`, `Week`, `Month`) and breakdowns by station, service and machine. `from`/`to` are business days in Asia/Amman, at most 366 days apart; repeat `stationIds` and `services` for several. Amounts in JOD |
 | `GET /health`, `GET /health/ready` | none | Liveness, and readiness (which also checks the database) |
 
 **Dashboard routes** (signed-in user; the cookie never opens an API endpoint):
@@ -96,10 +97,12 @@ docker compose up --build # API on http://localhost:8080, Swagger at /swagger (S
 | `/machines`, `/machines/{id}` | Machine cards with a level tag per service and a Refill button (search, "Needs refill" filter, sort by urgency); one machine's levels, refill history (with void), usage, latest uses and raw messages |
 | `/m/{id}/refill` | The phone page a machine's QR sticker opens: record a refill in a few taps |
 | `/alerts` | The alert centre: open alerts or the whole history, by kind (refill / no activity); refill or acknowledge in place. The bell in the app bar shows the open, unacknowledged count on every page |
+| `/reports/finance` | Finance: revenue, uses, average per day and unpriced uses against the period before; revenue or uses over time by service, per day, week or month; breakdowns by station, service and machine; the station's current prices. Filters for the period (presets or a custom range), stations (Super Admins), services and machine, kept in the address so a report can be bookmarked. A station user sees only their own station |
+| `/reports/finance/export?format=xlsx\|csv&…` | The same report as a download: an Excel workbook (summary, timeline, breakdowns and one row per day, station, machine and service) or a CSV of those rows. Same filters and scope as the page |
 | `/account/login`, `/account/logout` | Sign-in and sign-out. Static pages with antiforgery; sign-in is rate-limited and locks an account after repeated failures |
 | `/account/culture?culture=en-US\|ar-SA` | Language switch (cookie) |
 | `/account/password` | Change your own password; required after an admin sets a temporary one |
-| `/admin` and `/admin/inbox`, `/admin/stations`, `/admin/users`, `/admin/services` | Super Admins only: name and assign new machines, stations, users (temporary password, reset, deactivate), service catalog |
+| `/admin` and `/admin/inbox`, `/admin/stations`, `/admin/users`, `/admin/services` | Super Admins only: name and assign new machines, stations and each station's service prices, users (temporary password, reset, deactivate), service catalog |
 | `/admin/sticker/{id}` | Super Admins only: a printable sticker with the machine's name and a QR code to its refill page |
 
 **Response shapes:**
@@ -128,7 +131,7 @@ Nothing secret is committed.
 | `BackgroundWorkers` | `Enabled` | true | Runs the message processing worker in this process. Off in the integration tests. |
 | `Processing` | `BatchSize`, `SweepIntervalSeconds`, `MaxPastSkew`, `MaxFutureSkew`, `RetryMinDelay` | 200, 30, 7 days, 10 min, 2 s | How messages become usage; see "Message processing" below. |
 | `RequestLogging` | `Enabled`, `SlowRequestThresholdMs` | true, 2000 | One line per request. Headers and bodies are never logged. |
-| `Dashboard` | `TimeZone`, `DefaultCulture`, `PublicBaseUrl` | Asia/Amman, ar-SA, null | "Today" and every time on screen are in this zone. Startup fails if the zone is unknown. `PublicBaseUrl` is the address QR stickers point at; set it to the live site so a sticker printed from another address still works. |
+| `Dashboard` | `TimeZone`, `DefaultCulture`, `PublicBaseUrl`, `FirstDayOfWeek` | Asia/Amman, ar-SA, null, Saturday | "Today" and every time on screen are in this zone. Startup fails if the zone is unknown. `PublicBaseUrl` is the address QR stickers point at; set it to the live site so a sticker printed from another address still works. `FirstDayOfWeek` starts the finance report's weeks. |
 | `DashboardAuth` | `ExpireHours`, `RememberMeDays`, `RevalidationMinutes`, `MaxFailedAttempts`, `LockoutMinutes` | 12, 14, 5, 5, 15 | Session lifetimes, the session re-check interval, and the lockout. |
 | `Alerts` | `NoActivityAfterHours`, `BusyWithinMinutes` | 6, 15 | Machines send only when used: silence for this long (outside the station's quiet hours) means "silent" and raises a no-activity alert; a use this recent means "in use". A machine can override the hours in its settings. |
 | `Alerts` | `CheckIntervalSeconds`, `StartupGraceMinutes` | 60, 15 | How often the worker re-checks every machine's alerts, and how long after it starts before it may call a machine silent. |
@@ -347,6 +350,36 @@ Each ESP32 message is one use of one service:
   - Keep it awake with an external uptime ping on `/health` every 5 minutes (for example
     UptimeRobot, free), or with `startMode=AlwaysRunning`.
 
+### Prices and the finance report
+
+- **Prices.** One per station and service, in Jordanian dinars to the fils, set by Super Admins
+  (Administration → Stations → Prices). Station users see their station's prices but can't change
+  them.
+  - A price applies from a business day (Asia/Amman) on. The price on a day is the newest one that
+    had started by then, so a new price never changes what earlier days earned.
+  - A past start day revalues the uses since then: that is how history is priced the first time,
+    or a mistake corrected. Setting a price for a day that already has one replaces it.
+  - A price entered by mistake is removed (a soft delete that keeps who set and who removed it),
+    and the one before it applies again.
+- **Unpriced uses.** A use on a day its station had no price for the service is counted as
+  unpriced and shown on its own, never silently as zero. A price of 0 means free.
+- **Which station earned it.** The worker stamps each use with the station its machine stands at
+  when the use is processed. Moving a machine later moves only its future uses; the money already
+  earned stays with the station that earned it.
+  - The migration stamped the uses before it with each machine's station at that moment.
+  - Uses made while a machine was unassigned belong to no station. A whole-fleet report counts them
+    in a note, with a link to assign machines.
+- **The rollup.** `service_usage_daily` holds uses per business day, station, machine and service.
+  The worker keeps it in the same transaction as the uses.
+  - Reports read it, never the raw uses, and value it in memory at the day's prices.
+  - It has no soft-delete filter: a deleted machine or station keeps the revenue it earned.
+  - **Keep it forever.** It is a few rows per machine per day, and any future retention job must
+    not prune it, or past revenue disappears.
+- **Who sees what.** The same scope as every read: a station user gets their own station on the
+  page and in the export, whatever the address asks for. The read API key sees every station.
+- **The comparison period** is as long as the part of the range that has happened: "this month"
+  on the 2nd is compared with the two days before it, not with a whole month.
+
 ### The dashboard (Blazor Server in the API host)
 
 - **One site.** `CarWash.Hub.Web` is a Razor class library that the host composes with
@@ -431,6 +464,10 @@ dotnet ef migrations script --idempotent --project src/CarWash.Hub.Persistence -
 - **Collation.** When the migration creates the database, it creates it with collation
   `Arabic_100_CI_AS_SC_UTF8`. If a DBA creates the database instead, they must use that collation:
   it is what makes machine ids case-insensitive and sorts Arabic station names correctly.
+- **`QUOTED_IDENTIFIER`.** `station_service_prices` has a filtered unique index (one live price per
+  station, service and day). Anything that creates it or writes to the table must run with
+  `QUOTED_IDENTIFIER ON`. That is the default for the app, SSMS and Azure Data Studio, but not for
+  `sqlcmd`: pass `-I` when running the migration script or ad-hoc SQL with it.
 - **Naming.** Tables and columns are snake_case (`machine_messages.received_at`), so hand-written
   analysis SQL over the raw payloads uses one style:
 

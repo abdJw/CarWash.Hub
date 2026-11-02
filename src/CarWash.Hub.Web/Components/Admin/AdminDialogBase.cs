@@ -53,8 +53,9 @@ public abstract class AdminDialogBase : ComponentBase
     /// <typeparam name="TService">The service.</typeparam>
     /// <param name="save">The command.</param>
     /// <param name="confirmation">The snackbar text on success; "Saved." when null.</param>
-    /// <returns>A task that completes when the save has finished.</returns>
-    protected async Task SaveAsync<TService>(Func<TService, CancellationToken, Task> save, string? confirmation = null)
+    /// <param name="close">Whether a successful save closes the dialog; false for one that edits a list in place.</param>
+    /// <returns>Whether the save succeeded.</returns>
+    protected async Task<bool> SaveAsync<TService>(Func<TService, CancellationToken, Task> save, string? confirmation = null, bool close = true)
         where TService : notnull
     {
         Saving = true;
@@ -67,12 +68,17 @@ public abstract class AdminDialogBase : ComponentBase
             if (result.Succeeded)
             {
                 Snackbar.Add(confirmation ?? L[DashboardText.CommonSaved], Severity.Success);
-                Dialog.Close(DialogResult.Ok(true));
-                return;
+                if (close)
+                {
+                    Dialog.Close(DialogResult.Ok(true));
+                }
+
+                return true;
             }
 
             _errors = result.Errors;
             Message = result.Errors is { Count: > 0 } ? null : result.Message;
+            return false;
         }
         finally
         {

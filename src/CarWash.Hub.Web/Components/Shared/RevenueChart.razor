@@ -1,0 +1,241 @@
+@* Revenue - or uses - per service over the finance report's buckets, as stacked columns. The same
+   marks, legend, CSS hover layer and table view as the usage chart, so the two read as one system;
+   only the values are money, and the buckets are days, weeks or months. *@
+@using CarWash.Hub.Application.Features.Finance
+@inject IStringLocalizer<DashboardResource> L
+@inject DashboardFormat Format
+
+<figure class="viz-card @Class @(Dimmed ? "is-refreshing" : null)">
+    <figcaption class="viz-head viz-head--tools">
+        <div>
+            <h2 class="viz-title">@Title</h2>
+            <p class="viz-sub">@Summary</p>
+        </div>
+        <div class="viz-tools">
+            <div class="cw-segmented cw-segmented--small" role="group" aria-label="@L[DashboardText.FinanceMeasure]">
+                <button type="button" class="@(_uses ? null : "is-selected")" aria-pressed="@(_uses ? "false" : "true")" @onclick="() => _uses = false">
+                    @L[DashboardText.FinanceMeasureRevenue]
+                </button>
+                <button type="button" class="@(_uses ? "is-selected" : null)" aria-pressed="@(_uses ? "true" : "false")" @onclick="() => _uses = true">
+                    @L[DashboardText.FinanceMeasureUses]
+                </button>
+            </div>
+            <div class="cw-segmented cw-segmented--small" role="group" aria-label="@L[DashboardText.FinanceGrainLabel]">
+                @foreach (var (grain, key) in Grains)
+                {
+                    <button type="button" class="@(grain == Grain ? "is-selected" : null)" aria-pressed="@(grain == Grain ? "true" : "false")"
+                            @onclick="() => SelectGrainAsync(grain)">
+                        @L[key]
+                    </button>
+                }
+            </div>
+            <button type="button" class="viz-toggle" aria-pressed="@(_asTable ? "true" : "false")" @onclick="() => _asTable = !_asTable">
+                <MudIcon Icon="@(_asTable ? Icons.Material.Rounded.BarChart : Icons.Material.Rounded.TableRows)" Size="Size.Small" />
+                <span>@(_asTable ? L[DashboardText.ChartShowChart] : L[DashboardText.ChartShowTable])</span>
+            </button>
+        </div>
+    </figcaption>
+
+    <ul class="viz-legend">
+        @foreach (var service in LegendServices)
+        {
+            <li><span class="viz-swatch @Services.Css(service)"></span>@Services.Name(service)</li>
+        }
+    </ul>
+
+    @if (_asTable)
+    {
+        <div class="viz-table-wrap">
+            <table class="viz-table">
+                <thead>
+                    <tr>
+                        <th scope="col">@L[DashboardText.FinancePeriod]</th>
+                        @foreach (var service in LegendServices)
+                        {
+                            <th scope="col">@Services.Name(service)</th>
+                        }
+                        <th scope="col">@L[DashboardText.ChartTotal]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var period in Periods)
+                    {
+                        <tr>
+                            <th scope="row">@DashboardFormat.PeriodTitle(period.Start, period.End, Grain)</th>
+                            @foreach (var service in LegendServices)
+                            {
+                                <td>@Text(ValueOf(period, service))</td>
+                            }
+                            <td><strong>@Text(Total(period))</strong></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="viz-plot" role="img" aria-label="@Summary">
+            <div class="viz-y" aria-hidden="true">
+                <span style="bottom: 100%">@AxisText(AxisMax)</span>
+                <span style="bottom: 50%">@AxisText(AxisMax / 2)</span>
+                <span style="bottom: 0">0</span>
+            </div>
+
+            <div class="viz-area">
+                <div class="viz-gridline" style="bottom: 100%"></div>
+                <div class="viz-gridline" style="bottom: 50%"></div>
+                <div class="viz-gridline viz-baseline" style="bottom: 0"></div>
+
+                <div class="viz-cols">
+                    @for (var index = 0; index < Periods.Count; index++)
+                    {
+                        var period = Periods[index];
+                        var title = DashboardFormat.PeriodTitle(period.Start, period.End, Grain);
+                        var total = Total(period);
+                        <div class="viz-col @TipAlignment(index)" tabindex="0" aria-label="@($"{title}: {Text(total)}")">
+                            @if (total > 0)
+                            {
+                                <div class="viz-stack" style="height: @Invariant(100 * total / AxisMax)%">
+                                    @foreach (var service in InOrder(period))
+                                    {
+                                        <span class="viz-seg @Services.Css(service.Service)" style="flex-grow: @Invariant(ValueOf(service))"></span>
+                                    }
+                                </div>
+                            }
+                            <div class="viz-tip" role="tooltip">
+                                <strong class="viz-tip-value">@Text(total)</strong>
+                                <span class="viz-tip-label">@title</span>
+                                @foreach (var service in InOrder(period))
+                                {
+                                    <span class="viz-tip-row">
+                                        <i class="viz-linekey @Services.Css(service.Service)"></i>
+                                        <b>@Text(ValueOf(service))</b>
+                                        <span>@Services.Name(service.Service)</span>
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                @if (Periods.All(period => period.Uses == 0))
+                {
+                    <p class="viz-empty">@L[DashboardText.ChartNoData]</p>
+                }
+            </div>
+
+            <div class="viz-x" aria-hidden="true">
+                @for (var index = 0; index < Periods.Count; index++)
+                {
+                    <span>@(index % LabelStep == LabelOffset ? DashboardFormat.PeriodLabel(Periods[index].Start, Grain) : null)</span>
+                }
+            </div>
+        </div>
+    }
+</figure>
+
+@code {
+    private static readonly (FinanceGrain Grain, string Key)[] Grains =
+    [
+        (FinanceGrain.Day, DashboardText.FinanceGrainDay),
+        (FinanceGrain.Week, DashboardText.FinanceGrainWeek),
+        (FinanceGrain.Month, DashboardText.FinanceGrainMonth),
+    ];
+
+    private bool _asTable;
+    private bool _uses;
+
+    /// <summary>Gets or sets the chart title.</summary>
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the buckets to draw, oldest first.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<FinancePeriodDto> Periods { get; set; } = [];
+
+    /// <summary>Gets or sets the bucket size the periods were cut by.</summary>
+    [Parameter, EditorRequired]
+    public FinanceGrain Grain { get; set; }
+
+    /// <summary>Gets or sets the callback when another bucket size is chosen.</summary>
+    [Parameter]
+    public EventCallback<FinanceGrain> GrainChanged { get; set; }
+
+    /// <summary>Gets or sets the service names, icons and colours.</summary>
+    [Parameter, EditorRequired]
+    public ServiceLookup Services { get; set; } = ServiceLookup.Empty;
+
+    /// <summary>Gets or sets a value indicating whether newer data is loading; the chart dims but stays.</summary>
+    [Parameter]
+    public bool Dimmed { get; set; }
+
+    /// <summary>Gets or sets extra classes for the card.</summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    // The catalog's services plus any with uses here, in display order, so the legend stays put.
+    private IReadOnlyList<string> LegendServices =>
+    [
+        .. Services.Ordered.Select(service => service.Code)
+            .Union(Periods.SelectMany(period => period.Services).Select(service => service.Service), StringComparer.OrdinalIgnoreCase)
+            .OrderBy(Services.Order)
+            .ThenBy(code => code, StringComparer.Ordinal),
+    ];
+
+    private string Summary
+    {
+        get
+        {
+            if (Periods.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            return L[
+                DashboardText.FinanceChartSummary,
+                Text(Periods.Sum(Total)),
+                DashboardFormat.Date(Periods[0].Start),
+                DashboardFormat.Date(Periods[^1].End)];
+        }
+    }
+
+    private decimal AxisMax => (decimal)ChartScale.NiceCeiling((double)(Periods.Count == 0 ? 0 : Periods.Max(Total)));
+
+    // About six axis labels whatever the bucket count, ending on the newest bucket.
+    private int LabelStep => Math.Max(1, (int)Math.Ceiling(Periods.Count / 6d));
+
+    private int LabelOffset => (Periods.Count - 1) % LabelStep;
+
+    private decimal Total(FinancePeriodDto period) => _uses ? period.Uses : period.Revenue;
+
+    private decimal ValueOf(FinanceServiceAmountDto service) => _uses ? service.Uses : service.Revenue;
+
+    private decimal ValueOf(FinancePeriodDto period, string service) =>
+        period.Services.FirstOrDefault(amount => string.Equals(amount.Service, service, StringComparison.OrdinalIgnoreCase)) is { } amount
+            ? ValueOf(amount)
+            : 0;
+
+    private IEnumerable<FinanceServiceAmountDto> InOrder(FinancePeriodDto period) =>
+        period.Services.Where(service => ValueOf(service) > 0).OrderBy(service => Services.Order(service.Service)).ThenBy(service => service.Service, StringComparer.Ordinal);
+
+    private string Text(decimal value) => _uses ? DashboardFormat.Number((long)value) : Format.Money(value);
+
+    // Axis ticks are round by construction: no trailing zeros, and grouping past a thousand.
+    private string AxisText(decimal value) =>
+        _uses || value >= 1000 ? DashboardFormat.Number((long)value) : value.ToString("0.###", CultureInfo.CurrentCulture);
+
+    private static string Invariant(decimal value) => value.ToString("0.###", CultureInfo.InvariantCulture);
+
+    // Tooltips near either edge open inwards, so they never overflow the card.
+    private string? TipAlignment(int index) =>
+        index < Periods.Count / 4 ? "tip-start" : index >= Periods.Count * 3 / 4 ? "tip-end" : null;
+
+    private async Task SelectGrainAsync(FinanceGrain grain)
+    {
+        if (grain != Grain)
+        {
+            await GrainChanged.InvokeAsync(grain);
+        }
+    }
+}

@@ -703,6 +703,10 @@ namespace CarWash.Hub.Persistence.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
+                    b.Property<Guid?>("GasStationId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("gas_station_id");
+
                     b.Property<short>("ItemIndex")
                         .HasColumnType("smallint")
                         .HasColumnName("item_index");
@@ -737,6 +741,9 @@ namespace CarWash.Hub.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_service_usages");
 
+                    b.HasIndex("GasStationId")
+                        .HasDatabaseName("ix_service_usages_gas_station_id");
+
                     b.HasIndex("ServiceCode")
                         .HasDatabaseName("ix_service_usages_service_code");
 
@@ -748,6 +755,64 @@ namespace CarWash.Hub.Persistence.Migrations
                         .HasDatabaseName("ix_service_usages_machine_id_service_code_occurred_at");
 
                     b.ToTable("service_usages", (string)null);
+                });
+
+            modelBuilder.Entity("CarWash.Hub.Domain.Entities.ServiceUsageDaily", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateOnly>("BusinessDate")
+                        .HasColumnType("date")
+                        .HasColumnName("business_date");
+
+                    b.Property<Guid?>("GasStationId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("gas_station_id");
+
+                    b.Property<Guid>("MachineId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("machine_id");
+
+                    b.Property<string>("ServiceCode")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("service_code");
+
+                    b.Property<int>("UsageCount")
+                        .HasColumnType("int")
+                        .HasColumnName("usage_count");
+
+                    b.HasKey("Id")
+                        .HasName("pk_service_usage_daily");
+
+                    SqlServerKeyBuilderExtensions.IsClustered(b.HasKey("Id"), false);
+
+                    b.HasIndex("GasStationId")
+                        .HasDatabaseName("ix_service_usage_daily_gas_station_id");
+
+                    b.HasIndex("MachineId")
+                        .HasDatabaseName("ix_service_usage_daily_machine_id");
+
+                    b.HasIndex("ServiceCode")
+                        .HasDatabaseName("ix_service_usage_daily_service_code");
+
+                    b.HasIndex("BusinessDate", "GasStationId", "MachineId", "ServiceCode")
+                        .IsUnique()
+                        .HasDatabaseName("ix_service_usage_daily_business_date_station_machine_service");
+
+                    SqlServerIndexBuilderExtensions.IsClustered(b.HasIndex("BusinessDate", "GasStationId", "MachineId", "ServiceCode"));
+
+                    b.ToTable("service_usage_daily", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_service_usage_daily_usage_count", "usage_count >= 0");
+                        });
                 });
 
             modelBuilder.Entity("CarWash.Hub.Domain.Entities.ServiceUsageHourly", b =>
@@ -828,6 +893,82 @@ namespace CarWash.Hub.Persistence.Migrations
                         .HasName("pk_state_rebuild_requests");
 
                     b.ToTable("state_rebuild_requests", (string)null);
+                });
+
+            modelBuilder.Entity("CarWash.Hub.Domain.Entities.StationServicePrice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<DateOnly>("EffectiveFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("effective_from");
+
+                    b.Property<Guid>("GasStationId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("gas_station_id");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<DateTimeOffset?>("ModifiedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("modified_at");
+
+                    b.Property<Guid?>("ModifiedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("modified_by");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("note");
+
+                    b.Property<string>("ServiceCode")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("service_code");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(9, 3)
+                        .HasColumnType("decimal(9,3)")
+                        .HasColumnName("unit_price");
+
+                    b.HasKey("Id")
+                        .HasName("pk_station_service_prices");
+
+                    b.HasIndex("ServiceCode")
+                        .HasDatabaseName("ix_station_service_prices_service_code");
+
+                    b.HasIndex("GasStationId", "ServiceCode", "EffectiveFrom")
+                        .IsUnique()
+                        .HasDatabaseName("ix_station_service_prices_station_service_effective_from")
+                        .HasFilter("is_deleted = 0");
+
+                    b.ToTable("station_service_prices", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_station_service_prices_unit_price", "unit_price BETWEEN 0 AND 999.999");
+                        });
                 });
 
             modelBuilder.Entity("CarWash.Hub.Domain.Entities.User", b =>
@@ -1078,6 +1219,12 @@ namespace CarWash.Hub.Persistence.Migrations
 
             modelBuilder.Entity("CarWash.Hub.Domain.Entities.ServiceUsage", b =>
                 {
+                    b.HasOne("CarWash.Hub.Domain.Entities.GasStation", null)
+                        .WithMany()
+                        .HasForeignKey("GasStationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_service_usages_gas_stations_gas_station_id");
+
                     b.HasOne("CarWash.Hub.Domain.Entities.Machine", "Machine")
                         .WithMany()
                         .HasForeignKey("MachineId")
@@ -1103,6 +1250,30 @@ namespace CarWash.Hub.Persistence.Migrations
                     b.Navigation("Machine");
                 });
 
+            modelBuilder.Entity("CarWash.Hub.Domain.Entities.ServiceUsageDaily", b =>
+                {
+                    b.HasOne("CarWash.Hub.Domain.Entities.GasStation", null)
+                        .WithMany()
+                        .HasForeignKey("GasStationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_service_usage_daily_gas_stations_gas_station_id");
+
+                    b.HasOne("CarWash.Hub.Domain.Entities.Machine", null)
+                        .WithMany()
+                        .HasForeignKey("MachineId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_service_usage_daily_machines_machine_id");
+
+                    b.HasOne("CarWash.Hub.Domain.Entities.ServiceDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("ServiceCode")
+                        .HasPrincipalKey("Code")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_service_usage_daily_service_definitions_service_code");
+                });
+
             modelBuilder.Entity("CarWash.Hub.Domain.Entities.ServiceUsageHourly", b =>
                 {
                     b.HasOne("CarWash.Hub.Domain.Entities.Machine", "Machine")
@@ -1121,6 +1292,24 @@ namespace CarWash.Hub.Persistence.Migrations
                         .HasConstraintName("fk_service_usage_hourly_service_definitions_service_code");
 
                     b.Navigation("Machine");
+                });
+
+            modelBuilder.Entity("CarWash.Hub.Domain.Entities.StationServicePrice", b =>
+                {
+                    b.HasOne("CarWash.Hub.Domain.Entities.GasStation", null)
+                        .WithMany()
+                        .HasForeignKey("GasStationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_station_service_prices_gas_stations_gas_station_id");
+
+                    b.HasOne("CarWash.Hub.Domain.Entities.ServiceDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("ServiceCode")
+                        .HasPrincipalKey("Code")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_station_service_prices_service_definitions_service_code");
                 });
 
             modelBuilder.Entity("CarWash.Hub.Domain.Entities.User", b =>

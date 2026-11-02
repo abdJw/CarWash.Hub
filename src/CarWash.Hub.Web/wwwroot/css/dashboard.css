@@ -697,3 +697,71 @@ body:has(.mud-layout) .cw-splash { display: none; }
 /* Station quiet hours. */
 .cw-quiet { display: grid; gap: .5rem; padding-block-start: .25rem; border-block-start: 1px solid var(--gridline); }
 .cw-quiet-times { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+
+/* ---------------------------------------------------------------- finance */
+
+.cw-visually-hidden {
+    position: absolute !important; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+
+/* Filters: fields of one width that wrap, the export buttons pushed to the end of the row. */
+.cw-fin-filters { align-items: flex-start; }
+.cw-fin-field { flex: 0 1 200px; min-width: 160px; }
+.cw-fin-field--wide { flex-basis: 260px; }
+.cw-fin-export { display: flex; gap: .5rem; margin-inline-start: auto; align-self: center; }
+@media (max-width: 599.98px) {
+    .cw-fin-field, .cw-fin-field--wide { flex: 1 1 100%; }
+    .cw-fin-export { margin-inline-start: 0; }
+}
+
+/* A chart head with controls: they wrap under the title on narrow screens. */
+.viz-head--tools { flex-wrap: wrap; }
+.viz-tools { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.cw-segmented--small { padding: 2px; border-radius: 10px; }
+.cw-segmented--small button { min-height: 30px; padding: .25rem .625rem; font-size: .8125rem; border-radius: 8px; }
+
+/* The breakdown gets two thirds of the row beside the price list: its tables are the wider. */
+@media (min-width: 960px) { .cw-fin-grid { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); } }
+
+/* Breakdown tables: a name with its context under it, and a share bar beside the percentage. */
+.cw-fin-tabs .mud-tabs-tabbar { background: transparent; border-block-end: 1px solid var(--gridline); }
+.cw-fin-tabs .mud-tab { text-transform: none; font-weight: 600; letter-spacing: 0; }
+.cw-fin-table tbody th[scope="row"] { white-space: normal; }
+.cw-fin-table tfoot th, .cw-fin-table tfoot td { border-block-end: 0; font-weight: 650; color: var(--text-primary); }
+.cw-fin-name { display: inline-flex; align-items: flex-start; gap: .5rem; }
+.cw-fin-name .viz-swatch { margin-block-start: .3125rem; }
+.cw-fin-name-text { display: grid; gap: .0625rem; min-width: 0; }
+.cw-fin-name-text .cw-muted { font-size: .75rem; }
+.cw-fin-share { display: inline-flex; align-items: center; justify-content: flex-end; gap: .5rem; min-width: 6.5rem; }
+.cw-fin-share-track { display: block; inline-size: 3.5rem; block-size: 8px; border-radius: 4px; background: var(--track); overflow: hidden; }
+.cw-fin-share-fill { display: block; block-size: 100%; background: var(--accent); border-radius: 4px; }
+.cw-fin-unpriced { color: var(--status-warning-ink); font-weight: 650; }
+
+/* Current prices on the finance page. */
+.cw-fin-prices { list-style: none; margin: 0; padding: 0; display: grid; }
+.cw-fin-prices li {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .25rem .75rem;
+    padding-block: .625rem; border-block-end: 1px solid var(--gridline); font-size: .875rem; font-weight: 600;
+}
+.cw-fin-prices li:last-child { border-block-end: 0; }
+.cw-fin-price { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: .375rem; font-variant-numeric: tabular-nums; }
+.cw-fin-price .cw-muted { font-size: .8125rem; font-weight: 500; }
+
+/* The prices dialog: the form, then one row per service with its history folded away. */
+.cw-price-form { padding-block-end: 1rem; border-block-end: 1px solid var(--gridline); }
+.cw-price-form .cw-card-title { margin: 0; }
+.cw-price-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
+@media (max-width: 599.98px) { .cw-price-fields { grid-template-columns: minmax(0, 1fr); } }
+.cw-price-list { list-style: none; margin: .5rem 0 0; padding: 0; display: grid; }
+.cw-price-item { padding-block: .75rem; border-block-end: 1px solid var(--gridline); }
+.cw-price-item:last-child { border-block-end: 0; }
+.cw-price-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .375rem .75rem; }
+.cw-price-now { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: .375rem; font-variant-numeric: tabular-nums; }
+.cw-price-now .cw-muted { font-size: .8125rem; }
+.cw-price-next { display: flex; align-items: center; gap: .25rem; }
+.cw-price-history { margin-block-start: .5rem; }
+.cw-price-history summary { cursor: pointer; font-size: .8125rem; font-weight: 600; color: var(--accent-strong); inline-size: fit-content; }
+.cw-price-history summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.cw-price-history .viz-table th[scope="row"] { white-space: normal; }
+.cw-price-history tr.is-current th, .cw-price-history tr.is-current td { font-weight: 650; color: var(--text-primary); }
+.cw-price-note { display: block; font-size: .75rem; font-weight: 400; }

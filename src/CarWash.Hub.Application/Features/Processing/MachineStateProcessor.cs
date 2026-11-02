@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 namespace CarWash.Hub.Application.Features.Processing;
 
 /// <summary>
-/// Turns pending machine messages into usage, hourly counts and machine state.
+/// Turns pending machine messages into usage, hourly and daily counts and machine state.
 /// </summary>
 /// <remarks>
 /// Layer: Application. Called by the processing worker in a loop, one batch per call and one DI scope
@@ -62,7 +62,7 @@ public sealed record ProcessingBatchResult(int Processed, int Ignored, int Faile
 /// <remarks>
 /// Layer: Application.
 /// <para>
-/// <b>The single writer.</b> Only this class writes usage, the hourly rollup and machine state, and
+/// <b>The single writer.</b> Only this class writes usage, the hourly and daily rollups and machine state, and
 /// the worker lease keeps it to one process at a time, so a counter is a plain read-and-increment
 /// with no race. A batch is one transaction: its usage rows, its counters and its messages' new
 /// status commit together or not at all, so an interrupted batch is simply processed again.
@@ -86,6 +86,7 @@ public sealed record ProcessingBatchResult(int Processed, int Ignored, int Faile
 /// <param name="unitOfWork">Data access.</param>
 /// <param name="parser">Reads usage events out of payloads.</param>
 /// <param name="clock">The processing timestamp.</param>
+/// <param name="timeZone">The business day each use falls on.</param>
 /// <param name="options">Batch size and clock-skew limits.</param>
 /// <param name="events">Tells open dashboards what changed.</param>
 /// <param name="levels">Keeps each service's refill level current.</param>
@@ -95,6 +96,7 @@ public sealed class MachineStateProcessor(
     IUnitOfWork unitOfWork,
     IMachineMessageParser parser,
     IDateTimeProvider clock,
+    IBusinessTimeZone timeZone,
     IOptions<ProcessingOptions> options,
     IDashboardEventPublisher events,
     IServiceLevelUpdater levels,
@@ -350,15 +352,19 @@ public sealed class MachineStateProcessor(
             return ProcessingBatchResult.Empty;
         }
 
-        var candidates = live
-            .Where(item => item.Result.Outcome == MessageParseOutcome.Usage)
-            .SelectMany(item => item.Result.Events.Select(usage => ToUsage(item.Message, usage)))
+        var withUsage = live.Where(item => item.Result.Outcome == MessageParseOutcome.Usage).ToList();
+        var stations = await StationsOfAsync(withUsage, cancellationToken).ConfigureAwait(false);
+
+        var candidates = withUsage
+            .SelectMany(item => item.Result.Events.Select(usage =>
+                ToUsage(item.Message, usage, stations.GetValueOrDefault(item.Message.MachineId))))
             .ToList();
 
         var (accepted, duplicates) = await DeduplicateAsync(candidates, cancellationToken).ConfigureAwait(false);
 
         await unitOfWork.Repository<ServiceUsage, long>().AddRangeAsync(accepted, cancellationToken).ConfigureAwait(false);
         await IncrementHourlyAsync(accepted, cancellationToken).ConfigureAwait(false);
+        await IncrementDailyAsync(accepted, cancellationToken).ConfigureAwait(false);
         await UpdateMachineStatesAsync(live, accepted, now, cancellationToken).ConfigureAwait(false);
         await levels.ApplyUsageAsync(accepted, now, cancellationToken).ConfigureAwait(false);
 
@@ -400,7 +406,26 @@ public sealed class MachineStateProcessor(
         return new ProcessingBatchResult(processed, ignored, failed, accepted.Count, duplicates, HasMore: false);
     }
 
-    private ServiceUsage ToUsage(PendingMessage message, ParsedUsageEvent usage)
+    // The station each machine stands at now, read inside the transaction: a use belongs to the
+    // station it was made at, even if the machine moves later.
+    private async Task<Dictionary<Guid, Guid?>> StationsOfAsync(List<ParsedMessage> withUsage, CancellationToken cancellationToken)
+    {
+        if (withUsage.Count == 0)
+        {
+            return [];
+        }
+
+        var machines = await unitOfWork.Repository<Machine, Guid>()
+            .ListAsync(
+                new MachinesByIdsSpecification([.. withUsage.Select(item => item.Message.MachineId).Distinct()]),
+                machine => new { machine.Id, machine.GasStationId },
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        return machines.ToDictionary(machine => machine.Id, machine => machine.GasStationId);
+    }
+
+    private ServiceUsage ToUsage(PendingMessage message, ParsedUsageEvent usage, Guid? gasStationId)
     {
         var (occurredAt, source) = OccurrenceTimeResolver.Resolve(
             usage.DeviceTime, message.ReceivedAt, _options.MaxPastSkew, _options.MaxFutureSkew);
@@ -408,6 +433,7 @@ public sealed class MachineStateProcessor(
         return new ServiceUsage
         {
             MachineId = message.MachineId,
+            GasStationId = gasStationId,
             ServiceCode = usage.ServiceCode,
             OccurredAt = occurredAt,
             OccurredAtSource = source,
@@ -524,6 +550,51 @@ public sealed class MachineStateProcessor(
         }
     }
 
+    private async Task IncrementDailyAsync(List<ServiceUsage> accepted, CancellationToken cancellationToken)
+    {
+        if (accepted.Count == 0)
+        {
+            return;
+        }
+
+        var buckets = accepted
+            .GroupBy(usage => new DayKey(timeZone.DateOf(usage.OccurredAt), usage.GasStationId, usage.MachineId, usage.ServiceCode))
+            .ToDictionary(group => group.Key, group => group.Count());
+
+        var repository = unitOfWork.Repository<ServiceUsageDaily, long>();
+        var rows = await repository
+            .ListAsync(
+                new DailyUsageRowsSpecification(
+                    [.. buckets.Keys.Select(key => key.MachineId).Distinct()],
+                    buckets.Keys.Min(key => key.BusinessDate),
+                    buckets.Keys.Max(key => key.BusinessDate)),
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        var existing = rows.ToDictionary(row => new DayKey(row.BusinessDate, row.GasStationId, row.MachineId, row.ServiceCode));
+
+        foreach (var (key, count) in buckets)
+        {
+            if (existing.TryGetValue(key, out var row))
+            {
+                row.UsageCount += count;
+            }
+            else
+            {
+                await repository.AddAsync(
+                    new ServiceUsageDaily
+                    {
+                        BusinessDate = key.BusinessDate,
+                        GasStationId = key.GasStationId,
+                        MachineId = key.MachineId,
+                        ServiceCode = key.ServiceCode,
+                        UsageCount = count,
+                    },
+                    cancellationToken).ConfigureAwait(false);
+            }
+        }
+    }
+
     private async Task UpdateMachineStatesAsync(
         List<ParsedMessage> live,
         List<ServiceUsage> accepted,
@@ -600,5 +671,17 @@ public sealed class MachineStateProcessor(
 
         public override int GetHashCode() =>
             HashCode.Combine(MachineId, HourStart.UtcTicks, StringComparer.OrdinalIgnoreCase.GetHashCode(ServiceCode));
+    }
+
+    private readonly record struct DayKey(DateOnly BusinessDate, Guid? GasStationId, Guid MachineId, string ServiceCode)
+    {
+        public bool Equals(DayKey other) =>
+            BusinessDate == other.BusinessDate
+            && GasStationId == other.GasStationId
+            && MachineId == other.MachineId
+            && string.Equals(ServiceCode, other.ServiceCode, StringComparison.OrdinalIgnoreCase);
+
+        public override int GetHashCode() =>
+            HashCode.Combine(BusinessDate, GasStationId, MachineId, StringComparer.OrdinalIgnoreCase.GetHashCode(ServiceCode));
     }
 }

@@ -2,9 +2,11 @@ using CarWash.Hub.Application.Features.Alerts;
 using CarWash.Hub.Application.Features.Auth;
 using CarWash.Hub.Application.Features.Catalog;
 using CarWash.Hub.Application.Features.Dashboard;
+using CarWash.Hub.Application.Features.Finance;
 using CarWash.Hub.Application.Features.Ingestion;
 using CarWash.Hub.Application.Features.Levels;
 using CarWash.Hub.Application.Features.Machines;
+using CarWash.Hub.Application.Features.Pricing;
 using CarWash.Hub.Application.Features.Processing;
 using CarWash.Hub.Application.Features.Refills;
 using CarWash.Hub.Application.Features.Stations;
@@ -41,6 +43,10 @@ public static class DependencyInjection
         services.AddScoped<ISignInService, SignInService>();
         services.AddScoped<IFleetDashboardService, FleetDashboardService>();
         services.AddScoped<IRefillService, RefillService>();
+        services.AddScoped<IFinanceReportService, FinanceReportService>();
+
+        // Prices: anyone may read their own station's, only Super Admins set them.
+        services.AddScoped<IStationPriceService, StationPriceService>();
 
         // Administration: Super Admins only, checked inside each service.
         services.AddScoped<IGasStationService, GasStationService>();

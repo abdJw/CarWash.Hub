@@ -110,4 +110,8 @@
   <data name="Validation_QuietHours" xml:space="preserve"><value>حدّد بداية الساعات الهادئة ونهايتها بوقتين مختلفين، أو اتركهما فارغين لمحطة تعمل على مدار 24 ساعة.</value></data>
   <data name="Field_Alert" xml:space="preserve"><value>التنبيه</value></data>
   <data name="Field_NoActivityAfterHours" xml:space="preserve"><value>ساعات بلا نشاط</value></data>
+  <data name="Validation_PriceDecimals" xml:space="preserve"><value>يمكن أن يحتوي {0} على 3 منازل عشرية كحد أقصى (فلس).</value></data>
+  <data name="Validation_PriceDate" xml:space="preserve"><value>يجب أن يكون تاريخ البدء خلال آخر {0} سنوات وألا يتجاوز {1} يومًا من اليوم.</value></data>
+  <data name="Field_Price" xml:space="preserve"><value>السعر</value></data>
+  <data name="Field_EffectiveFrom" xml:space="preserve"><value>يسري من</value></data>
 </root>

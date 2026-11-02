@@ -110,4 +110,8 @@
   <data name="Validation_QuietHours" xml:space="preserve"><value>Set both the start and the end of quiet hours, at different times, or neither for a station open 24 hours.</value></data>
   <data name="Field_Alert" xml:space="preserve"><value>Alert</value></data>
   <data name="Field_NoActivityAfterHours" xml:space="preserve"><value>Hours without activity</value></data>
+  <data name="Validation_PriceDecimals" xml:space="preserve"><value>{0} can have at most 3 decimal places (fils).</value></data>
+  <data name="Validation_PriceDate" xml:space="preserve"><value>The start date must be within the last {0} years and at most {1} days ahead.</value></data>
+  <data name="Field_Price" xml:space="preserve"><value>Price</value></data>
+  <data name="Field_EffectiveFrom" xml:space="preserve"><value>Effective from</value></data>
 </root>

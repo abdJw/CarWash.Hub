@@ -27,6 +27,16 @@ public class ServiceUsage : BaseEntity<long>
     /// <summary>Gets or sets the machine the service was used on.</summary>
     public Machine Machine { get; set; } = null!;
 
+    /// <summary>
+    /// Gets or sets the station the machine stood at when the use was processed; null while it was
+    /// unassigned.
+    /// </summary>
+    /// <remarks>
+    /// Stamped once and never moved: a machine that changes station takes its future uses with it,
+    /// but the money it already earned stays with the station that earned it.
+    /// </remarks>
+    public Guid? GasStationId { get; set; }
+
     /// <summary>Gets or sets the service code, matching <see cref="ServiceDefinition.Code"/>.</summary>
     public string ServiceCode { get; set; } = string.Empty;
 

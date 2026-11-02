@@ -1,4 +1,5 @@
 @page "/admin/stations"
+@using CarWash.Hub.Application.Features.Pricing
 @using CarWash.Hub.Application.Features.Stations
 @inherits LivePageBase
 
@@ -56,10 +57,34 @@ else
                             <span class="cw-status cw-status--muted">@L[DashboardText.CommonInactive]</span>
                         }
                     </div>
+                    <div class="cw-admin-item-meta">
+                        @if (_prices.TryGetValue(station.Id, out var prices))
+                        {
+                            <span>
+                                <MudIcon Icon="@Icons.Material.Rounded.Sell" Size="Size.Small" />
+                                @string.Join(" · ", _services.Ordered
+                                    .Select(service => prices.FirstOrDefault(price => string.Equals(price.Service, service.Code, StringComparison.OrdinalIgnoreCase)))
+                                    .OfType<CurrentPriceDto>()
+                                    .Select(price => $"{_services.Name(price.Service)} {DashboardFormat.Amount(price.UnitPrice)}"))
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="cw-status cw-status--warning">
+                                <MudIcon Icon="@Icons.Material.Rounded.Warning" Size="Size.Small" />
+                                @L[DashboardText.StationsNoPrices]
+                            </span>
+                        }
+                    </div>
                 </div>
-                <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Rounded.Edit" OnClick="() => EditAsync(station)">
-                    @L[DashboardText.CommonEdit]
-                </MudButton>
+                <div class="cw-admin-item-actions">
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Rounded.Sell" OnClick="() => PricesAsync(station)">
+                        @L[DashboardText.StationsPrices]
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Rounded.Edit" OnClick="() => EditAsync(station)">
+                        @L[DashboardText.CommonEdit]
+                    </MudButton>
+                </div>
             </article>
         }
     </div>
@@ -67,13 +92,43 @@ else
 
 @code {
     private IReadOnlyList<StationDto>? _stations;
+    private Dictionary<Guid, IReadOnlyList<CurrentPriceDto>> _prices = [];
+    private ServiceLookup _services = ServiceLookup.Empty;
 
     private static bool IsArabic => CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
 
     protected override bool IsRelevant(MachineActivityEvent activity) => false;
 
-    protected override async Task LoadAsync(CancellationToken cancellationToken) =>
+    protected override async Task LoadAsync(CancellationToken cancellationToken)
+    {
+        if (_services.Ordered.Count == 0)
+        {
+            _services = new ServiceLookup(await Runner.QueryAsync<IFleetDashboardService, IReadOnlyList<ServiceInfoDto>>(
+                (service, token) => service.GetServicesAsync(token), cancellationToken));
+        }
+
         _stations = await Runner.QueryAsync<IGasStationService, IReadOnlyList<StationDto>>((service, token) => service.ListAsync(token), cancellationToken);
+
+        var prices = await Runner.QueryAsync<IStationPriceService, IReadOnlyList<StationCurrentPricesDto>>(
+            (service, token) => service.ListCurrentAsync(token), cancellationToken);
+        _prices = prices.ToDictionary(station => station.StationId, station => station.Prices);
+    }
+
+    private async Task PricesAsync(StationDto station)
+    {
+        var dialog = await Dialogs.ShowAsync<StationPricesDialog>(
+            L[DashboardText.PricesTitle, IsArabic ? station.NameAr : station.Name],
+            new DialogParameters<StationPricesDialog>
+            {
+                { prices => prices.StationId, station.Id },
+                { prices => prices.Services, _services },
+            },
+            AdminDialogs.Options);
+
+        // Refreshed however it closes: prices may have been saved before the close button.
+        await dialog.Result;
+        await RefreshAsync();
+    }
 
     private async Task EditAsync(StationDto? station)
     {

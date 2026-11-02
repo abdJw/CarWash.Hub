@@ -28,7 +28,7 @@
                     @if (delta != 0)
                     {
                         <MudIcon Icon="@(delta > 0 ? Icons.Material.Rounded.ArrowUpward : Icons.Material.Rounded.ArrowDownward)" Size="Size.Small" />
-                        <strong class="cw-ltr">@DashboardFormat.Signed(delta)</strong>
+                        <strong class="cw-ltr">@(DeltaText ?? DashboardFormat.Signed(delta))</strong>
                         <span>@DeltaLabel</span>
                     }
                     else
@@ -67,6 +67,13 @@
     /// <summary>Gets or sets the change against the comparison period.</summary>
     [Parameter]
     public long? Delta { get; set; }
+
+    /// <summary>
+    /// Gets or sets the change as shown, such as <c>+12%</c>, in place of <see cref="Delta"/>, which
+    /// then only gives its direction.
+    /// </summary>
+    [Parameter]
+    public string? DeltaText { get; set; }
 
     /// <summary>Gets or sets the comparison period's name, such as "vs. yesterday at this time".</summary>
     [Parameter]

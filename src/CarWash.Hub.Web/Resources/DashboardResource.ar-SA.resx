@@ -294,4 +294,94 @@
   <data name="Field_QuietHint" xml:space="preserve"><value>لا يؤدي توقف الأجهزة خلال الساعات الهادئة، عادة أثناء إغلاق المحطة، إلى تنبيه بعدم النشاط.</value></data>
   <data name="Stations_QuietHours" xml:space="preserve"><value>هادئة {0}–{1}</value></data>
   <data name="Stations_Open24" xml:space="preserve"><value>على مدار 24 ساعة</value></data>
+  <data name="Nav_Finance" xml:space="preserve"><value>المالية</value></data>
+  <data name="Finance_Title" xml:space="preserve"><value>التقارير المالية</value></data>
+  <data name="Finance_Period" xml:space="preserve"><value>الفترة</value></data>
+  <data name="Finance_PresetToday" xml:space="preserve"><value>اليوم</value></data>
+  <data name="Finance_PresetYesterday" xml:space="preserve"><value>أمس</value></data>
+  <data name="Finance_PresetThisWeek" xml:space="preserve"><value>هذا الأسبوع</value></data>
+  <data name="Finance_PresetThisMonth" xml:space="preserve"><value>هذا الشهر</value></data>
+  <data name="Finance_PresetLastMonth" xml:space="preserve"><value>الشهر الماضي</value></data>
+  <data name="Finance_PresetLast30Days" xml:space="preserve"><value>آخر 30 يومًا</value></data>
+  <data name="Finance_PresetThisYear" xml:space="preserve"><value>هذا العام</value></data>
+  <data name="Finance_PresetCustom" xml:space="preserve"><value>فترة مخصصة</value></data>
+  <data name="Finance_CustomRange" xml:space="preserve"><value>من – إلى</value></data>
+  <data name="Finance_Stations" xml:space="preserve"><value>المحطات</value></data>
+  <data name="Finance_AllStations" xml:space="preserve"><value>كل المحطات</value></data>
+  <data name="Finance_Services" xml:space="preserve"><value>الخدمات</value></data>
+  <data name="Finance_AllServices" xml:space="preserve"><value>كل الخدمات</value></data>
+  <data name="Finance_Machine" xml:space="preserve"><value>الجهاز</value></data>
+  <data name="Finance_AllMachines" xml:space="preserve"><value>كل الأجهزة</value></data>
+  <data name="Finance_SelectedCount" xml:space="preserve"><value>{0} محددة</value></data>
+  <data name="Finance_ExportExcel" xml:space="preserve"><value>Excel</value></data>
+  <data name="Finance_ExportCsv" xml:space="preserve"><value>CSV</value></data>
+  <data name="Finance_KpiRevenue" xml:space="preserve"><value>الإيرادات</value></data>
+  <data name="Finance_KpiUses" xml:space="preserve"><value>الاستخدامات</value></data>
+  <data name="Finance_KpiAverage" xml:space="preserve"><value>المتوسط اليومي</value></data>
+  <data name="Finance_KpiUnpriced" xml:space="preserve"><value>استخدامات بلا سعر</value></data>
+  <data name="Finance_VsPrevious" xml:space="preserve"><value>مقارنة بـ {0} – {1}</value></data>
+  <data name="Finance_SameAsPrevious" xml:space="preserve"><value>مثل الفترة السابقة</value></data>
+  <data name="Finance_AverageHint" xml:space="preserve"><value>على مدى {0} يومًا</value></data>
+  <data name="Finance_UnpricedHint" xml:space="preserve"><value>حدد الأسعار لاحتسابها</value></data>
+  <data name="Finance_UnpricedHintStation" xml:space="preserve"><value>اطلب من المسؤول تحديد الأسعار</value></data>
+  <data name="Finance_AllPriced" xml:space="preserve"><value>كل الاستخدامات مسعّرة</value></data>
+  <data name="Finance_UnassignedNote" xml:space="preserve"><value>لا تشمل الأرقام {0} استخدامًا على أجهزة غير مخصصة لأي محطة.</value></data>
+  <data name="Finance_AssignMachines" xml:space="preserve"><value>تخصيص الأجهزة</value></data>
+  <data name="Finance_ChartTitle" xml:space="preserve"><value>الإيرادات عبر الزمن</value></data>
+  <data name="Finance_ChartSummary" xml:space="preserve"><value>{0} إجمالًا · {1} – {2}</value></data>
+  <data name="Finance_Measure" xml:space="preserve"><value>المقياس</value></data>
+  <data name="Finance_MeasureRevenue" xml:space="preserve"><value>الإيرادات</value></data>
+  <data name="Finance_MeasureUses" xml:space="preserve"><value>الاستخدامات</value></data>
+  <data name="Finance_GrainLabel" xml:space="preserve"><value>التجميع</value></data>
+  <data name="Finance_GrainDay" xml:space="preserve"><value>يوم</value></data>
+  <data name="Finance_GrainWeek" xml:space="preserve"><value>أسبوع</value></data>
+  <data name="Finance_GrainMonth" xml:space="preserve"><value>شهر</value></data>
+  <data name="Finance_BreakdownTitle" xml:space="preserve"><value>التفاصيل</value></data>
+  <data name="Finance_ByStation" xml:space="preserve"><value>حسب المحطة</value></data>
+  <data name="Finance_ByService" xml:space="preserve"><value>حسب الخدمة</value></data>
+  <data name="Finance_ByMachine" xml:space="preserve"><value>حسب الجهاز</value></data>
+  <data name="Finance_ColUses" xml:space="preserve"><value>الاستخدامات</value></data>
+  <data name="Finance_ColRevenue" xml:space="preserve"><value>الإيرادات ({0})</value></data>
+  <data name="Finance_ColShare" xml:space="preserve"><value>الحصة</value></data>
+  <data name="Finance_ColUnpriced" xml:space="preserve"><value>بلا سعر</value></data>
+  <data name="Finance_NoRows" xml:space="preserve"><value>لا توجد استخدامات في هذه الفترة.</value></data>
+  <data name="Finance_Currency" xml:space="preserve"><value>د.أ</value></data>
+  <data name="Finance_PricesTitle" xml:space="preserve"><value>الأسعار · {0}</value></data>
+  <data name="Finance_EditPrices" xml:space="preserve"><value>تعديل الأسعار</value></data>
+  <data name="Finance_NoPrice" xml:space="preserve"><value>بلا سعر</value></data>
+  <data name="Finance_Since" xml:space="preserve"><value>منذ {0}</value></data>
+  <data name="Field_Service" xml:space="preserve"><value>الخدمة</value></data>
+  <data name="Field_Price" xml:space="preserve"><value>سعر الاستخدام</value></data>
+  <data name="Field_EffectiveFrom" xml:space="preserve"><value>يسري من</value></data>
+  <data name="Field_PriceNote" xml:space="preserve"><value>ملاحظة (اختياري)</value></data>
+  <data name="Common_Done" xml:space="preserve"><value>تم</value></data>
+  <data name="Stations_Prices" xml:space="preserve"><value>الأسعار</value></data>
+  <data name="Stations_NoPrices" xml:space="preserve"><value>لا توجد أسعار</value></data>
+  <data name="Prices_Title" xml:space="preserve"><value>الأسعار · {0}</value></data>
+  <data name="Prices_SetTitle" xml:space="preserve"><value>تحديد سعر</value></data>
+  <data name="Prices_Hint" xml:space="preserve"><value>يسري السعر من اليوم المختار فصاعدًا، وتحتفظ الأيام السابقة بأسعارها. اختيار يوم سابق يعيد احتساب الاستخدامات منذ ذلك اليوم.</value></data>
+  <data name="Prices_Set" xml:space="preserve"><value>حفظ السعر</value></data>
+  <data name="Prices_Saved" xml:space="preserve"><value>تم حفظ السعر</value></data>
+  <data name="Prices_None" xml:space="preserve"><value>بلا سعر: الاستخدامات غير مسعّرة</value></data>
+  <data name="Prices_Upcoming" xml:space="preserve"><value>{0} اعتبارًا من {1}</value></data>
+  <data name="Prices_History" xml:space="preserve"><value>سجل الأسعار ({0})</value></data>
+  <data name="Prices_SetBy" xml:space="preserve"><value>بواسطة</value></data>
+  <data name="Prices_Remove" xml:space="preserve"><value>حذف</value></data>
+  <data name="Prices_RemoveTitle" xml:space="preserve"><value>حذف هذا السعر؟</value></data>
+  <data name="Prices_RemoveText" xml:space="preserve"><value>سيُحذف سعر {0} البالغ {1} المطبَّق من {2}، ويعود السعر السابق ساريًا من ذلك اليوم.</value></data>
+  <data name="Prices_Removed" xml:space="preserve"><value>تم حذف السعر</value></data>
+  <data name="Export_SheetSummary" xml:space="preserve"><value>الملخص</value></data>
+  <data name="Export_SheetPeriods" xml:space="preserve"><value>الفترات</value></data>
+  <data name="Export_SheetStations" xml:space="preserve"><value>المحطات</value></data>
+  <data name="Export_SheetServices" xml:space="preserve"><value>الخدمات</value></data>
+  <data name="Export_SheetMachines" xml:space="preserve"><value>الأجهزة</value></data>
+  <data name="Export_SheetDetail" xml:space="preserve"><value>التفاصيل</value></data>
+  <data name="Export_Currency" xml:space="preserve"><value>العملة</value></data>
+  <data name="Export_Date" xml:space="preserve"><value>التاريخ</value></data>
+  <data name="Export_MachineCode" xml:space="preserve"><value>رمز الجهاز</value></data>
+  <data name="Export_PeriodStart" xml:space="preserve"><value>من</value></data>
+  <data name="Export_PeriodEnd" xml:space="preserve"><value>إلى</value></data>
+  <data name="Export_PreviousPeriod" xml:space="preserve"><value>الفترة السابقة</value></data>
+  <data name="Export_RevenueChange" xml:space="preserve"><value>التغير في الإيرادات</value></data>
+  <data name="Export_UnassignedUses" xml:space="preserve"><value>استخدامات على أجهزة غير مخصصة</value></data>
 </root>

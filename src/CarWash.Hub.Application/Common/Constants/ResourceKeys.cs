@@ -130,6 +130,12 @@ public static class ResourceKeys
 
         /// <summary>Set both the start and the end of quiet hours, at different times, or neither for a station open 24 hours.</summary>
         public const string QuietHours = "Validation_QuietHours";
+
+        /// <summary>{0} can have at most 3 decimal places (fils).</summary>
+        public const string PriceDecimals = "Validation_PriceDecimals";
+
+        /// <summary>The start date must be within the last {0} years and at most {1} days ahead.</summary>
+        public const string PriceDate = "Validation_PriceDate";
     }
 
     /// <summary>Localized names of fields and things, substituted into other messages.</summary>
@@ -218,6 +224,12 @@ public static class ResourceKeys
 
         /// <summary>Hours without activity</summary>
         public const string NoActivityAfterHours = "Field_NoActivityAfterHours";
+
+        /// <summary>Price</summary>
+        public const string Price = "Field_Price";
+
+        /// <summary>Effective from</summary>
+        public const string EffectiveFrom = "Field_EffectiveFrom";
     }
 
     /// <summary>Success messages carried in the <c>ApiResponse</c> envelope.</summary>

@@ -40,6 +40,12 @@ public sealed class ServiceUsageConfiguration : IEntityTypeConfiguration<Service
             .HasForeignKey(u => u.MachineMessageId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // The station at the time of use, for the money it earned; the machine may move later.
+        builder.HasOne<GasStation>()
+            .WithMany()
+            .HasForeignKey(u => u.GasStationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // A message is never counted twice, however often it is processed.
         builder.HasIndex(u => new { u.MachineMessageId, u.ItemIndex })
             .IsUnique()

@@ -108,6 +108,34 @@ public sealed class HourlyUsageRowsSpecification : BaseSpecification<ServiceUsag
     }
 }
 
+/// <summary>The daily rollup rows of some machines within a range of business days, tracked to be incremented.</summary>
+/// <remarks>Layer: Application.</remarks>
+public sealed class DailyUsageRowsSpecification : BaseSpecification<ServiceUsageDaily>
+{
+    /// <summary>Builds the specification.</summary>
+    /// <param name="machineIds">The machines.</param>
+    /// <param name="fromDate">The first day, inclusive.</param>
+    /// <param name="toDate">The last day, inclusive.</param>
+    public DailyUsageRowsSpecification(IReadOnlyCollection<Guid> machineIds, DateOnly fromDate, DateOnly toDate)
+        : base(row => machineIds.Contains(row.MachineId) && row.BusinessDate >= fromDate && row.BusinessDate <= toDate)
+    {
+        EnableTracking();
+    }
+}
+
+/// <summary>Some machines, including deleted ones - for the station each one stands at.</summary>
+/// <remarks>Layer: Application.</remarks>
+public sealed class MachinesByIdsSpecification : BaseSpecification<Machine>
+{
+    /// <summary>Builds the specification.</summary>
+    /// <param name="machineIds">The machines.</param>
+    public MachinesByIdsSpecification(IReadOnlyCollection<Guid> machineIds)
+        : base(machine => machineIds.Contains(machine.Id))
+    {
+        IncludeSoftDeleted();
+    }
+}
+
 /// <summary>The state rows of some machines, tracked to be updated.</summary>
 /// <remarks>Layer: Application.</remarks>
 public sealed class MachineStatesSpecification : BaseSpecification<MachineState>

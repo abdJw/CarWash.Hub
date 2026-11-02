@@ -74,6 +74,7 @@
                     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Rounded.SpaceDashboard">@L[DashboardText.NavOverview]</MudNavLink>
                     <MudNavLink Href="machines" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Rounded.LocalCarWash">@L[DashboardText.NavMachines]</MudNavLink>
                     <MudNavLink Href="alerts" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Rounded.Notifications">@L[DashboardText.NavAlerts]</MudNavLink>
+                    <MudNavLink Href="reports/finance" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Rounded.Payments">@L[DashboardText.NavFinance]</MudNavLink>
                     @if (_isSuperAdmin)
                     {
                         <MudNavGroup Title="@L[DashboardText.NavAdmin]" Icon="@Icons.Material.Rounded.AdminPanelSettings" Expanded="true">
@@ -113,6 +114,10 @@
             <NavLink href="alerts" Match="NavLinkMatch.Prefix" ActiveClass="active">
                 <MudIcon Icon="@Icons.Material.Rounded.Notifications" />
                 <span>@L[DashboardText.NavAlerts]</span>
+            </NavLink>
+            <NavLink href="reports/finance" Match="NavLinkMatch.Prefix" ActiveClass="active">
+                <MudIcon Icon="@Icons.Material.Rounded.Payments" />
+                <span>@L[DashboardText.NavFinance]</span>
             </NavLink>
             @if (_isSuperAdmin)
             {

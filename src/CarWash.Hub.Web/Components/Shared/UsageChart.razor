@@ -167,18 +167,8 @@
         }
     }
 
-    // A clean, even ceiling - 2, 4, 6, 8 or 10 times a power of ten - so both tick labels, the top
-    // and the half-way line, are whole round numbers.
-    private int AxisMax
-    {
-        get
-        {
-            var max = Math.Max(1, Series.Buckets.Count == 0 ? 0 : Series.Buckets.Max(bucket => bucket.Total));
-            var magnitude = Math.Pow(10, Math.Floor(Math.Log10(max)));
-            var step = new[] { 2d, 4d, 6d, 8d, 10d }.First(candidate => candidate * magnitude >= max);
-            return (int)(step * magnitude);
-        }
-    }
+    // Counts are whole, so the ceiling is too: both tick labels are whole round numbers.
+    private int AxisMax => (int)ChartScale.NiceCeiling(Math.Max(1, Series.Buckets.Count == 0 ? 0 : Series.Buckets.Max(bucket => bucket.Total)));
 
     // About six axis labels whatever the bucket count, ending on the newest bucket.
     private int LabelStep => Math.Max(1, (int)Math.Ceiling(Series.Buckets.Count / 6d));

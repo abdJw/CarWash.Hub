@@ -1,6 +1,7 @@
 using System.Globalization;
 using CarWash.Hub.Application.Abstractions.Services;
 using CarWash.Hub.Application.Features.Dashboard;
+using CarWash.Hub.Application.Features.Finance;
 using CarWash.Hub.Web.Localization;
 using Microsoft.Extensions.Localization;
 
@@ -38,6 +39,60 @@ public sealed class DashboardFormat(IStringLocalizer<DashboardResource> localize
         > 0 => "+" + Number(value),
         < 0 => "−" + Number(-value),
         _ => "0",
+    };
+
+    /// <summary>Formats an amount of money to the fils, without the currency.</summary>
+    /// <param name="value">The amount, in dinars.</param>
+    /// <returns>For example <c>1,284.500</c>.</returns>
+    public static string Amount(decimal value) => value.ToString("N3", Culture);
+
+    /// <summary>Formats a change as a signed whole percentage.</summary>
+    /// <param name="current">The value now.</param>
+    /// <param name="previous">The value it is compared with.</param>
+    /// <returns>For example <c>+12%</c>; null when there is nothing to compare with.</returns>
+    public static string? Change(decimal current, decimal previous)
+    {
+        if (previous == 0)
+        {
+            return null;
+        }
+
+        var percent = (long)Math.Round((current - previous) * 100 / previous, MidpointRounding.AwayFromZero);
+        return Signed(percent) + "%";
+    }
+
+    /// <summary>Formats a share from 0 to 1 as a whole percentage.</summary>
+    /// <param name="share">The share.</param>
+    /// <returns>For example <c>37%</c>.</returns>
+    public static string Share(decimal share) => Math.Round(share * 100, MidpointRounding.AwayFromZero).ToString("0", Culture) + "%";
+
+    /// <summary>Formats an amount of money with the currency.</summary>
+    /// <param name="value">The amount, in dinars.</param>
+    /// <returns>For example <c>1,284.500 JOD</c>.</returns>
+    public string Money(decimal value) => $"{Amount(value)} {localizer[DashboardText.FinanceCurrency]}";
+
+    /// <summary>Formats a business date.</summary>
+    /// <param name="date">The date.</param>
+    /// <returns>For example "2 Nov 2026".</returns>
+    public static string Date(DateOnly date) => date.ToString("d MMM yyyy", Culture);
+
+    /// <summary>Formats a finance bucket's start for its axis label.</summary>
+    /// <param name="start">The bucket's first day.</param>
+    /// <param name="grain">The bucket size.</param>
+    /// <returns>A day, or a month for monthly buckets.</returns>
+    public static string PeriodLabel(DateOnly start, FinanceGrain grain) =>
+        start.ToString(grain == FinanceGrain.Month ? "MMM yyyy" : "d MMM", Culture);
+
+    /// <summary>Formats a finance bucket's full span, for its tooltip and table row.</summary>
+    /// <param name="start">The bucket's first day.</param>
+    /// <param name="end">Its last day.</param>
+    /// <param name="grain">The bucket size.</param>
+    /// <returns>For example "Monday 2 November", "31 Oct – 6 Nov" or "November 2026".</returns>
+    public static string PeriodTitle(DateOnly start, DateOnly end, FinanceGrain grain) => grain switch
+    {
+        FinanceGrain.Day => start.ToString("dddd d MMMM yyyy", Culture),
+        FinanceGrain.Month when start.Day == 1 && end == start.AddMonths(1).AddDays(-1) => start.ToString("MMMM yyyy", Culture),
+        _ => $"{start.ToString("d MMM", Culture)} – {end.ToString("d MMM yyyy", Culture)}",
     };
 
     /// <summary>Formats how long ago an instant was.</summary>

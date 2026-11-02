@@ -1,0 +1,544 @@
+@page "/reports/finance"
+@using CarWash.Hub.Application.Features.Finance
+@using CarWash.Hub.Application.Features.Pricing
+@using CarWash.Hub.Web.Components.Admin
+@inherits LivePageBase
+@inject NavigationManager Navigation
+
+<PageTitle>@L[DashboardText.FinanceTitle] · @L[DashboardText.AppName]</PageTitle>
+
+<header class="cw-page-head">
+    <div>
+        <h1 class="cw-h1">@L[DashboardText.FinanceTitle]</h1>
+        @if (_filters is not null)
+        {
+            <p class="cw-muted cw-small">@DashboardFormat.Date(Range.From) – @DashboardFormat.Date(Range.To)</p>
+        }
+    </div>
+    <LiveBadge At="LastRefreshedAt" Now="Now" />
+</header>
+
+@if (_filters is not null)
+{
+    <div class="cw-filters cw-filters--wrap cw-fin-filters">
+        <MudSelect T="Preset" Value="_preset" ValueChanged="OnPresetChanged" Label="@L[DashboardText.FinancePeriod]"
+                   Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Class="cw-fin-field">
+            @foreach (var (preset, key) in Presets)
+            {
+                <MudSelectItem Value="preset">@L[key]</MudSelectItem>
+            }
+        </MudSelect>
+
+        @if (_preset == Preset.Custom)
+        {
+            <MudDateRangePicker DateRange="CustomRange" DateRangeChanged="OnCustomRangeChanged" Label="@L[DashboardText.FinanceCustomRange]"
+                                Variant="Variant.Outlined" Margin="Margin.Dense" MaxDate="_filters.Today.ToDateTime(TimeOnly.MinValue)"
+                                MaxDays="FinanceReportQuery.MaxSpanDays + 1" Class="cw-fin-field cw-fin-field--wide" />
+        }
+
+        @if (_filters.AllStations)
+        {
+            <MudSelect T="Guid" MultiSelection="true" SelectedValues="_stationIds" SelectedValuesChanged="OnStationsChanged"
+                       Label="@L[DashboardText.FinanceStations]" Placeholder="@L[DashboardText.FinanceAllStations]"
+                       MultiSelectionTextFunc="StationsText" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true"
+                       Class="cw-fin-field">
+                @foreach (var station in _filters.Stations)
+                {
+                    <MudSelectItem Value="station.Id">
+                        <bdi>@station.Name</bdi> <span class="cw-code-chip">@station.Code</span>
+                    </MudSelectItem>
+                }
+            </MudSelect>
+        }
+
+        <MudSelect T="string" MultiSelection="true" SelectedValues="_serviceCodes" SelectedValuesChanged="OnServicesChanged"
+                   Label="@L[DashboardText.FinanceServices]" Placeholder="@L[DashboardText.FinanceAllServices]"
+                   MultiSelectionTextFunc="ServicesText" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true"
+                   Class="cw-fin-field">
+            @foreach (var code in _filters.Services)
+            {
+                <MudSelectItem Value="code">
+                    <span class="cw-icon-option"><span class="viz-swatch @_services.Css(code)"></span>@_services.Name(code)</span>
+                </MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSelect T="Guid?" Value="_machineId" ValueChanged="OnMachineChanged" Label="@L[DashboardText.FinanceMachine]"
+                   ToStringFunc="MachineText" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Class="cw-fin-field">
+            <MudSelectItem T="Guid?" Value="null">@L[DashboardText.FinanceAllMachines]</MudSelectItem>
+            @foreach (var machine in VisibleMachines)
+            {
+                <MudSelectItem T="Guid?" Value="machine.Id"><bdi>@machine.Name</bdi></MudSelectItem>
+            }
+        </MudSelect>
+
+        <div class="cw-fin-export">
+            <MudButton Href="@ExportUrl("xlsx")" download="" Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Rounded.TableView">
+                @L[DashboardText.FinanceExportExcel]
+            </MudButton>
+            <MudButton Href="@ExportUrl("csv")" download="" Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Rounded.Download">
+                @L[DashboardText.FinanceExportCsv]
+            </MudButton>
+        </div>
+    </div>
+}
+
+@if (_report is null)
+{
+    <div class="cw-kpis">
+        @for (var i = 0; i < 4; i++)
+        {
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="128px" Class="cw-skeleton" />
+        }
+    </div>
+    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="320px" Class="cw-skeleton mt-4" />
+}
+else
+{
+    var totals = _report.Totals;
+    var previous = _report.Previous;
+    var deltaLabel = L[DashboardText.FinanceVsPrevious, DashboardFormat.Date(_report.PreviousFrom), DashboardFormat.Date(_report.PreviousTo)];
+
+    <div class="cw-kpis @(IsRefreshing ? "is-refreshing" : null)">
+        <StatTile Label="@L[DashboardText.FinanceKpiRevenue]"
+                  Icon="@Icons.Material.Rounded.Payments"
+                  Value="@Format.Money(totals.Revenue)"
+                  Delta="Direction(totals.Revenue, previous.Revenue)"
+                  DeltaText="@DashboardFormat.Change(totals.Revenue, previous.Revenue)"
+                  DeltaLabel="@deltaLabel"
+                  SameLabel="@L[DashboardText.FinanceSameAsPrevious]" />
+
+        <StatTile Label="@L[DashboardText.FinanceKpiUses]"
+                  Icon="@Icons.Material.Rounded.TouchApp"
+                  Value="@DashboardFormat.Number(totals.Uses)"
+                  Delta="Direction(totals.Uses, previous.Uses)"
+                  DeltaText="@DashboardFormat.Change(totals.Uses, previous.Uses)"
+                  DeltaLabel="@deltaLabel"
+                  SameLabel="@L[DashboardText.FinanceSameAsPrevious]" />
+
+        <StatTile Label="@L[DashboardText.FinanceKpiAverage]"
+                  Icon="@Icons.Material.Rounded.CalendarToday"
+                  Value="@Format.Money(totals.AveragePerDay)"
+                  Delta="Direction(totals.AveragePerDay, previous.AveragePerDay)"
+                  DeltaText="@DashboardFormat.Change(totals.AveragePerDay, previous.AveragePerDay)"
+                  DeltaLabel="@deltaLabel"
+                  SameLabel="@L[DashboardText.FinanceSameAsPrevious]"
+                  Hint="@L[DashboardText.FinanceAverageHint, totals.Days]" />
+
+        @if (_isSuperAdmin && totals.UnpricedUses > 0)
+        {
+            <a class="cw-tile-link" href="admin/stations">
+                <StatTile Label="@L[DashboardText.FinanceKpiUnpriced]"
+                          Icon="@Icons.Material.Rounded.MoneyOff"
+                          Value="@DashboardFormat.Number(totals.UnpricedUses)"
+                          Status="warning"
+                          Hint="@L[DashboardText.FinanceUnpricedHint]" />
+            </a>
+        }
+        else
+        {
+            <StatTile Label="@L[DashboardText.FinanceKpiUnpriced]"
+                      Icon="@Icons.Material.Rounded.MoneyOff"
+                      Value="@DashboardFormat.Number(totals.UnpricedUses)"
+                      Status="@(totals.UnpricedUses > 0 ? "warning" : "good")"
+                      Hint="@(totals.UnpricedUses > 0 ? L[DashboardText.FinanceUnpricedHintStation] : L[DashboardText.FinanceAllPriced])" />
+        }
+    </div>
+
+    @if (_report.UnassignedUses > 0)
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Class="mb-4">
+            @L[DashboardText.FinanceUnassignedNote, DashboardFormat.Number(_report.UnassignedUses)]
+            <MudLink Href="admin/inbox" Class="ms-1">@L[DashboardText.FinanceAssignMachines]</MudLink>
+        </MudAlert>
+    }
+
+    <div class="cw-grid cw-fin-grid">
+        <RevenueChart Class="cw-span-2"
+                      Title="@L[DashboardText.FinanceChartTitle]"
+                      Periods="_report.Periods"
+                      Grain="_report.Grain"
+                      GrainChanged="OnGrainChanged"
+                      Services="_services"
+                      Dimmed="IsRefreshing" />
+
+        <section class="cw-card @(_stationPrices is null ? "cw-span-2" : null) @(IsRefreshing ? "is-refreshing" : null)">
+            <h2 class="cw-card-title">@L[DashboardText.FinanceBreakdownTitle]</h2>
+            <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" TabPanelsClass="pt-3" Class="cw-fin-tabs">
+                @if (_report.Stations.Count > 1)
+                {
+                    <MudTabPanel Text="@L[DashboardText.FinanceByStation]">
+                        <FinanceBreakdownTable Lines="_report.Stations" Totals="totals" NameHeader="@L[DashboardText.FieldStation]" />
+                    </MudTabPanel>
+                }
+                <MudTabPanel Text="@L[DashboardText.FinanceByService]">
+                    <FinanceBreakdownTable Lines="_report.Services" Totals="totals" NameHeader="@L[DashboardText.FieldService]" Services="_services" />
+                </MudTabPanel>
+                <MudTabPanel Text="@L[DashboardText.FinanceByMachine]">
+                    <FinanceBreakdownTable Lines="_report.Machines" Totals="totals" NameHeader="@L[DashboardText.FinanceMachine]" />
+                </MudTabPanel>
+            </MudTabs>
+        </section>
+
+        @if (_stationPrices is { } prices)
+        {
+            <section class="cw-card">
+                <div class="cw-card-head">
+                    <h2 class="cw-card-title">@L[DashboardText.FinancePricesTitle, prices.StationName]</h2>
+                    @if (_isSuperAdmin)
+                    {
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Rounded.Edit"
+                                   OnClick="() => EditPricesAsync(prices.StationId, prices.StationName)">
+                            @L[DashboardText.FinanceEditPrices]
+                        </MudButton>
+                    }
+                </div>
+                <ul class="cw-fin-prices">
+                    @foreach (var service in prices.Services)
+                    {
+                        <li @key="service.Service">
+                            <span class="cw-icon-option">
+                                <MudIcon Icon="@_services.Icon(service.Service)" Size="Size.Small" />
+                                @_services.Name(service.Service)
+                            </span>
+                            @if (service.Current is { } current)
+                            {
+                                <span class="cw-fin-price">
+                                    <strong>@Format.Money(current.UnitPrice)</strong>
+                                    <span class="cw-muted">@L[DashboardText.FinanceSince, DashboardFormat.Date(current.EffectiveFrom)]</span>
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="cw-status cw-status--warning">
+                                    <MudIcon Icon="@Icons.Material.Rounded.Warning" Size="Size.Small" />
+                                    @L[DashboardText.FinanceNoPrice]
+                                </span>
+                            }
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
+    </div>
+}
+
+@code {
+    private static readonly (Preset Preset, string Key)[] Presets =
+    [
+        (Preset.Today, DashboardText.FinancePresetToday),
+        (Preset.Yesterday, DashboardText.FinancePresetYesterday),
+        (Preset.ThisWeek, DashboardText.FinancePresetThisWeek),
+        (Preset.ThisMonth, DashboardText.FinancePresetThisMonth),
+        (Preset.LastMonth, DashboardText.FinancePresetLastMonth),
+        (Preset.Last30Days, DashboardText.FinancePresetLast30Days),
+        (Preset.ThisYear, DashboardText.FinancePresetThisYear),
+        (Preset.Custom, DashboardText.FinancePresetCustom),
+    ];
+
+    private FinanceFiltersDto? _filters;
+    private ServiceLookup _services = ServiceLookup.Empty;
+    private FinanceReportDto? _report;
+    private StationPricesDto? _stationPrices;
+    private bool _isSuperAdmin;
+
+    // The filters, as read from the address - the single source of truth, so a report can be
+    // bookmarked or shared and the back button behaves.
+    private string? _appliedQuery;
+    private Preset _preset = Preset.ThisMonth;
+    private DateOnly? _customFrom;
+    private DateOnly? _customTo;
+    private List<Guid> _stationIds = [];
+    private List<string> _serviceCodes = [];
+    private Guid? _machineId;
+    private FinanceGrain _grain = FinanceGrain.Auto;
+
+    private enum Preset
+    {
+        Today,
+        Yesterday,
+        ThisWeek,
+        ThisMonth,
+        LastMonth,
+        Last30Days,
+        ThisYear,
+        Custom,
+    }
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
+    [SupplyParameterFromQuery(Name = "period")]
+    private string? PeriodQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "from")]
+    private string? FromQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "to")]
+    private string? ToQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "station")]
+    private Guid[]? StationQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "service")]
+    private string[]? ServiceQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "machine")]
+    private Guid? MachineQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "grain")]
+    private string? GrainQuery { get; set; }
+
+    // The range the preset stands for, ending today - "this month" is the month so far.
+    private (DateOnly From, DateOnly To) Range
+    {
+        get
+        {
+            var today = _filters!.Today;
+            var monthStart = new DateOnly(today.Year, today.Month, 1);
+            return _preset switch
+            {
+                Preset.Today => (today, today),
+                Preset.Yesterday => (today.AddDays(-1), today.AddDays(-1)),
+                Preset.ThisWeek => (FinancePeriods.StartOfWeek(today, _filters.FirstDayOfWeek), today),
+                Preset.LastMonth => (monthStart.AddMonths(-1), monthStart.AddDays(-1)),
+                Preset.Last30Days => (today.AddDays(-29), today),
+                Preset.ThisYear => (new DateOnly(today.Year, 1, 1), today),
+                Preset.Custom when _customFrom is { } from && _customTo is { } to => Clamp(from, to),
+                _ => (monthStart, today),
+            };
+        }
+    }
+
+    private DateRange CustomRange => new(Range.From.ToDateTime(TimeOnly.MinValue), Range.To.ToDateTime(TimeOnly.MinValue));
+
+    // The machines standing at the chosen stations now, or at any; the selected one always stays listed.
+    private IEnumerable<FinanceMachineOptionDto> VisibleMachines =>
+        _filters!.Machines.Where(machine => _stationIds.Count == 0 || (machine.StationId is { } id && _stationIds.Contains(id)) || machine.Id == _machineId);
+
+    // A station user's own station, or the one station a Super Admin picked: its prices are shown.
+    private Guid? PricedStation =>
+        !_filters!.AllStations ? _filters.Stations.FirstOrDefault()?.Id
+        : _stationIds.Count == 1 ? _stationIds[0]
+        : _filters.Stations.Count == 1 ? _filters.Stations[0].Id
+        : null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isSuperAdmin = (await AuthenticationState).User.IsInRole(nameof(CarWash.Hub.Domain.Enums.UserRole.SuperAdmin));
+        ReadQuery();
+        await base.OnInitializedAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // A filter change navigates to the new address, which lands here.
+        if (_filters is not null && ReadQuery())
+        {
+            await RefreshAsync();
+        }
+    }
+
+    protected override bool IsRelevant(MachineActivityEvent activity) =>
+        _filters is not null && activity.MachinesWithUsage.Count > 0 && Range.To >= _filters.Today;
+
+    protected override async Task LoadAsync(CancellationToken cancellationToken)
+    {
+        if (_filters is null)
+        {
+            _filters = await Runner.QueryAsync<IFinanceReportService, FinanceFiltersDto>(
+                (service, token) => service.GetFiltersAsync(token), cancellationToken);
+            _services = new ServiceLookup(await Runner.QueryAsync<IFleetDashboardService, IReadOnlyList<ServiceInfoDto>>(
+                (service, token) => service.GetServicesAsync(token), cancellationToken));
+        }
+
+        var query = Query();
+        _report = await Runner.QueryAsync<IFinanceReportService, FinanceReportDto>(
+            (service, token) => service.GetReportAsync(query, token), cancellationToken);
+
+        _stationPrices = PricedStation is { } stationId
+            ? await Runner.QueryAsync<IStationPriceService, StationPricesDto>((service, token) => service.GetAsync(stationId, token), cancellationToken)
+            : null;
+    }
+
+    private FinanceReportQuery Query()
+    {
+        var (from, to) = Range;
+        return new FinanceReportQuery
+        {
+            From = from,
+            To = to,
+            StationIds = _stationIds,
+            Services = _serviceCodes,
+            MachineId = _machineId,
+            Grain = _grain,
+        };
+    }
+
+    // Reads the filters from the address; true when they changed since the last read.
+    private bool ReadQuery()
+    {
+        var signature = string.Join(
+            '|',
+            PeriodQuery, FromQuery, ToQuery, string.Join(',', StationQuery ?? []), string.Join(',', ServiceQuery ?? []), MachineQuery, GrainQuery);
+        if (signature == _appliedQuery)
+        {
+            return false;
+        }
+
+        _appliedQuery = signature;
+        _customFrom = ParseDate(FromQuery);
+        _customTo = ParseDate(ToQuery);
+        _preset = Enum.TryParse<Preset>(PeriodQuery, ignoreCase: true, out var preset) && Enum.IsDefined(preset)
+                  && (preset != Preset.Custom || (_customFrom is not null && _customTo is not null))
+            ? preset
+            : Preset.ThisMonth;
+        _stationIds = [.. (StationQuery ?? []).Distinct()];
+        _serviceCodes = [.. (ServiceQuery ?? []).Where(code => !string.IsNullOrWhiteSpace(code)).Select(code => code.Trim().ToLowerInvariant()).Distinct()];
+        _machineId = MachineQuery;
+        _grain = Enum.TryParse<FinanceGrain>(GrainQuery, ignoreCase: true, out var grain) && Enum.IsDefined(grain) ? grain : FinanceGrain.Auto;
+        return true;
+    }
+
+    private void NavigateToFilters()
+    {
+        var (from, to) = Range;
+        var custom = _preset == Preset.Custom;
+        Navigation.NavigateTo(
+            Navigation.GetUriWithQueryParameters(new Dictionary<string, object?>
+            {
+                ["period"] = _preset == Preset.ThisMonth ? null : _preset.ToString().ToLowerInvariant(),
+                ["from"] = custom ? from.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : null,
+                ["to"] = custom ? to.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : null,
+                ["station"] = _stationIds.Count > 0 ? _stationIds.ToArray() : null,
+                ["service"] = _serviceCodes.Count > 0 ? _serviceCodes.ToArray() : null,
+                ["machine"] = _machineId,
+                ["grain"] = _grain == FinanceGrain.Auto ? null : _grain.ToString().ToLowerInvariant(),
+            }),
+            replace: true);
+    }
+
+    private void OnPresetChanged(Preset preset)
+    {
+        if (preset == Preset.Custom)
+        {
+            // Start the custom range from what is on screen.
+            (_customFrom, _customTo) = Range;
+        }
+
+        _preset = preset;
+        NavigateToFilters();
+    }
+
+    private void OnCustomRangeChanged(DateRange? range)
+    {
+        if (range is { Start: { } start, End: { } end })
+        {
+            (_customFrom, _customTo) = (DateOnly.FromDateTime(start), DateOnly.FromDateTime(end));
+            NavigateToFilters();
+        }
+    }
+
+    private void OnStationsChanged(IEnumerable<Guid>? stations)
+    {
+        _stationIds = [.. stations ?? []];
+
+        // A machine that stands at none of the chosen stations would leave the report empty.
+        var machineStation = _filters!.Machines.FirstOrDefault(option => option.Id == _machineId)?.StationId;
+        if (_machineId is not null && _stationIds.Count > 0 && (machineStation is not { } at || !_stationIds.Contains(at)))
+        {
+            _machineId = null;
+        }
+
+        NavigateToFilters();
+    }
+
+    private void OnServicesChanged(IEnumerable<string?>? services)
+    {
+        _serviceCodes = [.. (services ?? []).OfType<string>()];
+        NavigateToFilters();
+    }
+
+    private void OnMachineChanged(Guid? machine)
+    {
+        _machineId = machine;
+        NavigateToFilters();
+    }
+
+    private void OnGrainChanged(FinanceGrain grain)
+    {
+        _grain = grain;
+        NavigateToFilters();
+    }
+
+    private async Task EditPricesAsync(Guid stationId, string stationName)
+    {
+        var dialog = await Dialogs.ShowAsync<StationPricesDialog>(
+            L[DashboardText.PricesTitle, stationName],
+            new DialogParameters<StationPricesDialog>
+            {
+                { prices => prices.StationId, stationId },
+                { prices => prices.Services, _services },
+            },
+            AdminDialogs.Options);
+
+        await dialog.Result;
+        await RefreshAsync();
+    }
+
+    private string ExportUrl(string format)
+    {
+        var (from, to) = Range;
+        var query = new List<KeyValuePair<string, string?>>
+        {
+            new("format", format),
+            new("from", from.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
+            new("to", to.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
+            new("grain", _grain.ToString()),
+        };
+        query.AddRange(_stationIds.Select(id => new KeyValuePair<string, string?>("stationIds", id.ToString())));
+        query.AddRange(_serviceCodes.Select(code => new KeyValuePair<string, string?>("services", code)));
+        if (_machineId is { } machine)
+        {
+            query.Add(new("machineId", machine.ToString()));
+        }
+
+        return "reports/finance/export" + QueryString.Create(query).ToUriComponent();
+    }
+
+    private string StationsText(IReadOnlyList<string> _) =>
+        _stationIds.Count switch
+        {
+            0 => L[DashboardText.FinanceAllStations],
+            1 => _filters!.Stations.FirstOrDefault(station => station.Id == _stationIds[0])?.Name ?? string.Empty,
+            var count => L[DashboardText.FinanceSelectedCount, count],
+        };
+
+    private string ServicesText(IReadOnlyList<string> _) =>
+        _serviceCodes.Count switch
+        {
+            0 => L[DashboardText.FinanceAllServices],
+            1 => _services.Name(_serviceCodes[0]),
+            var count => L[DashboardText.FinanceSelectedCount, count],
+        };
+
+    private string MachineText(Guid? machine) =>
+        machine is { } id
+            ? _filters?.Machines.FirstOrDefault(option => option.Id == id)?.Name ?? id.ToString()
+            : L[DashboardText.FinanceAllMachines];
+
+    private static long? Direction(decimal current, decimal previous) => previous == 0 ? null : Math.Sign(current - previous);
+
+    private static DateOnly? ParseDate(string? value) =>
+        DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date) ? date : null;
+
+    private static (DateOnly From, DateOnly To) Clamp(DateOnly from, DateOnly to)
+    {
+        if (to < from)
+        {
+            (from, to) = (to, from);
+        }
+
+        return to.DayNumber - from.DayNumber > FinanceReportQuery.MaxSpanDays ? (to.AddDays(-FinanceReportQuery.MaxSpanDays), to) : (from, to);
+    }
+}

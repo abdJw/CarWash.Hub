@@ -1,5 +1,6 @@
 using CarWash.Hub.Web.Auth;
 using CarWash.Hub.Web.Components;
+using CarWash.Hub.Web.Reports;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -83,6 +84,7 @@ public static class DashboardEndpointExtensions
             .RequireAuthorization(DashboardPolicies.Authenticated);
 
         endpoints.MapAccountEndpoints();
+        endpoints.MapFinanceExport();
 
         return endpoints;
     }

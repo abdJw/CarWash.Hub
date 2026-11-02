@@ -878,4 +878,274 @@ public static class DashboardText
 
     /// <summary>Open 24 hours</summary>
     public const string StationsOpen24 = "Stations_Open24";
+
+    /// <summary>Finance</summary>
+    public const string NavFinance = "Nav_Finance";
+
+    /// <summary>Finance</summary>
+    public const string FinanceTitle = "Finance_Title";
+
+    /// <summary>Period</summary>
+    public const string FinancePeriod = "Finance_Period";
+
+    /// <summary>Today</summary>
+    public const string FinancePresetToday = "Finance_PresetToday";
+
+    /// <summary>Yesterday</summary>
+    public const string FinancePresetYesterday = "Finance_PresetYesterday";
+
+    /// <summary>This week</summary>
+    public const string FinancePresetThisWeek = "Finance_PresetThisWeek";
+
+    /// <summary>This month</summary>
+    public const string FinancePresetThisMonth = "Finance_PresetThisMonth";
+
+    /// <summary>Last month</summary>
+    public const string FinancePresetLastMonth = "Finance_PresetLastMonth";
+
+    /// <summary>Last 30 days</summary>
+    public const string FinancePresetLast30Days = "Finance_PresetLast30Days";
+
+    /// <summary>This year</summary>
+    public const string FinancePresetThisYear = "Finance_PresetThisYear";
+
+    /// <summary>Custom range</summary>
+    public const string FinancePresetCustom = "Finance_PresetCustom";
+
+    /// <summary>From – to</summary>
+    public const string FinanceCustomRange = "Finance_CustomRange";
+
+    /// <summary>Stations</summary>
+    public const string FinanceStations = "Finance_Stations";
+
+    /// <summary>All stations</summary>
+    public const string FinanceAllStations = "Finance_AllStations";
+
+    /// <summary>Services</summary>
+    public const string FinanceServices = "Finance_Services";
+
+    /// <summary>All services</summary>
+    public const string FinanceAllServices = "Finance_AllServices";
+
+    /// <summary>Machine</summary>
+    public const string FinanceMachine = "Finance_Machine";
+
+    /// <summary>All machines</summary>
+    public const string FinanceAllMachines = "Finance_AllMachines";
+
+    /// <summary>{0} selected</summary>
+    public const string FinanceSelectedCount = "Finance_SelectedCount";
+
+    /// <summary>Excel</summary>
+    public const string FinanceExportExcel = "Finance_ExportExcel";
+
+    /// <summary>CSV</summary>
+    public const string FinanceExportCsv = "Finance_ExportCsv";
+
+    /// <summary>Revenue</summary>
+    public const string FinanceKpiRevenue = "Finance_KpiRevenue";
+
+    /// <summary>Uses</summary>
+    public const string FinanceKpiUses = "Finance_KpiUses";
+
+    /// <summary>Average per day</summary>
+    public const string FinanceKpiAverage = "Finance_KpiAverage";
+
+    /// <summary>Unpriced uses</summary>
+    public const string FinanceKpiUnpriced = "Finance_KpiUnpriced";
+
+    /// <summary>vs {0} – {1}</summary>
+    public const string FinanceVsPrevious = "Finance_VsPrevious";
+
+    /// <summary>Same as the period before</summary>
+    public const string FinanceSameAsPrevious = "Finance_SameAsPrevious";
+
+    /// <summary>Over {0} days</summary>
+    public const string FinanceAverageHint = "Finance_AverageHint";
+
+    /// <summary>Set prices to count them</summary>
+    public const string FinanceUnpricedHint = "Finance_UnpricedHint";
+
+    /// <summary>Ask an administrator to set the prices</summary>
+    public const string FinanceUnpricedHintStation = "Finance_UnpricedHintStation";
+
+    /// <summary>Every use has a price</summary>
+    public const string FinanceAllPriced = "Finance_AllPriced";
+
+    /// <summary>{0} uses on machines not assigned to a station are not included.</summary>
+    public const string FinanceUnassignedNote = "Finance_UnassignedNote";
+
+    /// <summary>Assign machines</summary>
+    public const string FinanceAssignMachines = "Finance_AssignMachines";
+
+    /// <summary>Revenue over time</summary>
+    public const string FinanceChartTitle = "Finance_ChartTitle";
+
+    /// <summary>{0} in total · {1} – {2}</summary>
+    public const string FinanceChartSummary = "Finance_ChartSummary";
+
+    /// <summary>Measure</summary>
+    public const string FinanceMeasure = "Finance_Measure";
+
+    /// <summary>Revenue</summary>
+    public const string FinanceMeasureRevenue = "Finance_MeasureRevenue";
+
+    /// <summary>Uses</summary>
+    public const string FinanceMeasureUses = "Finance_MeasureUses";
+
+    /// <summary>Group by</summary>
+    public const string FinanceGrainLabel = "Finance_GrainLabel";
+
+    /// <summary>Day</summary>
+    public const string FinanceGrainDay = "Finance_GrainDay";
+
+    /// <summary>Week</summary>
+    public const string FinanceGrainWeek = "Finance_GrainWeek";
+
+    /// <summary>Month</summary>
+    public const string FinanceGrainMonth = "Finance_GrainMonth";
+
+    /// <summary>Breakdown</summary>
+    public const string FinanceBreakdownTitle = "Finance_BreakdownTitle";
+
+    /// <summary>By station</summary>
+    public const string FinanceByStation = "Finance_ByStation";
+
+    /// <summary>By service</summary>
+    public const string FinanceByService = "Finance_ByService";
+
+    /// <summary>By machine</summary>
+    public const string FinanceByMachine = "Finance_ByMachine";
+
+    /// <summary>Uses</summary>
+    public const string FinanceColUses = "Finance_ColUses";
+
+    /// <summary>Revenue ({0})</summary>
+    public const string FinanceColRevenue = "Finance_ColRevenue";
+
+    /// <summary>Share</summary>
+    public const string FinanceColShare = "Finance_ColShare";
+
+    /// <summary>Unpriced</summary>
+    public const string FinanceColUnpriced = "Finance_ColUnpriced";
+
+    /// <summary>No uses in this period.</summary>
+    public const string FinanceNoRows = "Finance_NoRows";
+
+    /// <summary>JOD</summary>
+    public const string FinanceCurrency = "Finance_Currency";
+
+    /// <summary>Prices · {0}</summary>
+    public const string FinancePricesTitle = "Finance_PricesTitle";
+
+    /// <summary>Edit prices</summary>
+    public const string FinanceEditPrices = "Finance_EditPrices";
+
+    /// <summary>No price</summary>
+    public const string FinanceNoPrice = "Finance_NoPrice";
+
+    /// <summary>since {0}</summary>
+    public const string FinanceSince = "Finance_Since";
+
+    /// <summary>Service</summary>
+    public const string FieldService = "Field_Service";
+
+    /// <summary>Price per use</summary>
+    public const string FieldPrice = "Field_Price";
+
+    /// <summary>Effective from</summary>
+    public const string FieldEffectiveFrom = "Field_EffectiveFrom";
+
+    /// <summary>Note (optional)</summary>
+    public const string FieldPriceNote = "Field_PriceNote";
+
+    /// <summary>Done</summary>
+    public const string CommonDone = "Common_Done";
+
+    /// <summary>Prices</summary>
+    public const string StationsPrices = "Stations_Prices";
+
+    /// <summary>No prices set</summary>
+    public const string StationsNoPrices = "Stations_NoPrices";
+
+    /// <summary>Prices · {0}</summary>
+    public const string PricesTitle = "Prices_Title";
+
+    /// <summary>Set a price</summary>
+    public const string PricesSetTitle = "Prices_SetTitle";
+
+    /// <summary>A price applies from the chosen day on, and earlier days keep theirs. Choosing a past day revalues the uses since then.</summary>
+    public const string PricesHint = "Prices_Hint";
+
+    /// <summary>Save price</summary>
+    public const string PricesSet = "Prices_Set";
+
+    /// <summary>Price saved</summary>
+    public const string PricesSaved = "Prices_Saved";
+
+    /// <summary>No price: uses are unpriced</summary>
+    public const string PricesNone = "Prices_None";
+
+    /// <summary>{0} from {1}</summary>
+    public const string PricesUpcoming = "Prices_Upcoming";
+
+    /// <summary>Price history ({0})</summary>
+    public const string PricesHistory = "Prices_History";
+
+    /// <summary>Set by</summary>
+    public const string PricesSetBy = "Prices_SetBy";
+
+    /// <summary>Remove</summary>
+    public const string PricesRemove = "Prices_Remove";
+
+    /// <summary>Remove this price?</summary>
+    public const string PricesRemoveTitle = "Prices_RemoveTitle";
+
+    /// <summary>The {0} price of {1} from {2} will be removed, and the price before it applies again from that day.</summary>
+    public const string PricesRemoveText = "Prices_RemoveText";
+
+    /// <summary>Price removed</summary>
+    public const string PricesRemoved = "Prices_Removed";
+
+    /// <summary>Summary</summary>
+    public const string ExportSheetSummary = "Export_SheetSummary";
+
+    /// <summary>Periods</summary>
+    public const string ExportSheetPeriods = "Export_SheetPeriods";
+
+    /// <summary>Stations</summary>
+    public const string ExportSheetStations = "Export_SheetStations";
+
+    /// <summary>Services</summary>
+    public const string ExportSheetServices = "Export_SheetServices";
+
+    /// <summary>Machines</summary>
+    public const string ExportSheetMachines = "Export_SheetMachines";
+
+    /// <summary>Detail</summary>
+    public const string ExportSheetDetail = "Export_SheetDetail";
+
+    /// <summary>Currency</summary>
+    public const string ExportCurrency = "Export_Currency";
+
+    /// <summary>Date</summary>
+    public const string ExportDate = "Export_Date";
+
+    /// <summary>Machine code</summary>
+    public const string ExportMachineCode = "Export_MachineCode";
+
+    /// <summary>From</summary>
+    public const string ExportPeriodStart = "Export_PeriodStart";
+
+    /// <summary>To</summary>
+    public const string ExportPeriodEnd = "Export_PeriodEnd";
+
+    /// <summary>Previous period</summary>
+    public const string ExportPreviousPeriod = "Export_PreviousPeriod";
+
+    /// <summary>Revenue change</summary>
+    public const string ExportRevenueChange = "Export_RevenueChange";
+
+    /// <summary>Uses on unassigned machines</summary>
+    public const string ExportUnassignedUses = "Export_UnassignedUses";
 }

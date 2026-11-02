@@ -22,6 +22,9 @@ public sealed class DashboardOptions
     [Required]
     public string DefaultCulture { get; set; } = "ar-SA";
 
+    /// <summary>Gets or sets the day a week starts on in the finance report's weekly totals.</summary>
+    public DayOfWeek FirstDayOfWeek { get; set; } = DayOfWeek.Saturday;
+
     /// <summary>
     /// Gets or sets the dashboard's public address, for links in e-mails and push notifications.
     /// Null to derive it from the request where one exists.

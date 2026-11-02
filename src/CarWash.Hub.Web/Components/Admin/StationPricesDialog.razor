@@ -1,0 +1,215 @@
+@* A station's price list: set a price for a service from a day on, and see each service's current,
+   upcoming and past prices. Stays open across saves - prices are usually set several at a time. *@
+@using CarWash.Hub.Application.Features.Pricing
+@inherits AdminDialogBase
+@inject IDialogService DialogService
+
+<MudDialog>
+    <DialogContent>
+        @if (Message is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-3">@Message</MudAlert>
+        }
+
+        @if (_prices is null)
+        {
+            <MudProgressLinear Indeterminate="true" />
+        }
+        else
+        {
+            <section class="cw-form cw-price-form">
+                <h3 class="cw-card-title">@L[DashboardText.PricesSetTitle]</h3>
+                <div class="cw-price-fields">
+                    <MudSelect T="string" @bind-Value="_service" Label="@L[DashboardText.FieldService]" Variant="Variant.Outlined" Dense="true"
+                               Error="@HasError(nameof(SetStationPriceRequest.Service))" ErrorText="@ErrorOf(nameof(SetStationPriceRequest.Service))">
+                        @foreach (var service in _prices.Services)
+                        {
+                            <MudSelectItem Value="service.Service">
+                                <span class="cw-icon-option"><MudIcon Icon="@Services.Icon(service.Service)" Size="Size.Small" /> @Services.Name(service.Service)</span>
+                            </MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudNumericField T="decimal?" @bind-Value="_price" Label="@L[DashboardText.FieldPrice]" Variant="Variant.Outlined"
+                                     Min="0m" Max="Domain.Entities.StationServicePrice.MaxUnitPrice" Step="0.05m" Format="0.000" Culture="CultureInfo.InvariantCulture"
+                                     Adornment="Adornment.End" AdornmentText="@L[DashboardText.FinanceCurrency]" Class="cw-ltr-input"
+                                     Error="@HasError(nameof(SetStationPriceRequest.UnitPrice))" ErrorText="@ErrorOf(nameof(SetStationPriceRequest.UnitPrice))" />
+                    <MudDatePicker @bind-Date="_from" Label="@L[DashboardText.FieldEffectiveFrom]" Variant="Variant.Outlined"
+                                   Error="@HasError(nameof(SetStationPriceRequest.EffectiveFrom))" ErrorText="@ErrorOf(nameof(SetStationPriceRequest.EffectiveFrom))" />
+                </div>
+                <MudTextField @bind-Value="_note" Label="@L[DashboardText.FieldPriceNote]" Variant="Variant.Outlined" MaxLength="Domain.Entities.StationServicePrice.NoteMaxLength"
+                              Error="@HasError(nameof(SetStationPriceRequest.Note))" ErrorText="@ErrorOf(nameof(SetStationPriceRequest.Note))" />
+                <p class="cw-muted cw-small">@L[DashboardText.PricesHint]</p>
+                <div>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.Sell"
+                               Disabled="@(Saving || _service is null || _price is null || _from is null)" OnClick="SetAsync">
+                        @L[DashboardText.PricesSet]
+                    </MudButton>
+                </div>
+            </section>
+
+            <ul class="cw-price-list">
+                @foreach (var service in _prices.Services)
+                {
+                    <li class="cw-price-item" @key="service.Service">
+                        <div class="cw-price-head">
+                            <span class="cw-icon-option">
+                                <MudIcon Icon="@Services.Icon(service.Service)" Size="Size.Small" />
+                                <strong>@Services.Name(service.Service)</strong>
+                            </span>
+                            @if (service.Current is { } current)
+                            {
+                                <span class="cw-price-now">
+                                    <strong>@Format.Money(current.UnitPrice)</strong>
+                                    <span class="cw-muted">@L[DashboardText.FinanceSince, DashboardFormat.Date(current.EffectiveFrom)]</span>
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="cw-status cw-status--warning">
+                                    <MudIcon Icon="@Icons.Material.Rounded.Warning" Size="Size.Small" />
+                                    @L[DashboardText.PricesNone]
+                                </span>
+                            }
+                        </div>
+
+                        @if (service.Next is { } next)
+                        {
+                            <p class="cw-muted cw-small cw-price-next">
+                                <MudIcon Icon="@Icons.Material.Rounded.Schedule" Size="Size.Small" />
+                                @L[DashboardText.PricesUpcoming, Format.Money(next.UnitPrice), DashboardFormat.Date(next.EffectiveFrom)]
+                            </p>
+                        }
+
+                        @if (service.History.Count > 0)
+                        {
+                            <details class="cw-price-history">
+                                <summary>@L[DashboardText.PricesHistory, service.History.Count]</summary>
+                                <div class="viz-table-wrap">
+                                    <table class="viz-table">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">@L[DashboardText.FieldEffectiveFrom]</th>
+                                                <th scope="col">@L[DashboardText.FieldPrice]</th>
+                                                <th scope="col">@L[DashboardText.PricesSetBy]</th>
+                                                <th scope="col"><span class="cw-visually-hidden">@L[DashboardText.PricesRemove]</span></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var entry in service.History)
+                                            {
+                                                <tr @key="entry.Id" class="@(entry.Id == service.Current?.Id ? "is-current" : null)">
+                                                    <th scope="row">
+                                                        @DashboardFormat.Date(entry.EffectiveFrom)
+                                                        @if (entry.Note is { } note)
+                                                        {
+                                                            <span class="cw-muted cw-price-note"><bdi>@note</bdi></span>
+                                                        }
+                                                    </th>
+                                                    <td>@DashboardFormat.Amount(entry.UnitPrice)</td>
+                                                    <td>
+                                                        <bdi>@(entry.SetBy ?? "—")</bdi>
+                                                        <span class="cw-muted cw-price-note">@Format.DateTime(entry.SetAt)</span>
+                                                    </td>
+                                                    <td>
+                                                        <MudIconButton Icon="@Icons.Material.Rounded.DeleteOutline" Size="Size.Small" Disabled="Saving"
+                                                                       aria-label="@L[DashboardText.PricesRemove]" title="@L[DashboardText.PricesRemove]"
+                                                                       OnClick="() => RemoveAsync(service.Service, entry)" />
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </details>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Done">@L[DashboardText.CommonDone]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private StationPricesDto? _prices;
+    private string? _service;
+    private decimal? _price;
+    private DateTime? _from;
+    private string? _note;
+    private bool _changed;
+
+    /// <summary>Gets or sets the station whose prices are shown.</summary>
+    [Parameter, EditorRequired]
+    public Guid StationId { get; set; }
+
+    /// <summary>Gets or sets the service names and icons.</summary>
+    [Parameter, EditorRequired]
+    public ServiceLookup Services { get; set; } = ServiceLookup.Empty;
+
+    [Inject]
+    private DashboardFormat Format { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+        _service = _prices?.Services.FirstOrDefault(service => service.Current is null)?.Service ?? _prices?.Services.FirstOrDefault()?.Service;
+        _from = _prices?.Today.ToDateTime(TimeOnly.MinValue);
+    }
+
+    private async Task LoadAsync() =>
+        _prices = await Runner.QueryAsync<IStationPriceService, StationPricesDto>((service, token) => service.GetAsync(StationId, token));
+
+    private async Task SetAsync()
+    {
+        if (_service is null || _price is not { } price || _from is not { } from)
+        {
+            return;
+        }
+
+        var saved = await SaveAsync<IStationPriceService>(
+            (service, token) => service.SetAsync(
+                new SetStationPriceRequest
+                {
+                    StationId = StationId,
+                    Service = _service,
+                    UnitPrice = price,
+                    EffectiveFrom = DateOnly.FromDateTime(from),
+                    Note = _note,
+                },
+                token),
+            L[DashboardText.PricesSaved],
+            close: false);
+
+        if (saved)
+        {
+            _changed = true;
+            _price = null;
+            _note = null;
+            await LoadAsync();
+        }
+    }
+
+    private async Task RemoveAsync(string service, PriceEntryDto entry)
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            L[DashboardText.PricesRemoveTitle],
+            L[DashboardText.PricesRemoveText, Services.Name(service), Format.Money(entry.UnitPrice), DashboardFormat.Date(entry.EffectiveFrom)],
+            yesText: L[DashboardText.PricesRemove],
+            cancelText: L[DashboardText.CommonCancel]);
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        if (await SaveAsync<IStationPriceService>((prices, token) => prices.DeleteAsync(entry.Id, token), L[DashboardText.PricesRemoved], close: false))
+        {
+            _changed = true;
+            await LoadAsync();
+        }
+    }
+
+    private void Done() => Dialog.Close(DialogResult.Ok(_changed));
+}

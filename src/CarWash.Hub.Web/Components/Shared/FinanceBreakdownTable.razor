@@ -1,0 +1,99 @@
+@* One breakdown of the finance report - by station, service or machine - as a table: uses, revenue,
+   and a share bar so the biggest earners stand out at a glance. Unpriced uses get a column only
+   when there are any. *@
+@using CarWash.Hub.Application.Features.Finance
+@inject IStringLocalizer<DashboardResource> L
+
+@if (Lines.Count == 0)
+{
+    <p class="cw-muted">@L[DashboardText.FinanceNoRows]</p>
+}
+else
+{
+    var anyUnpriced = Lines.Any(line => line.UnpricedUses > 0);
+    <div class="viz-table-wrap">
+        <table class="viz-table cw-fin-table">
+            <thead>
+                <tr>
+                    <th scope="col">@NameHeader</th>
+                    <th scope="col">@L[DashboardText.FinanceColUses]</th>
+                    <th scope="col">@L[DashboardText.FinanceColRevenue, L[DashboardText.FinanceCurrency]]</th>
+                    <th scope="col">@L[DashboardText.FinanceColShare]</th>
+                    @if (anyUnpriced)
+                    {
+                        <th scope="col">@L[DashboardText.FinanceColUnpriced]</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var line in Lines)
+                {
+                    <tr @key="line.Key">
+                        <th scope="row">
+                            <span class="cw-fin-name">
+                                @if (Services is not null)
+                                {
+                                    <span class="viz-swatch @Services.Css(line.Key)"></span>
+                                }
+                                <span class="cw-fin-name-text">
+                                    <bdi>@line.Name</bdi>
+                                    @if (line.Detail is { } detail)
+                                    {
+                                        <span class="cw-muted"><bdi>@detail</bdi></span>
+                                    }
+                                </span>
+                            </span>
+                        </th>
+                        <td>@DashboardFormat.Number(line.Uses)</td>
+                        <td><strong>@DashboardFormat.Amount(line.Revenue)</strong></td>
+                        <td>
+                            <span class="cw-fin-share">
+                                <span class="cw-fin-share-track" aria-hidden="true">
+                                    <span class="cw-fin-share-fill" style="inline-size: @((line.Share * 100).ToString("0.##", CultureInfo.InvariantCulture))%"></span>
+                                </span>
+                                <span>@DashboardFormat.Share(line.Share)</span>
+                            </span>
+                        </td>
+                        @if (anyUnpriced)
+                        {
+                            <td class="@(line.UnpricedUses > 0 ? "cw-fin-unpriced" : null)">@DashboardFormat.Number(line.UnpricedUses)</td>
+                        }
+                    </tr>
+                }
+            </tbody>
+            @if (Lines.Count > 1)
+            {
+                <tfoot>
+                    <tr>
+                        <th scope="row">@L[DashboardText.ChartTotal]</th>
+                        <td>@DashboardFormat.Number(Totals.Uses)</td>
+                        <td><strong>@DashboardFormat.Amount(Totals.Revenue)</strong></td>
+                        <td></td>
+                        @if (anyUnpriced)
+                        {
+                            <td>@DashboardFormat.Number(Totals.UnpricedUses)</td>
+                        }
+                    </tr>
+                </tfoot>
+            }
+        </table>
+    </div>
+}
+
+@code {
+    /// <summary>Gets or sets the lines, biggest earner first.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<FinanceLineDto> Lines { get; set; } = [];
+
+    /// <summary>Gets or sets the report's totals, for the footer.</summary>
+    [Parameter, EditorRequired]
+    public FinanceTotalsDto Totals { get; set; } = default!;
+
+    /// <summary>Gets or sets the first column's heading: station, service or machine.</summary>
+    [Parameter, EditorRequired]
+    public string NameHeader { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the service lookup when the lines are services, for their colours.</summary>
+    [Parameter]
+    public ServiceLookup? Services { get; set; }
+}

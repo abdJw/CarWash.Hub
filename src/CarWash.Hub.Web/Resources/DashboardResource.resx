@@ -294,4 +294,94 @@
   <data name="Field_QuietHint" xml:space="preserve"><value>Silence during quiet hours, usually while the station is closed, does not raise a no-activity alert.</value></data>
   <data name="Stations_QuietHours" xml:space="preserve"><value>Quiet {0}–{1}</value></data>
   <data name="Stations_Open24" xml:space="preserve"><value>Open 24 hours</value></data>
+  <data name="Nav_Finance" xml:space="preserve"><value>Finance</value></data>
+  <data name="Finance_Title" xml:space="preserve"><value>Finance</value></data>
+  <data name="Finance_Period" xml:space="preserve"><value>Period</value></data>
+  <data name="Finance_PresetToday" xml:space="preserve"><value>Today</value></data>
+  <data name="Finance_PresetYesterday" xml:space="preserve"><value>Yesterday</value></data>
+  <data name="Finance_PresetThisWeek" xml:space="preserve"><value>This week</value></data>
+  <data name="Finance_PresetThisMonth" xml:space="preserve"><value>This month</value></data>
+  <data name="Finance_PresetLastMonth" xml:space="preserve"><value>Last month</value></data>
+  <data name="Finance_PresetLast30Days" xml:space="preserve"><value>Last 30 days</value></data>
+  <data name="Finance_PresetThisYear" xml:space="preserve"><value>This year</value></data>
+  <data name="Finance_PresetCustom" xml:space="preserve"><value>Custom range</value></data>
+  <data name="Finance_CustomRange" xml:space="preserve"><value>From – to</value></data>
+  <data name="Finance_Stations" xml:space="preserve"><value>Stations</value></data>
+  <data name="Finance_AllStations" xml:space="preserve"><value>All stations</value></data>
+  <data name="Finance_Services" xml:space="preserve"><value>Services</value></data>
+  <data name="Finance_AllServices" xml:space="preserve"><value>All services</value></data>
+  <data name="Finance_Machine" xml:space="preserve"><value>Machine</value></data>
+  <data name="Finance_AllMachines" xml:space="preserve"><value>All machines</value></data>
+  <data name="Finance_SelectedCount" xml:space="preserve"><value>{0} selected</value></data>
+  <data name="Finance_ExportExcel" xml:space="preserve"><value>Excel</value></data>
+  <data name="Finance_ExportCsv" xml:space="preserve"><value>CSV</value></data>
+  <data name="Finance_KpiRevenue" xml:space="preserve"><value>Revenue</value></data>
+  <data name="Finance_KpiUses" xml:space="preserve"><value>Uses</value></data>
+  <data name="Finance_KpiAverage" xml:space="preserve"><value>Average per day</value></data>
+  <data name="Finance_KpiUnpriced" xml:space="preserve"><value>Unpriced uses</value></data>
+  <data name="Finance_VsPrevious" xml:space="preserve"><value>vs {0} – {1}</value></data>
+  <data name="Finance_SameAsPrevious" xml:space="preserve"><value>Same as the period before</value></data>
+  <data name="Finance_AverageHint" xml:space="preserve"><value>Over {0} days</value></data>
+  <data name="Finance_UnpricedHint" xml:space="preserve"><value>Set prices to count them</value></data>
+  <data name="Finance_UnpricedHintStation" xml:space="preserve"><value>Ask an administrator to set the prices</value></data>
+  <data name="Finance_AllPriced" xml:space="preserve"><value>Every use has a price</value></data>
+  <data name="Finance_UnassignedNote" xml:space="preserve"><value>{0} uses on machines not assigned to a station are not included.</value></data>
+  <data name="Finance_AssignMachines" xml:space="preserve"><value>Assign machines</value></data>
+  <data name="Finance_ChartTitle" xml:space="preserve"><value>Revenue over time</value></data>
+  <data name="Finance_ChartSummary" xml:space="preserve"><value>{0} in total · {1} – {2}</value></data>
+  <data name="Finance_Measure" xml:space="preserve"><value>Measure</value></data>
+  <data name="Finance_MeasureRevenue" xml:space="preserve"><value>Revenue</value></data>
+  <data name="Finance_MeasureUses" xml:space="preserve"><value>Uses</value></data>
+  <data name="Finance_GrainLabel" xml:space="preserve"><value>Group by</value></data>
+  <data name="Finance_GrainDay" xml:space="preserve"><value>Day</value></data>
+  <data name="Finance_GrainWeek" xml:space="preserve"><value>Week</value></data>
+  <data name="Finance_GrainMonth" xml:space="preserve"><value>Month</value></data>
+  <data name="Finance_BreakdownTitle" xml:space="preserve"><value>Breakdown</value></data>
+  <data name="Finance_ByStation" xml:space="preserve"><value>By station</value></data>
+  <data name="Finance_ByService" xml:space="preserve"><value>By service</value></data>
+  <data name="Finance_ByMachine" xml:space="preserve"><value>By machine</value></data>
+  <data name="Finance_ColUses" xml:space="preserve"><value>Uses</value></data>
+  <data name="Finance_ColRevenue" xml:space="preserve"><value>Revenue ({0})</value></data>
+  <data name="Finance_ColShare" xml:space="preserve"><value>Share</value></data>
+  <data name="Finance_ColUnpriced" xml:space="preserve"><value>Unpriced</value></data>
+  <data name="Finance_NoRows" xml:space="preserve"><value>No uses in this period.</value></data>
+  <data name="Finance_Currency" xml:space="preserve"><value>JOD</value></data>
+  <data name="Finance_PricesTitle" xml:space="preserve"><value>Prices · {0}</value></data>
+  <data name="Finance_EditPrices" xml:space="preserve"><value>Edit prices</value></data>
+  <data name="Finance_NoPrice" xml:space="preserve"><value>No price</value></data>
+  <data name="Finance_Since" xml:space="preserve"><value>since {0}</value></data>
+  <data name="Field_Service" xml:space="preserve"><value>Service</value></data>
+  <data name="Field_Price" xml:space="preserve"><value>Price per use</value></data>
+  <data name="Field_EffectiveFrom" xml:space="preserve"><value>Effective from</value></data>
+  <data name="Field_PriceNote" xml:space="preserve"><value>Note (optional)</value></data>
+  <data name="Common_Done" xml:space="preserve"><value>Done</value></data>
+  <data name="Stations_Prices" xml:space="preserve"><value>Prices</value></data>
+  <data name="Stations_NoPrices" xml:space="preserve"><value>No prices set</value></data>
+  <data name="Prices_Title" xml:space="preserve"><value>Prices · {0}</value></data>
+  <data name="Prices_SetTitle" xml:space="preserve"><value>Set a price</value></data>
+  <data name="Prices_Hint" xml:space="preserve"><value>A price applies from the chosen day on, and earlier days keep theirs. Choosing a past day revalues the uses since then.</value></data>
+  <data name="Prices_Set" xml:space="preserve"><value>Save price</value></data>
+  <data name="Prices_Saved" xml:space="preserve"><value>Price saved</value></data>
+  <data name="Prices_None" xml:space="preserve"><value>No price: uses are unpriced</value></data>
+  <data name="Prices_Upcoming" xml:space="preserve"><value>{0} from {1}</value></data>
+  <data name="Prices_History" xml:space="preserve"><value>Price history ({0})</value></data>
+  <data name="Prices_SetBy" xml:space="preserve"><value>Set by</value></data>
+  <data name="Prices_Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="Prices_RemoveTitle" xml:space="preserve"><value>Remove this price?</value></data>
+  <data name="Prices_RemoveText" xml:space="preserve"><value>The {0} price of {1} from {2} will be removed, and the price before it applies again from that day.</value></data>
+  <data name="Prices_Removed" xml:space="preserve"><value>Price removed</value></data>
+  <data name="Export_SheetSummary" xml:space="preserve"><value>Summary</value></data>
+  <data name="Export_SheetPeriods" xml:space="preserve"><value>Periods</value></data>
+  <data name="Export_SheetStations" xml:space="preserve"><value>Stations</value></data>
+  <data name="Export_SheetServices" xml:space="preserve"><value>Services</value></data>
+  <data name="Export_SheetMachines" xml:space="preserve"><value>Machines</value></data>
+  <data name="Export_SheetDetail" xml:space="preserve"><value>Detail</value></data>
+  <data name="Export_Currency" xml:space="preserve"><value>Currency</value></data>
+  <data name="Export_Date" xml:space="preserve"><value>Date</value></data>
+  <data name="Export_MachineCode" xml:space="preserve"><value>Machine code</value></data>
+  <data name="Export_PeriodStart" xml:space="preserve"><value>From</value></data>
+  <data name="Export_PeriodEnd" xml:space="preserve"><value>To</value></data>
+  <data name="Export_PreviousPeriod" xml:space="preserve"><value>Previous period</value></data>
+  <data name="Export_RevenueChange" xml:space="preserve"><value>Revenue change</value></data>
+  <data name="Export_UnassignedUses" xml:space="preserve"><value>Uses on unassigned machines</value></data>
 </root>
