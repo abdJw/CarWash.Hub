@@ -53,6 +53,15 @@ else
                   Value="@DashboardFormat.Number(_overview.MachineCount)"
                   Hint="@L[DashboardText.KpiBusyNow, DashboardFormat.Number(_overview.BusyCount)]" />
 
+        @if (_overview.OfflineCount > 0)
+        {
+            <StatTile Label="@L[DashboardText.KpiOffline]"
+                      Icon="@Icons.Material.Rounded.CloudOff"
+                      Value="@DashboardFormat.Number(_overview.OfflineCount)"
+                      Status="critical"
+                      Hint="@L[DashboardText.KpiOfflineHint, ActivityOptions.Value.OfflineAfterMinutes]" />
+        }
+
         <StatTile Label="@L[DashboardText.KpiSilent]"
                   Icon="@Icons.Material.Rounded.PortableWifiOff"
                   Value="@DashboardFormat.Number(_overview.SilentCount)"

@@ -1,6 +1,7 @@
 using CarWash.Hub.Application.Abstractions.Persistence;
 using CarWash.Hub.Application.Abstractions.Services;
 using CarWash.Hub.Application.Features.Alerts;
+using CarWash.Hub.Application.Features.DeviceSettings;
 using CarWash.Hub.Application.Features.Processing;
 using CarWash.Hub.Infrastructure.Processing;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,6 +35,8 @@ namespace CarWash.Hub.Infrastructure.Workers;
 /// <param name="workerOptions">Whether workers run here.</param>
 /// <param name="processingOptions">The sweep interval.</param>
 /// <param name="alertOptions">How often alerts are re-checked, and the start-up grace.</param>
+/// <param name="settingsSignal">Asks for the machines' settings to be recomputed after a dashboard save.</param>
+/// <param name="settingsOptions">How often the machines' settings are recomputed regardless.</param>
 /// <param name="monitor">Records progress for the status endpoint.</param>
 /// <param name="clock">Timestamps for the monitor.</param>
 /// <param name="logger">Logger.</param>
@@ -44,6 +47,8 @@ public sealed class MachineStateWorker(
     IOptionsMonitor<BackgroundWorkerOptions> workerOptions,
     IOptionsMonitor<ProcessingOptions> processingOptions,
     IOptionsMonitor<AlertOptions> alertOptions,
+    IDeviceSettingsSignal settingsSignal,
+    IOptionsMonitor<DeviceSettingsOptions> settingsOptions,
     ProcessingMonitor monitor,
     IDateTimeProvider clock,
     ILogger<MachineStateWorker> logger) : BackgroundService
@@ -125,6 +130,7 @@ public sealed class MachineStateWorker(
             logger.LogInformation("Processing lease acquired; this process now processes machine messages");
             var nextForecastRefresh = DateTimeOffset.MinValue;
             var nextAlertCheck = DateTimeOffset.MinValue;
+            var nextSettingsReconcile = DateTimeOffset.MinValue;
 
             // A machine is not called silent until messages that arrived while this process was not
             // processing have had time to be processed.
@@ -157,6 +163,15 @@ public sealed class MachineStateWorker(
                     nextAlertCheck = clock.UtcNow + TimeSpan.FromSeconds(alertOptions.CurrentValue.CheckIntervalSeconds);
                 }
 
+                // After the batch, so the acknowledgements it applied are counted against the
+                // revisions as they stood; at once after a dashboard save, and on a timer for the
+                // dated price that takes effect at midnight.
+                if (settingsSignal.TryConsume() || clock.UtcNow >= nextSettingsReconcile)
+                {
+                    await ReconcileSettingsAsync(stoppingToken).ConfigureAwait(false);
+                    nextSettingsReconcile = clock.UtcNow + TimeSpan.FromSeconds(settingsOptions.CurrentValue.ReconcileIntervalSeconds);
+                }
+
                 var interval = TimeSpan.FromSeconds(processingOptions.CurrentValue.SweepIntervalSeconds);
                 await trigger.WaitAsync(interval, stoppingToken).ConfigureAwait(false);
             }
@@ -171,6 +186,23 @@ public sealed class MachineStateWorker(
         await scope.ServiceProvider.GetRequiredService<IMachineStateProcessor>()
             .CheckAlertsAsync(allowNoActivityRaise, stoppingToken)
             .ConfigureAwait(false);
+    }
+
+    // Like the alert check: a settings problem is logged and retried at the next interval, and never
+    // stops message processing or gives up the lease.
+    private async Task ReconcileSettingsAsync(CancellationToken stoppingToken)
+    {
+        try
+        {
+            await using var scope = scopeFactory.CreateAsyncScope();
+            await scope.ServiceProvider.GetRequiredService<IDeviceSettingsReconciler>()
+                .ReconcileAsync(clock.UtcNow, stoppingToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogWarning(exception, "Recomputing the machines' settings failed; the next check will catch up");
+        }
     }
 
     private async Task RefreshForecastsAsync(CancellationToken stoppingToken)

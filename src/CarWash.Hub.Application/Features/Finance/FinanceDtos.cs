@@ -51,12 +51,19 @@ public sealed record FinanceReportQuery
 
 /// <summary>Totals over a period.</summary>
 /// <param name="Uses">Every use, priced or not.</param>
-/// <param name="Revenue">The value of the priced uses, in dinars.</param>
-/// <param name="UnpricedUses">Uses on a day their station had no price for the service.</param>
+/// <param name="Revenue">
+/// The value of the priced uses, in dinars: the price each machine charged where it reports one,
+/// otherwise the station's price list.
+/// </param>
+/// <param name="UnpricedUses">Uses with no price at all: the machine reported none and the station had none that day.</param>
 /// <param name="Days">The days elapsed in the period, which the average is over.</param>
 /// <param name="AveragePerDay">Revenue per elapsed day.</param>
+/// <param name="CashCollected">
+/// The cash customers inserted, in dinars, as reported by the machines that report it. It can exceed
+/// the revenue (overpayment), and it covers reporting machines only.
+/// </param>
 /// <remarks>Layer: Application.</remarks>
-public sealed record FinanceTotalsDto(long Uses, decimal Revenue, long UnpricedUses, int Days, decimal AveragePerDay);
+public sealed record FinanceTotalsDto(long Uses, decimal Revenue, long UnpricedUses, int Days, decimal AveragePerDay, decimal CashCollected = 0);
 
 /// <summary>One service's share of a bucket.</summary>
 /// <param name="Service">The service code.</param>
@@ -72,9 +79,10 @@ public sealed record FinanceServiceAmountDto(string Service, long Uses, decimal 
 /// <param name="Revenue">Their value, in dinars.</param>
 /// <param name="UnpricedUses">Its unpriced uses.</param>
 /// <param name="Services">The split by service, in display order, services with no uses left out.</param>
+/// <param name="CashCollected">The cash reported for it, in dinars.</param>
 /// <remarks>Layer: Application.</remarks>
 public sealed record FinancePeriodDto(
-    DateOnly Start, DateOnly End, long Uses, decimal Revenue, long UnpricedUses, IReadOnlyList<FinanceServiceAmountDto> Services);
+    DateOnly Start, DateOnly End, long Uses, decimal Revenue, long UnpricedUses, IReadOnlyList<FinanceServiceAmountDto> Services, decimal CashCollected = 0);
 
 /// <summary>One line of a breakdown: a station, a service, or a machine at a station.</summary>
 /// <param name="Key">The station id, the service code, or <c>machineId:stationId</c>.</param>
@@ -84,8 +92,10 @@ public sealed record FinancePeriodDto(
 /// <param name="Revenue">Their value, in dinars.</param>
 /// <param name="UnpricedUses">Its unpriced uses.</param>
 /// <param name="Share">Its share of the revenue, from 0 to 1 - of the uses when nothing is priced.</param>
+/// <param name="CashCollected">The cash reported for it, in dinars.</param>
 /// <remarks>Layer: Application.</remarks>
-public sealed record FinanceLineDto(string Key, string Name, string? Detail, long Uses, decimal Revenue, long UnpricedUses, decimal Share);
+public sealed record FinanceLineDto(
+    string Key, string Name, string? Detail, long Uses, decimal Revenue, long UnpricedUses, decimal Share, decimal CashCollected = 0);
 
 /// <summary>One day of one service on one machine at one station, with its price.</summary>
 /// <param name="Date">The business day.</param>
@@ -97,12 +107,15 @@ public sealed record FinanceLineDto(string Key, string Name, string? Detail, lon
 /// <param name="Service">The service code.</param>
 /// <param name="ServiceName">Its name.</param>
 /// <param name="Uses">The uses.</param>
-/// <param name="UnitPrice">The price that day; null when unpriced.</param>
+/// <param name="UnitPrice">The station's list price that day, applied to the uses the machine did not price; null when it had none.</param>
 /// <param name="Revenue">Their value, in dinars.</param>
+/// <param name="DevicePricedUses">How many of the uses the machine priced itself.</param>
+/// <param name="CashCollected">The cash the machine reported for them, in dinars.</param>
 /// <remarks>Layer: Application.</remarks>
 public sealed record FinanceDetailRowDto(
     DateOnly Date, Guid StationId, string Station, Guid MachineId, string Machine, string MachineCode,
-    string Service, string ServiceName, long Uses, decimal? UnitPrice, decimal Revenue);
+    string Service, string ServiceName, long Uses, decimal? UnitPrice, decimal Revenue,
+    long DevicePricedUses = 0, decimal CashCollected = 0);
 
 /// <summary>The finance report.</summary>
 /// <param name="From">The first day.</param>

@@ -89,7 +89,15 @@ public sealed class FinanceReportService(
         var counts = await unitOfWork.Repository<ServiceUsageDaily, long>()
             .ListAsync(
                 new FinanceDaysSpecification(previousFrom, query.To, stationIds, services, query.MachineId),
-                row => new DayCount(row.BusinessDate, row.GasStationId!.Value, row.MachineId, row.ServiceCode, row.UsageCount),
+                row => new DayCount(
+                    row.BusinessDate,
+                    row.GasStationId!.Value,
+                    row.MachineId,
+                    row.ServiceCode,
+                    row.UsageCount,
+                    row.DevicePricedUses,
+                    row.DeviceSalesAmount,
+                    row.CashCollectedAmount),
                 cancellationToken)
             .ConfigureAwait(false);
 
@@ -124,7 +132,8 @@ public sealed class FinanceReportService(
                             .GroupBy(count => count.Service, StringComparer.OrdinalIgnoreCase)
                             .OrderBy(group => names.ServiceOrder(group.Key))
                             .Select(group => new FinanceServiceAmountDto(group.Key, group.Sum(count => (long)count.Uses), group.Sum(count => count.Revenue))),
-                    ]);
+                    ],
+                    inBucket.Sum(count => count.Cash));
             })
             .ToList();
 
@@ -222,7 +231,8 @@ public sealed class FinanceReportService(
             revenue,
             counts.Sum(count => count.UnpricedUses),
             days,
-            days == 0 ? 0 : Math.Round(revenue / days, 3, MidpointRounding.AwayFromZero));
+            days == 0 ? 0 : Math.Round(revenue / days, 3, MidpointRounding.AwayFromZero),
+            counts.Sum(count => count.Cash));
     }
 
     // Biggest earner first; while nothing is priced, the busiest.
@@ -241,7 +251,8 @@ public sealed class FinanceReportService(
                 var revenue = group.Sum(count => count.Revenue);
                 var (key, name, detail) = describe(group.Key);
                 var share = totals.Revenue > 0 ? revenue / totals.Revenue : totals.Uses > 0 ? (decimal)uses / totals.Uses : 0;
-                return new FinanceLineDto(key, name, detail, uses, revenue, group.Sum(count => count.UnpricedUses), Math.Round(share, 4));
+                return new FinanceLineDto(
+                    key, name, detail, uses, revenue, group.Sum(count => count.UnpricedUses), Math.Round(share, 4), group.Sum(count => count.Cash));
             })
             .OrderByDescending(line => line.Revenue)
             .ThenByDescending(line => line.Uses)
@@ -266,7 +277,9 @@ public sealed class FinanceReportService(
                 names.Service(count.Service),
                 count.Uses,
                 count.UnitPrice,
-                count.Revenue)),
+                count.Revenue,
+                count.DevicePricedUses,
+                count.Cash)),
     ];
 
     // Deleted stations and machines included: the money they earned is still reported, by name.
@@ -306,7 +319,8 @@ public sealed class FinanceReportService(
                 StringComparer.OrdinalIgnoreCase));
     }
 
-    private sealed record DayCount(DateOnly Date, Guid StationId, Guid MachineId, string Service, int Uses);
+    private sealed record DayCount(
+        DateOnly Date, Guid StationId, Guid MachineId, string Service, int Uses, int DevicePricedUses, decimal DeviceSales, decimal Cash);
 
     private sealed class ValuedCount(DayCount count, decimal? unitPrice)
     {
@@ -322,9 +336,13 @@ public sealed class FinanceReportService(
 
         public decimal? UnitPrice => unitPrice;
 
-        public decimal Revenue => (unitPrice ?? 0) * count.Uses;
+        public int DevicePricedUses => count.DevicePricedUses;
 
-        public long UnpricedUses => unitPrice is null ? count.Uses : 0;
+        public decimal Cash => count.Cash;
+
+        public decimal Revenue => FinanceValuation.Revenue(count.Uses, count.DevicePricedUses, count.DeviceSales, unitPrice);
+
+        public long UnpricedUses => FinanceValuation.UnpricedUses(count.Uses, count.DevicePricedUses, unitPrice);
     }
 
     private sealed class Names(

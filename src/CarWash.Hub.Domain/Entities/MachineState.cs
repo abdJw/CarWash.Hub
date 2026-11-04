@@ -16,6 +16,9 @@ namespace CarWash.Hub.Domain.Entities;
 /// </remarks>
 public class MachineState : BaseEntity<Guid>
 {
+    /// <summary>The longest boot id kept; the firmware sends 16 hex digits.</summary>
+    public const int BootIdMaxLength = 32;
+
     /// <summary>Gets or sets the machine; its key is this row's key.</summary>
     public Machine Machine { get; set; } = null!;
 
@@ -36,4 +39,35 @@ public class MachineState : BaseEntity<Guid>
 
     /// <summary>Gets or sets when the worker last wrote this row, in UTC.</summary>
     public DateTimeOffset UpdatedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the machine last reported water as available; null until it reports it.
+    /// A last-known value, not evidence the machine is still online - read it with <see cref="LastSeenAt"/>.
+    /// </summary>
+    public bool? WaterAvailable { get; set; }
+
+    /// <summary>Gets or sets when the message carrying <see cref="WaterAvailable"/> arrived, in UTC.</summary>
+    public DateTimeOffset? WaterReportedAt { get; set; }
+
+    /// <summary>Gets or sets when <see cref="WaterAvailable"/> last changed value, in UTC: "no water since".</summary>
+    public DateTimeOffset? WaterChangedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the message <see cref="WaterAvailable"/> came from. Messages can be processed out
+    /// of order, so a report only replaces the water state if it came from a newer message.
+    /// </summary>
+    public long? WaterMessageId { get; set; }
+
+    /// <summary>
+    /// Gets or sets when the machine last sent a device report (boot, water status, payment or
+    /// settings acknowledgement), in UTC. Null for firmware that only reports uses; non-null marks a
+    /// machine that reports every 30 seconds, so silence means it is offline rather than just idle.
+    /// </summary>
+    public DateTimeOffset? LastHeartbeatAt { get; set; }
+
+    /// <summary>Gets or sets when the machine last reported starting up, in UTC.</summary>
+    public DateTimeOffset? LastBootAt { get; set; }
+
+    /// <summary>Gets or sets the firmware's id for that start-up; a new one each boot.</summary>
+    public string? LastBootId { get; set; }
 }

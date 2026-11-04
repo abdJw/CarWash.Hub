@@ -34,4 +34,20 @@ public class ServiceUsageDaily : BaseEntity<long>
 
     /// <summary>Gets or sets the number of uses on the day.</summary>
     public int UsageCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets how many of <see cref="UsageCount"/> carried the machine's own price. Those are
+    /// valued at <see cref="DeviceSalesAmount"/>; only the rest are valued at the station's price list.
+    /// </summary>
+    public int DevicePricedUses { get; set; }
+
+    /// <summary>Gets or sets the sum of the prices the machine charged for <see cref="DevicePricedUses"/>, in JOD.</summary>
+    public decimal DeviceSalesAmount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the cash customers inserted for <see cref="DevicePricedUses"/>, in JOD. Only
+    /// machines that report it contribute, so it is not the whole station's takings when older
+    /// firmware is still in the field.
+    /// </summary>
+    public decimal CashCollectedAmount { get; set; }
 }

@@ -62,6 +62,32 @@ public sealed class HostConfigurationTests(DatabaseFixture database) : IAsyncLif
     }
 
     [Fact]
+    public async Task Polling_settings_past_its_own_limit_is_refused_with_whole_seconds_and_leaves_posting_alone()
+    {
+        using var client = Factory(new()
+        {
+            ["RateLimiting:Enabled"] = "true",
+            ["RateLimiting:SettingsPermitLimit"] = "2",
+            ["RateLimiting:SettingsWindowSeconds"] = "60",
+        }).CreateClient();
+        var machineId = ApiRequests.NewMachineId();
+
+        for (var i = 0; i < 2; i++)
+        {
+            using var allowed = await client.SendAndDisposeAsync(ApiRequests.Settings(machineId));
+            allowed.StatusCode.ShouldBe(HttpStatusCode.OK);
+        }
+
+        using var refused = await client.SendAndDisposeAsync(ApiRequests.Settings(machineId));
+
+        refused.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
+        int.Parse(refused.Headers.GetValues("Retry-After").Single(), System.Globalization.CultureInfo.InvariantCulture).ShouldBeInRange(1, 60);
+
+        // A separate bucket: the machine's payments still get through.
+        await client.PushStatusAsync(machineId, "after-polls");
+    }
+
+    [Fact]
     public void Production_refuses_to_start_with_a_development_key()
     {
         var factory = Factory(

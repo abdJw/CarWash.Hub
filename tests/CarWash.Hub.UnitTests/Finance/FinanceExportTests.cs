@@ -41,12 +41,20 @@ public class FinanceExportTests
         var lines = Lines(FinanceCsv.Write(Report(Row("محطة الشميساني", "Bay 1", 0.5m)), Localizer()));
 
         lines.Length.ShouldBe(2);
-        lines[1].ShouldBe("2026-11-02,محطة الشميساني,Bay 1,B0:CB:D8:D0:64:2C,Soap,3,0.500,1.500");
+        lines[1].ShouldBe("2026-11-02,محطة الشميساني,Bay 1,B0:CB:D8:D0:64:2C,Soap,3,0.500,1.500,0,0.000");
     }
 
     [Fact]
     public void An_unpriced_row_leaves_the_price_empty() =>
-        Lines(FinanceCsv.Write(Report(Row("A", "B", null)), Localizer()))[1].ShouldEndWith(",3,,0.000");
+        Lines(FinanceCsv.Write(Report(Row("A", "B", null)), Localizer()))[1].ShouldEndWith(",3,,0.000,0,0.000");
+
+    [Fact]
+    public void A_row_the_machine_priced_carries_its_cash()
+    {
+        var row = Row("A", "B", null) with { Revenue = 1.25m, DevicePricedUses = 3, CashCollected = 1.5m };
+
+        Lines(FinanceCsv.Write(Report(row), Localizer()))[1].ShouldEndWith(",3,,1.250,3,1.500");
+    }
 
     [Theory]
     [InlineData("=HYPERLINK(\"x\")", "\"'=HYPERLINK(\"\"x\"\")\"")]

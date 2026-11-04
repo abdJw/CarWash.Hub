@@ -54,4 +54,19 @@ public class ServiceUsage : BaseEntity<long>
 
     /// <summary>Gets or sets the position of the event within its message: 0, or its index in an array.</summary>
     public short ItemIndex { get; set; }
+
+    /// <summary>
+    /// Gets or sets the service price the machine charged, in JOD (<c>price_qirsh</c> / 100); null when
+    /// the firmware does not report prices, and the use is then valued at the station's price list.
+    /// </summary>
+    public decimal? SaleAmount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the cash the customer inserted, in JOD (<c>paid_qirsh</c> / 100). May exceed
+    /// <see cref="SaleAmount"/>; kept separately so sales and collected cash are never mixed.
+    /// </summary>
+    public decimal? PaidAmount { get; set; }
+
+    /// <summary>Gets or sets the run time the customer selected, in seconds; null when not reported.</summary>
+    public int? DurationSeconds { get; set; }
 }

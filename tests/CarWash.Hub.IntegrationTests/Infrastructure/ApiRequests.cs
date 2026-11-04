@@ -12,6 +12,25 @@ public static class ApiRequests
     /// <summary>The ingestion endpoint.</summary>
     public const string IngestPath = "/api/v1/machine-messages";
 
+    /// <summary>The machines' settings poll.</summary>
+    public const string SettingsPath = "/api/v1/settings";
+
+    /// <summary>Builds a settings poll the way the firmware sends it: the machine key, the MAC in the query.</summary>
+    /// <param name="machineId">The machine id; null to send none.</param>
+    /// <param name="key">The <c>client-secret-key</c>, or null to send none.</param>
+    /// <returns>The request.</returns>
+    public static HttpRequestMessage Settings(string? machineId, string? key = TestKeys.Ingest)
+    {
+        var path = machineId is null ? SettingsPath : $"{SettingsPath}?machineId={Uri.EscapeDataString(machineId)}";
+        var request = new HttpRequestMessage(HttpMethod.Get, path);
+        if (key is not null)
+        {
+            request.Headers.Add(HttpHeaderNames.ClientSecretKey, key);
+        }
+
+        return request;
+    }
+
     /// <summary>A fresh machine id, so tests never see each other's data in the shared database.</summary>
     /// <returns>An id such as <c>t-0f3a...</c>.</returns>
     public static string NewMachineId() => $"t-{Guid.NewGuid():N}";

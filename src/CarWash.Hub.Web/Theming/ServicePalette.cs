@@ -31,6 +31,7 @@ public static class ServicePalette
         ["water"] = 1,
         ["vacuum"] = 2,
         ["soap"] = 3,
+        ["minute_water"] = 4,
     };
 
     /// <summary>Returns each service's slot, 1-based; 0 means the neutral "other" colour.</summary>

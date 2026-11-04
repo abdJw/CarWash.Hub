@@ -32,14 +32,16 @@ public sealed class DbInitializer(
     IPasswordHasher passwordHasher,
     ILogger<DbInitializer> logger) : IDbInitializer
 {
-    // The services the machines are known to send today. Refill tracking is on for all three: the
-    // owner refills soap and water tanks and empties the vacuum. Colours are left to the dashboard's
-    // palette until the owner picks one.
+    // The services the machines are known to send today. Refill tracking is on for the first three:
+    // the owner refills soap and water tanks and empties the vacuum. minute_water - the quarter-dinar
+    // water service of the event firmware - draws on the same water, so it is not tracked separately.
+    // Colours are left to the dashboard's palette until the owner picks one.
     private static readonly ServiceDefinition[] SeedServices =
     [
         new() { Code = "soap", Name = "Soap", NameAr = "صابون", Icon = "soap", TracksRefill = true, SortOrder = 10 },
         new() { Code = "water", Name = "Water", NameAr = "ماء", Icon = "water", TracksRefill = true, SortOrder = 20 },
         new() { Code = "vacuum", Name = "Vacuum", NameAr = "مكنسة كهربائية", Icon = "vacuum", TracksRefill = true, SortOrder = 30 },
+        new() { Code = "minute_water", Name = "Minute water", NameAr = "ماء بالدقيقة", Icon = "water", TracksRefill = false, SortOrder = 25 },
     ];
 
     private readonly SeedOptions _options = options.Value;
@@ -137,15 +139,31 @@ public sealed class DbInitializer(
         // IgnoreQueryFilters: a service the owner retired stays retired rather than being re-added.
         var existing = await context.ServiceDefinitions
             .IgnoreQueryFilters()
-            .Select(service => service.Code)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
         var missing = SeedServices
-            .Where(seed => !existing.Contains(seed.Code, StringComparer.OrdinalIgnoreCase))
+            .Where(seed => !existing.Exists(service => string.Equals(service.Code, seed.Code, StringComparison.OrdinalIgnoreCase)))
             .ToList();
 
-        if (missing.Count == 0)
+        // A seeded code a machine sent before this seed existed was registered bare - named by its
+        // code and marked unconfigured. Give it the seed's names, unless the owner has since edited it.
+        var bare = existing
+            .Where(service => !service.IsConfigured && !service.IsDeleted)
+            .Select(service => (Service: service, Seed: Array.Find(SeedServices, seed => string.Equals(seed.Code, service.Code, StringComparison.OrdinalIgnoreCase))))
+            .Where(pair => pair.Seed is not null)
+            .ToList();
+
+        foreach (var (service, seed) in bare)
+        {
+            service.Name = seed!.Name;
+            service.NameAr = seed.NameAr;
+            service.Icon = seed.Icon;
+            service.SortOrder = seed.SortOrder;
+            service.IsConfigured = true;
+        }
+
+        if (missing.Count == 0 && bare.Count == 0)
         {
             return;
         }
@@ -168,7 +186,9 @@ public sealed class DbInitializer(
         try
         {
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            logger.LogInformation("Seeded service(s) {Codes}", string.Join(", ", missing.Select(seed => seed.Code)));
+            logger.LogInformation(
+                "Seeded service(s) {Codes}",
+                string.Join(", ", missing.Select(seed => seed.Code).Concat(bare.Select(pair => pair.Service.Code))));
         }
         catch (DbUpdateException exception) when (exception.InnerException is SqlException { Number: 2601 or 2627 })
         {

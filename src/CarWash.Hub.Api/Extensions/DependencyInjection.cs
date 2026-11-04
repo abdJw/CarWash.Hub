@@ -10,6 +10,7 @@ using CarWash.Hub.Api.Options;
 using CarWash.Hub.Application.Abstractions.Services;
 using CarWash.Hub.Application.Common.Constants;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 
 namespace CarWash.Hub.Api.Extensions;
@@ -167,46 +168,34 @@ public static class DependencyInjection
         return services;
     }
 
-    /// <summary>Registers the ingestion rate-limiting policy.</summary>
+    /// <summary>Registers the ingestion and settings-poll rate-limiting policies.</summary>
     private static IServiceCollection AddConfiguredRateLimiting(this IServiceCollection services) =>
         services.AddRateLimiter(rateLimiter =>
         {
             rateLimiter.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-            rateLimiter.AddPolicy(RateLimitingOptions.IngestPolicyName, context =>
-            {
-                // Resolved per request, so the limits reflect current configuration.
-                var limits = context.RequestServices.GetRequiredService<IOptions<RateLimitingOptions>>().Value;
+            rateLimiter.AddPolicy(
+                RateLimitingOptions.IngestPolicyName,
+                context => PerAddress(context, "ingest", limits => (limits.IngestPermitLimit, limits.IngestWindowSeconds)));
 
-                if (!limits.Enabled)
-                {
-                    return RateLimitPartition.GetNoLimiter("disabled");
-                }
-
-                // Partitioned by client address, not by key: every machine sends the same key, so a
-                // per-key limit would be one bucket for the whole fleet. Behind a proxy this is the
-                // machine's address only when ReverseProxy is configured.
-                var partitionKey = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-
-                return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = limits.IngestPermitLimit,
-                    Window = TimeSpan.FromSeconds(limits.IngestWindowSeconds),
-
-                    // Refuse immediately rather than queue: a machine that is told to back off
-                    // retries later; a queued request just holds a connection open.
-                    QueueLimit = 0,
-                });
-            });
+            // Its own bucket: a fleet polling for settings every 15 seconds must never use up the
+            // budget its payments are posted from.
+            rateLimiter.AddPolicy(
+                RateLimitingOptions.SettingsPolicyName,
+                context => PerAddress(context, "settings", limits => (limits.SettingsPermitLimit, limits.SettingsWindowSeconds)));
 
             rateLimiter.OnRejected = async (context, cancellationToken) =>
             {
-                // Tells a well-behaved client when to try again instead of leaving it to guess.
-                if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
-                {
-                    context.HttpContext.Response.Headers.RetryAfter =
-                        ((int)Math.Ceiling(retryAfter.TotalSeconds)).ToString(CultureInfo.InvariantCulture);
-                }
+                // Tells a well-behaved client when to try again instead of leaving it to guess - in
+                // whole seconds, which is what the firmware reads. A lease without the metadata falls
+                // back to the window, the longest the wait can be.
+                var limits = context.HttpContext.RequestServices.GetRequiredService<IOptions<RateLimitingOptions>>().Value;
+                var isSettingsPoll = context.HttpContext.GetEndpoint()?.Metadata.GetMetadata<EnableRateLimitingAttribute>()?.PolicyName
+                                     == RateLimitingOptions.SettingsPolicyName;
+                var retryAfterSeconds = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter)
+                    ? (int)Math.Ceiling(retryAfter.TotalSeconds)
+                    : isSettingsPoll ? limits.SettingsWindowSeconds : limits.IngestWindowSeconds;
+                context.HttpContext.Response.Headers.RetryAfter = Math.Max(1, retryAfterSeconds).ToString(CultureInfo.InvariantCulture);
 
                 var localizer = context.HttpContext.RequestServices.GetRequiredService<ILocalizationService>();
                 var correlationId = context.HttpContext.Items
@@ -233,6 +222,34 @@ public static class DependencyInjection
                     cancellationToken).ConfigureAwait(false);
             };
         });
+
+    // Partitioned by client address, not by key: every machine sends the same key, so a per-key limit
+    // would be one bucket for the whole fleet. Behind a proxy this is the machine's address only when
+    // ReverseProxy is configured.
+    private static RateLimitPartition<string> PerAddress(
+        HttpContext context, string bucket, Func<RateLimitingOptions, (int PermitLimit, int WindowSeconds)> select)
+    {
+        // Resolved per request, so the limits reflect current configuration.
+        var limits = context.RequestServices.GetRequiredService<IOptions<RateLimitingOptions>>().Value;
+
+        if (!limits.Enabled)
+        {
+            return RateLimitPartition.GetNoLimiter("disabled");
+        }
+
+        var (permitLimit, windowSeconds) = select(limits);
+        var partitionKey = $"{bucket}:{context.Connection.RemoteIpAddress?.ToString() ?? "unknown"}";
+
+        return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = permitLimit,
+            Window = TimeSpan.FromSeconds(windowSeconds),
+
+            // Refuse immediately rather than queue: a machine that is told to back off retries
+            // later; a queued request just holds a connection open.
+            QueueLimit = 0,
+        });
+    }
 
     /// <summary>Registers liveness and readiness health checks.</summary>
     /// <remarks>

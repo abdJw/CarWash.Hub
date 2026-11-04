@@ -384,4 +384,67 @@
   <data name="Export_PreviousPeriod" xml:space="preserve"><value>Previous period</value></data>
   <data name="Export_RevenueChange" xml:space="preserve"><value>Revenue change</value></data>
   <data name="Export_UnassignedUses" xml:space="preserve"><value>Uses on unassigned machines</value></data>
+  <data name="Finance_KpiCash" xml:space="preserve"><value>Cash collected</value></data>
+  <data name="Finance_KpiCashHint" xml:space="preserve"><value>Cash the machines report customers inserted; more than revenue when someone overpays.</value></data>
+  <data name="Finance_ColCash" xml:space="preserve"><value>Cash ({0})</value></data>
+  <data name="Export_DevicePricedUses" xml:space="preserve"><value>Uses priced by the machine</value></data>
+  <data name="Prices_AndDurationsTitle" xml:space="preserve"><value>Prices &amp; run times · {0}</value></data>
+  <data name="Prices_DeviceRule" xml:space="preserve"><value>Prices of machine services are sent to the machines: 0.05 to 9.95 JOD, in steps of 0.05.</value></data>
+  <data name="Durations_Title" xml:space="preserve"><value>Run times</value></data>
+  <data name="Durations_Hint" xml:space="preserve"><value>Sent to this station's machines with today's prices. A machine applies them when idle and confirms; until then it shows as pending.</value></data>
+  <data name="Durations_Suggested" xml:space="preserve"><value>Suggested, not saved</value></data>
+  <data name="Durations_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Durations_Saved" xml:space="preserve"><value>Run times saved</value></data>
+  <data name="Durations_Position" xml:space="preserve"><value>Position {0}</value></data>
+  <data name="Durations_Single" xml:space="preserve"><value>Run time</value></data>
+  <data name="Durations_SecondsUnit" xml:space="preserve"><value>s</value></data>
+  <data name="Alerts_KindMachine" xml:space="preserve"><value>Machine status</value></data>
+  <data name="AlertType_Offline" xml:space="preserve"><value>Offline</value></data>
+  <data name="AlertType_WaterUnavailable" xml:space="preserve"><value>No water</value></data>
+  <data name="AlertText_Offline" xml:space="preserve"><value>{0} is offline: nothing received since {1}.</value></data>
+  <data name="AlertText_WaterUnavailable" xml:space="preserve"><value>{0} reports no water since {1}.</value></data>
+  <data name="AlertText_NoSales" xml:space="preserve"><value>{0} is online but has had no sales since {1}.</value></data>
+  <data name="AlertResolution_WaterRestored" xml:space="preserve"><value>Closed: water is available again</value></data>
+  <data name="Activity_Offline" xml:space="preserve"><value>Offline · {0}</value></data>
+  <data name="Activity_NoSales" xml:space="preserve"><value>No sales · {0}</value></data>
+  <data name="Water_Available" xml:space="preserve"><value>Water</value></data>
+  <data name="Water_Unavailable" xml:space="preserve"><value>No water</value></data>
+  <data name="Water_Stale" xml:space="preserve"><value>Last reported {0}; the machine is offline, so this may have changed.</value></data>
+  <data name="Water_Reported" xml:space="preserve"><value>Reported {0}</value></data>
+  <data name="Kpi_Offline" xml:space="preserve"><value>Offline</value></data>
+  <data name="Kpi_OfflineHint" xml:space="preserve"><value>Nothing received for {0} minutes or more</value></data>
+  <data name="DeviceSettings_Title" xml:space="preserve"><value>Machine settings</value></data>
+  <data name="DeviceSettings_Hint" xml:space="preserve"><value>The station's prices and run times, sent to the machine when it polls. A change is pending until the machine confirms it.</value></data>
+  <data name="DeviceSettings_StatusApplied" xml:space="preserve"><value>Applied on the machine</value></data>
+  <data name="DeviceSettings_StatusPending" xml:space="preserve"><value>Waiting for the machine</value></data>
+  <data name="DeviceSettings_StatusBusy" xml:space="preserve"><value>Machine busy; it will apply them when idle</value></data>
+  <data name="DeviceSettings_StatusFailed" xml:space="preserve"><value>Refused by the machine</value></data>
+  <data name="DeviceSettings_StatusBlocked" xml:space="preserve"><value>Not sent</value></data>
+  <data name="DeviceSettings_StatusNone" xml:space="preserve"><value>Not configured</value></data>
+  <data name="DeviceSettings_ChipApplied" xml:space="preserve"><value>Settings applied</value></data>
+  <data name="DeviceSettings_ChipPending" xml:space="preserve"><value>Settings pending</value></data>
+  <data name="DeviceSettings_ChipAttention" xml:space="preserve"><value>Settings need attention</value></data>
+  <data name="DeviceSettings_IssueUnassigned" xml:space="preserve"><value>The machine has no station, so it has no prices.</value></data>
+  <data name="DeviceSettings_IssueStationInactive" xml:space="preserve"><value>The station is out of service.</value></data>
+  <data name="DeviceSettings_IssueMissingPrice" xml:space="preserve"><value>No price today for {0}. The machine keeps its last settings.</value></data>
+  <data name="DeviceSettings_IssueInvalidPrice" xml:space="preserve"><value>Today's price of {0} is not one the machine accepts (0.05 to 9.95 JOD, in steps of 0.05).</value></data>
+  <data name="DeviceSettings_IssueMissingDurations" xml:space="preserve"><value>No run times saved for {0}.</value></data>
+  <data name="DeviceSettings_Revision" xml:space="preserve"><value>Revision {0}</value></data>
+  <data name="DeviceSettings_Sent" xml:space="preserve"><value>Sent</value></data>
+  <data name="DeviceSettings_Confirmed" xml:space="preserve"><value>Confirmed</value></data>
+  <data name="DeviceSettings_None" xml:space="preserve"><value>None yet</value></data>
+  <data name="DeviceSettings_LastReply" xml:space="preserve"><value>Last reply: {0} (revision {1}), {2}</value></data>
+  <data name="DeviceSettings_LastBoot" xml:space="preserve"><value>Last start-up</value></data>
+  <data name="DeviceSettings_LastReport" xml:space="preserve"><value>Last report</value></data>
+  <data name="DeviceSettings_ColPrice" xml:space="preserve"><value>Price</value></data>
+  <data name="DeviceSettings_ColRunTimes" xml:space="preserve"><value>Run times (s)</value></data>
+  <data name="DeviceSettings_Edit" xml:space="preserve"><value>Prices &amp; run times</value></data>
+  <data name="Ack_Saved" xml:space="preserve"><value>saved</value></data>
+  <data name="Ack_Unchanged" xml:space="preserve"><value>already current</value></data>
+  <data name="Ack_Busy" xml:space="preserve"><value>busy, will retry</value></data>
+  <data name="Ack_StorageError" xml:space="preserve"><value>could not save</value></data>
+  <data name="Ack_InvalidSettings" xml:space="preserve"><value>values refused</value></data>
+  <data name="Ack_InvalidCommand" xml:space="preserve"><value>command not understood</value></data>
+  <data name="Ack_InvalidJson" xml:space="preserve"><value>response unreadable</value></data>
+  <data name="Ack_Unknown" xml:space="preserve"><value>unknown reply</value></data>
 </root>

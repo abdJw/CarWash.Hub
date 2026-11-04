@@ -3,6 +3,7 @@ using CarWash.Hub.Application.Abstractions.Services;
 using CarWash.Hub.Application.Common.Constants;
 using CarWash.Hub.Application.Exceptions;
 using CarWash.Hub.Application.Features.Alerts;
+using CarWash.Hub.Application.Features.DeviceSettings;
 using CarWash.Hub.Application.Features.Levels;
 using CarWash.Hub.Application.Features.Machines;
 using CarWash.Hub.Application.Features.Processing;
@@ -112,14 +113,15 @@ public sealed class FleetDashboardService(
         return new FleetOverviewDto(
             MachineCount: active.Count,
             BusyCount: active.Count(machine => ActivityOf(machine, now) == MachineActivity.Busy),
-            SilentCount: active.Count(machine => ActivityOf(machine, now) is MachineActivity.Silent or MachineActivity.Unknown),
+            SilentCount: active.Count(machine => ActivityOf(machine, now) is MachineActivity.Silent or MachineActivity.NoSales or MachineActivity.Unknown),
             UnassignedCount: scope.IsRestricted ? 0 : machines.Count(machine => machine.GasStationId is null),
             UsesToday: hourly.Where(row => row.HourStart >= todayStart).Sum(row => row.Count),
             UsesYesterdaySoFar: hourly.Where(row => row.HourStart >= yesterdayStart && row.HourStart <= yesterdayUntil).Sum(row => row.Count),
             TodayByService: Totals(hourly.Where(row => row.HourStart >= todayStart)),
             Last12Hours: HourTotals(hourly, currentHour),
             Usage: BuildSeries(range, now, todayStart, hourly),
-            GeneratedAt: now);
+            GeneratedAt: now,
+            OfflineCount: active.Count(machine => ActivityOf(machine, now) == MachineActivity.Offline));
     }
 
     /// <inheritdoc />
@@ -162,11 +164,37 @@ public sealed class FleetDashboardService(
                 cancellationToken)
             .ConfigureAwait(false);
 
+        var settings = (await unitOfWork.Repository<MachineDeviceSettings, Guid>()
+                .ListAsync(new DeviceSettingsRowsSpecification([machineId], tracked: false), cancellationToken)
+                .ConfigureAwait(false))
+            .FirstOrDefault();
+
+        // Only for firmware that polls for settings: the earlier firmware cannot apply them, so a
+        // "pending" there would never clear.
+        var row = machines[0];
+        var deviceSettings = row.LastHeartbeatAt is null
+            ? null
+            : new MachineDeviceSettingsDto(
+                DeviceSettingsRules.StatusOf(settings),
+                settings?.DesiredRevision ?? 0,
+                settings?.DesiredAt,
+                settings?.AppliedRevision ?? 0,
+                settings?.AppliedAt,
+                settings?.Issue ?? Domain.Enums.DeviceSettingsIssue.None,
+                settings?.IssueService,
+                settings?.LastAckStatus ?? Domain.Enums.DeviceAckStatus.None,
+                settings?.LastAckRevision ?? 0,
+                settings?.LastAckAt,
+                settings?.ServicesJson is { } json ? DeviceSettingsDocument.Parse(json) : [],
+                row.LastBootAt,
+                row.LastHeartbeatAt);
+
         return new MachineDetailDto(
             card,
             BuildSeries(range, now, todayStart, hourly),
             recentUses,
-            [.. recentMessages.Select(message => message with { Payload = Clip(message.Payload) })]);
+            [.. recentMessages.Select(message => message with { Payload = Clip(message.Payload) })],
+            deviceSettings);
     }
 
     private static DateTimeOffset Earliest(params DateTimeOffset[] instants) => instants.Min();
@@ -272,7 +300,11 @@ public sealed class FleetDashboardService(
                     machine.State != null ? machine.State.TotalUses : 0L,
                     machine.NoActivityAfterHours,
                     machine.GasStation != null ? machine.GasStation.QuietHoursStart : null,
-                    machine.GasStation != null ? machine.GasStation.QuietHoursEnd : null),
+                    machine.GasStation != null ? machine.GasStation.QuietHoursEnd : null,
+                    machine.State != null ? machine.State.LastHeartbeatAt : null,
+                    machine.State != null ? machine.State.WaterAvailable : null,
+                    machine.State != null ? machine.State.WaterReportedAt : null,
+                    machine.State != null ? machine.State.LastBootAt : null),
                 cancellationToken)
             .ConfigureAwait(false);
 
@@ -298,6 +330,11 @@ public sealed class FleetDashboardService(
             .ConfigureAwait(false);
 
         var byMachine = rows.ToLookup(row => row.MachineId);
+
+        var settings = (await unitOfWork.Repository<MachineDeviceSettings, Guid>()
+                .ListAsync(new DeviceSettingsRowsSpecification([.. machines.Select(machine => machine.Id)], tracked: false), cancellationToken)
+                .ConfigureAwait(false))
+            .ToDictionary(row => row.Id);
 
         var levels = (await unitOfWork.Repository<MachineServiceState, long>()
                 .ListAsync(
@@ -336,7 +373,13 @@ public sealed class FleetDashboardService(
                 ActivityOf(machine, now),
                 Totals(own.Where(row => row.HourStart >= todayStart)),
                 HourTotals(own, currentHour),
-                [.. levels[machine.Id]]);
+                [.. levels[machine.Id]],
+                machine.LastHeartbeatAt is not null,
+                machine.WaterAvailable,
+                machine.WaterReportedAt,
+                machine.LastHeartbeatAt is null
+                    ? DeviceSettingsStatus.NotConfigured
+                    : DeviceSettingsRules.StatusOf(settings.GetValueOrDefault(machine.Id)));
         })];
     }
 
@@ -347,11 +390,27 @@ public sealed class FleetDashboardService(
             return MachineActivity.Unknown;
         }
 
-        // The same rule as the no-activity alert, so a "silent" card always has (or is about to have)
-        // an alert: the machine's own threshold, not counting its station's quiet hours.
-        var silence = AlertRules.ActiveSilence(lastSeen, now, machine.QuietHoursStart, machine.QuietHoursEnd, timeZone.Zone);
-        if (silence >= TimeSpan.FromHours(machine.NoActivityAfterHours ?? _activity.NoActivityAfterHours))
+        var threshold = TimeSpan.FromHours(machine.NoActivityAfterHours ?? _activity.NoActivityAfterHours);
+
+        if (machine.LastHeartbeatAt is not null)
         {
+            // Connectivity is a fact, so offline ignores quiet hours here - the alert waits for them.
+            if (now - lastSeen >= TimeSpan.FromMinutes(_activity.OfflineAfterMinutes))
+            {
+                return MachineActivity.Offline;
+            }
+
+            // Online, so quiet means no sales: the same rule as its no-activity alert.
+            var since = machine.LastUsageAt ?? machine.FirstSeenAt;
+            if (AlertRules.ActiveSilence(since, now, machine.QuietHoursStart, machine.QuietHoursEnd, timeZone.Zone) >= threshold)
+            {
+                return MachineActivity.NoSales;
+            }
+        }
+        else if (AlertRules.ActiveSilence(lastSeen, now, machine.QuietHoursStart, machine.QuietHoursEnd, timeZone.Zone) >= threshold)
+        {
+            // The same rule as the no-activity alert, so a "silent" card always has (or is about to
+            // have) an alert: the machine's own threshold, not counting its station's quiet hours.
             return MachineActivity.Silent;
         }
 
@@ -375,7 +434,11 @@ public sealed class FleetDashboardService(
         long TotalUses,
         int? NoActivityAfterHours,
         TimeOnly? QuietHoursStart,
-        TimeOnly? QuietHoursEnd);
+        TimeOnly? QuietHoursEnd,
+        DateTimeOffset? LastHeartbeatAt,
+        bool? WaterAvailable,
+        DateTimeOffset? WaterReportedAt,
+        DateTimeOffset? LastBootAt);
 
     private sealed record HourServiceCount(DateTimeOffset HourStart, string Service, int Count);
 

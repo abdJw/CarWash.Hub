@@ -17,13 +17,14 @@ public class DashboardPresentationTests
     private static ServiceInfoDto Service(string code, int sortOrder) => new(code, code, null, null, true, sortOrder, true);
 
     [Fact]
-    public void The_three_known_services_own_the_first_three_colour_slots()
+    public void The_known_services_own_the_first_colour_slots()
     {
-        var slots = ServicePalette.AssignSlots([Service("soap", 10), Service("water", 20), Service("vacuum", 30)]);
+        var slots = ServicePalette.AssignSlots([Service("soap", 10), Service("water", 20), Service("minute_water", 25), Service("vacuum", 30)]);
 
         slots["water"].ShouldBe(1);
         slots["vacuum"].ShouldBe(2);
         slots["soap"].ShouldBe(3);
+        slots["minute_water"].ShouldBe(4);
     }
 
     [Fact]
@@ -32,7 +33,7 @@ public class DashboardPresentationTests
         var before = ServicePalette.AssignSlots([Service("soap", 10), Service("water", 20), Service("vacuum", 30)]);
         var after = ServicePalette.AssignSlots([Service("soap", 10), Service("wax", 15), Service("water", 20), Service("vacuum", 30)]);
 
-        after["wax"].ShouldBe(4);
+        after["wax"].ShouldBe(5);
         after["soap"].ShouldBe(before["soap"]);
         after["water"].ShouldBe(before["water"]);
         after["vacuum"].ShouldBe(before["vacuum"]);
@@ -45,11 +46,11 @@ public class DashboardPresentationTests
 
         var slots = ServicePalette.AssignSlots(services);
 
-        // Water, vacuum and soap keep 1-3 even when absent, so extras fill 4-8 and the rest fold.
+        // Water, vacuum, soap and minute water keep 1-4 even when absent, so extras fill 5-8 and the rest fold.
         slots.Values.Where(slot => slot > 0).ShouldBeUnique();
-        slots["extra1"].ShouldBe(4);
-        slots["extra5"].ShouldBe(ServicePalette.SlotCount);
-        slots["extra6"].ShouldBe(0);
+        slots["extra1"].ShouldBe(5);
+        slots["extra4"].ShouldBe(ServicePalette.SlotCount);
+        slots["extra5"].ShouldBe(0);
         ServicePalette.CssClass(0).ShouldBe("svc-other");
     }
 

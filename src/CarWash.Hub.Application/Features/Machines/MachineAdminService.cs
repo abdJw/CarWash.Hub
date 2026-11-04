@@ -88,11 +88,13 @@ public interface IMachineAdminService
 /// <param name="currentUser">Must be a Super Admin.</param>
 /// <param name="validator">Validates the change.</param>
 /// <param name="localizer">Messages.</param>
+/// <param name="settingsSignal">Tells the worker the machine's settings may have changed - it may have moved station.</param>
 public sealed class MachineAdminService(
     IUnitOfWork unitOfWork,
     ICurrentUserService currentUser,
     IValidator<UpdateMachineRequest> validator,
-    ILocalizationService localizer) : IMachineAdminService
+    ILocalizationService localizer,
+    IDeviceSettingsSignal settingsSignal) : IMachineAdminService
 {
     /// <inheritdoc />
     public async Task<MachineSettingsDto> GetAsync(Guid machineId, CancellationToken cancellationToken = default)
@@ -146,6 +148,7 @@ public sealed class MachineAdminService(
         machine.NoActivityAfterHours = request.NoActivityAfterHours;
 
         await unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        settingsSignal.Request();
         return await GetAsync(machine.Id, cancellationToken).ConfigureAwait(false);
     }
 

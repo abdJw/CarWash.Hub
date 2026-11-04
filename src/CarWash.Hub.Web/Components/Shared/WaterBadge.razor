@@ -1,0 +1,30 @@
+@* A machine's last reported water state, for firmware that reports it. Greyed out, with the reason
+   in its title, while the machine is offline: a last-known value is not proof it still holds. *@
+@inject IStringLocalizer<DashboardResource> L
+@inject DashboardFormat Format
+
+@if (Available is { } available)
+{
+    <span class="cw-status cw-status--@(Stale ? "muted" : available ? "good" : "critical")" title="@Title">
+        <MudIcon Icon="@(available ? Icons.Material.Rounded.WaterDrop : Icons.Material.Rounded.FormatColorReset)" Size="Size.Small" />
+        <span>@(available ? L[DashboardText.WaterAvailable] : L[DashboardText.WaterUnavailable])</span>
+    </span>
+}
+
+@code {
+    /// <summary>Gets or sets whether the machine last reported water; null when it never has, and nothing is shown.</summary>
+    [Parameter]
+    public bool? Available { get; set; }
+
+    /// <summary>Gets or sets when it reported it.</summary>
+    [Parameter]
+    public DateTimeOffset? ReportedAt { get; set; }
+
+    /// <summary>Gets or sets whether the report is out of date because the machine is offline.</summary>
+    [Parameter]
+    public bool Stale { get; set; }
+
+    private string? Title => ReportedAt is not { } at
+        ? null
+        : Stale ? L[DashboardText.WaterStale, Format.DateTime(at)].Value : L[DashboardText.WaterReported, Format.DateTime(at)].Value;
+}

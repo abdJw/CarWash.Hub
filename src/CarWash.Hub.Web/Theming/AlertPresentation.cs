@@ -38,6 +38,8 @@ public static class AlertPresentation
         AlertType.Low => Icons.Material.Rounded.Warning,
         AlertType.Empty => Icons.Material.Rounded.Error,
         AlertType.UsedAfterEmpty => Icons.Material.Rounded.Report,
+        AlertType.Offline => Icons.Material.Rounded.CloudOff,
+        AlertType.WaterUnavailable => Icons.Material.Rounded.FormatColorReset,
         _ => Icons.Material.Rounded.SensorsOff,
     };
 
@@ -54,6 +56,8 @@ public static class AlertPresentation
             AlertType.Low => DashboardText.AlertTypeLow,
             AlertType.Empty => DashboardText.AlertTypeEmpty,
             AlertType.UsedAfterEmpty => DashboardText.AlertTypeUsedAfterEmpty,
+            AlertType.Offline => DashboardText.AlertTypeOffline,
+            AlertType.WaterUnavailable => DashboardText.AlertTypeWaterUnavailable,
             _ => DashboardText.AlertTypeNoActivity,
         }];
     }
@@ -71,6 +75,7 @@ public static class AlertPresentation
             AlertResolution.Escalated => DashboardText.AlertResolutionEscalated,
             AlertResolution.ActivityResumed => DashboardText.AlertResolutionActivityResumed,
             AlertResolution.NotEligible => DashboardText.AlertResolutionNotEligible,
+            AlertResolution.WaterRestored => DashboardText.AlertResolutionWaterRestored,
             _ => DashboardText.AlertResolutionCleared,
         }];
     }
@@ -100,9 +105,14 @@ public static class AlertPresentation
                 localizer[DashboardText.AlertTextLow, service, machine, DashboardFormat.Number(Math.Max(0, alert.Remaining ?? 0)), DashboardFormat.Number(alert.Capacity ?? 0)],
             AlertType.Empty => localizer[DashboardText.AlertTextEmpty, service, machine],
             AlertType.UsedAfterEmpty => localizer[DashboardText.AlertTextUsedAfterEmpty, service, machine],
-            _ => localizer[DashboardText.AlertTextNoActivity, machine, alert.LastSeenAt is { } seen ? format.DateTime(seen) : "—"],
+            AlertType.Offline => localizer[DashboardText.AlertTextOffline, machine, When(alert.LastSeenAt, format)],
+            AlertType.WaterUnavailable => localizer[DashboardText.AlertTextWaterUnavailable, machine, When(alert.WaterUnavailableSince, format)],
+            AlertType.NoActivity when alert.LastSaleAt is { } lastSale => localizer[DashboardText.AlertTextNoSales, machine, format.DateTime(lastSale)],
+            _ => localizer[DashboardText.AlertTextNoActivity, machine, When(alert.LastSeenAt, format)],
         };
     }
 
     private static string Isolated(string text) => $"{Isolate}{text}{EndIsolate}";
+
+    private static string When(DateTimeOffset? at, DashboardFormat format) => at is { } time ? format.DateTime(time) : "—";
 }

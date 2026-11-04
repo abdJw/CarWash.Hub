@@ -389,10 +389,62 @@ public sealed class FinanceTests(DatabaseFixture database) : IAsyncLifetime
         var lines = Encoding.UTF8.GetString(bytes, 3, bytes.Length - 3).Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
         lines.Length.ShouldBe(3);
         lines.Skip(1).ShouldAllBe(line => line.Contains(machineA.Code, StringComparison.Ordinal));
-        lines.ShouldContain(line => line.EndsWith(",1,0.500,0.500", StringComparison.Ordinal));
+        lines.ShouldContain(line => line.EndsWith(",1,0.500,0.500,0,0.000", StringComparison.Ordinal));
 
         using var anonymous = await database.SharedApi.Browser().GetAsync(new Uri($"/reports/finance/export?{query}", UriKind.Relative), Token);
         anonymous.StatusCode.ShouldBe(HttpStatusCode.Redirect);
+    }
+
+    [Fact]
+    public async Task A_machine_that_reports_its_price_is_valued_at_it_and_its_cash_is_reported()
+    {
+        var station = await database.CreateStationAsync();
+        var machine = await MachineAsync(station);
+        await PriceAsync(station, "soap", 1m, Today.AddDays(-5));
+        await UsesAsync(machine.Code, ("soap", At(-1, 12)));
+        await PaymentsAsync(machine.Code, ("soap", 50, 100), ("soap", 50, 50));
+
+        var report = await ReportAsync(Admin, Today.AddDays(-2), Today, stations: [station]);
+
+        report.Totals.Uses.ShouldBe(3);
+        report.Totals.Revenue.ShouldBe(2m, "the earlier firmware's use at the list price, the two sales at 0.50 each");
+        report.Totals.CashCollected.ShouldBe(1.5m);
+        report.Totals.UnpricedUses.ShouldBe(0);
+        report.Stations.Single().CashCollected.ShouldBe(1.5m);
+        report.Periods.Single(period => period.Start == Today).CashCollected.ShouldBe(1.5m);
+
+        // A later list price revalues only the use the machine did not price.
+        await PriceAsync(station, "soap", 2m, Today.AddDays(-5));
+        var revalued = await ReportAsync(Admin, Today.AddDays(-2), Today, stations: [station], detail: true);
+        revalued.Totals.Revenue.ShouldBe(3m);
+        var today = revalued.Detail!.Single(row => row.Date == Today);
+        today.DevicePricedUses.ShouldBe(2);
+        today.Revenue.ShouldBe(1m);
+        today.CashCollected.ShouldBe(1.5m);
+    }
+
+    [Fact]
+    public async Task A_use_the_machine_priced_is_never_unpriced()
+    {
+        var station = await database.CreateStationAsync();
+        var machine = await MachineAsync(station);
+        await PaymentsAsync(machine.Code, ("minute_water", 25, 25));
+
+        var report = await ReportAsync(Admin, Today, Today, stations: [station]);
+
+        report.Totals.Revenue.ShouldBe(0.25m);
+        report.Totals.UnpricedUses.ShouldBe(0);
+    }
+
+    private async Task PaymentsAsync(string code, params (string Service, int PriceQirsh, int PaidQirsh)[] payments)
+    {
+        foreach (var (service, price, paid) in payments)
+        {
+            using var response = await _client.SendAndDisposeAsync(ApiRequests.Ingest(ApiRequests.Body(code, ProcessingDriver.Payment(code, service, price, paid))));
+            response.EnsureSuccessStatusCode();
+        }
+
+        await database.SharedApi.ProcessAllPendingAsync();
     }
 
     private static string Iso(DateOnly date) => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
@@ -445,10 +497,14 @@ public sealed class FinanceTests(DatabaseFixture database) : IAsyncLifetime
         Guid[]? stations = null,
         string[]? services = null,
         Guid? machine = null,
-        FinanceGrain grain = FinanceGrain.Auto) =>
+        FinanceGrain grain = FinanceGrain.Auto,
+        bool detail = false) =>
         database.SharedApi.AsUserAsync<IFinanceReportService, FinanceReportDto>(
             user,
             finance => finance.GetReportAsync(
-                new FinanceReportQuery { From = from, To = to, StationIds = stations, Services = services, MachineId = machine, Grain = grain },
+                new FinanceReportQuery
+                {
+                    From = from, To = to, StationIds = stations, Services = services, MachineId = machine, Grain = grain, IncludeDetail = detail,
+                },
                 Token));
 }

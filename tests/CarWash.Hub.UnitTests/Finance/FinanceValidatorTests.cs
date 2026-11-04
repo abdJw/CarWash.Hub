@@ -14,7 +14,7 @@ public class FinanceValidatorTests
     private static readonly SetStationPriceRequest ValidPrice = new()
     {
         StationId = Guid.NewGuid(),
-        Service = "soap",
+        Service = "wax",
         UnitPrice = 0.5m,
         EffectiveFrom = new DateOnly(2026, 11, 2),
     };

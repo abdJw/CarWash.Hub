@@ -92,11 +92,13 @@ public interface IGasStationService
 /// <param name="currentUser">Must be a Super Admin.</param>
 /// <param name="validator">Validates the request.</param>
 /// <param name="localizer">Names things in "not found" messages.</param>
+/// <param name="settingsSignal">Tells the worker the machines' settings may have changed - the station may have been taken out of service.</param>
 public sealed class GasStationService(
     IUnitOfWork unitOfWork,
     ICurrentUserService currentUser,
     IValidator<SaveStationRequest> validator,
-    ILocalizationService localizer) : IGasStationService
+    ILocalizationService localizer,
+    IDeviceSettingsSignal settingsSignal) : IGasStationService
 {
     /// <inheritdoc />
     public async Task<IReadOnlyList<StationDto>> ListAsync(CancellationToken cancellationToken = default)
@@ -174,6 +176,7 @@ public sealed class GasStationService(
         station.QuietHoursEnd = request.QuietHoursEnd;
 
         await unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        settingsSignal.Request();
 
         return (await ListAsync(cancellationToken).ConfigureAwait(false)).Single(saved => saved.Id == station.Id);
     }

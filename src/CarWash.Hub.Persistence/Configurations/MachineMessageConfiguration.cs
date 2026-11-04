@@ -34,6 +34,18 @@ public sealed class MachineMessageConfiguration : IEntityTypeConfiguration<Machi
         builder.Property(m => m.UserAgent).HasMaxLength(512);
         builder.Property(m => m.CorrelationId).HasMaxLength(64);
 
+        // varchar: the id is printable ASCII by construction (DeviceEventId.TryRead).
+        builder.Property(m => m.DeviceEventId)
+            .HasMaxLength(MachineMessage.DeviceEventIdMaxLength)
+            .IsUnicode(false);
+
+        // The ingest dedupe arbiter: a retried event races its original here, and exactly one row
+        // survives. Filtered, so the earlier firmware's messages (no event id) are never compared.
+        builder.HasIndex(m => new { m.MachineId, m.DeviceEventId })
+            .IsUnique()
+            .HasFilter("[device_event_id] IS NOT NULL")
+            .HasDatabaseName("ix_machine_messages_device_event_id");
+
         // Serves "latest status", "history, newest first" and "last seen" - each one a seek on
         // machine_id followed by a short range read. The id breaks ties between messages received
         // in the same tick, so paging is stable.

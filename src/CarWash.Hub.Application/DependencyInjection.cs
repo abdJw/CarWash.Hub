@@ -2,6 +2,7 @@ using CarWash.Hub.Application.Features.Alerts;
 using CarWash.Hub.Application.Features.Auth;
 using CarWash.Hub.Application.Features.Catalog;
 using CarWash.Hub.Application.Features.Dashboard;
+using CarWash.Hub.Application.Features.DeviceSettings;
 using CarWash.Hub.Application.Features.Finance;
 using CarWash.Hub.Application.Features.Ingestion;
 using CarWash.Hub.Application.Features.Levels;
@@ -47,6 +48,9 @@ public static class DependencyInjection
 
         // Prices: anyone may read their own station's, only Super Admins set them.
         services.AddScoped<IStationPriceService, StationPriceService>();
+        services.AddScoped<IStationDurationService, StationDurationService>();
+        services.AddScoped<IDeviceSettingsReconciler, DeviceSettingsReconciler>();
+        services.AddScoped<IDeviceSettingsService, DeviceSettingsService>();
 
         // Administration: Super Admins only, checked inside each service.
         services.AddScoped<IGasStationService, GasStationService>();
@@ -56,7 +60,8 @@ public static class DependencyInjection
 
         // Message processing. The parser is pure and stateless; the processor is scoped because
         // the worker runs each batch in a scope of its own, with its own unit of work.
-        services.AddSingleton<IMachineMessageParser, Esp32ServiceEventParser>();
+        services.AddSingleton<Esp32ServiceEventParser>();
+        services.AddSingleton<IMachineMessageParser, MachineMessageParser>();
         services.AddScoped<IMachineStateProcessor, MachineStateProcessor>();
         services.AddScoped<IServiceLevelUpdater, ServiceLevelUpdater>();
         services.AddScoped<IAlertEvaluator, AlertEvaluator>();

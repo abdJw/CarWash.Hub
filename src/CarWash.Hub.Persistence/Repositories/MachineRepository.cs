@@ -59,6 +59,26 @@ public sealed class MachineRepository(ApplicationDbContext context, IMemoryCache
         return registration;
     }
 
+    /// <inheritdoc />
+    public async Task<MachineRegistration?> FindRegistrationAsync(string code, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(code);
+
+        var cacheKey = CacheKeyPrefix + code.ToUpperInvariant();
+        if (cache.TryGetValue(cacheKey, out MachineRegistration? cached) && cached is not null)
+        {
+            return cached;
+        }
+
+        var registration = await FindAsync(code, cancellationToken).ConfigureAwait(false);
+        if (registration is not null)
+        {
+            cache.Set(cacheKey, registration, CacheEntryOptions);
+        }
+
+        return registration;
+    }
+
     private Task<MachineRegistration?> FindAsync(string code, CancellationToken cancellationToken) =>
         // IgnoreQueryFilters: a soft-deleted machine still owns its id, and its messages are still
         // evidence worth keeping.

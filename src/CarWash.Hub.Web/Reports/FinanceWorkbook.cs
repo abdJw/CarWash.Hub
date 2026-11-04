@@ -66,6 +66,7 @@ public static class FinanceWorkbook
 
         row++;
         Figure(localizer[DashboardText.FinanceKpiRevenue], report.Totals.Revenue, MoneyFormat);
+        Figure(localizer[DashboardText.FinanceKpiCash], report.Totals.CashCollected, MoneyFormat);
         Figure(localizer[DashboardText.FinanceKpiUses], report.Totals.Uses, CountFormat);
         Figure(localizer[DashboardText.FinanceKpiAverage], report.Totals.AveragePerDay, MoneyFormat);
         Figure(localizer[DashboardText.FinanceKpiUnpriced], report.Totals.UnpricedUses, CountFormat);
@@ -115,6 +116,7 @@ public static class FinanceWorkbook
                 localizer[DashboardText.FinanceColUses],
                 Revenue(localizer),
                 localizer[DashboardText.FinanceColUnpriced],
+                Cash(localizer),
                 .. services.Select(service => $"{service.Name} ({localizer[DashboardText.FinanceCurrency]})"),
             ]);
 
@@ -126,17 +128,18 @@ public static class FinanceWorkbook
             Count(sheet.Cell(row, 3), period.Uses);
             Money(sheet.Cell(row, 4), period.Revenue);
             Count(sheet.Cell(row, 5), period.UnpricedUses);
+            Money(sheet.Cell(row, 6), period.CashCollected);
 
             for (var index = 0; index < services.Count; index++)
             {
                 var amount = period.Services.FirstOrDefault(service => string.Equals(service.Service, services[index].Key, StringComparison.OrdinalIgnoreCase));
-                Money(sheet.Cell(row, 6 + index), amount?.Revenue ?? 0);
+                Money(sheet.Cell(row, 7 + index), amount?.Revenue ?? 0);
             }
 
             row++;
         }
 
-        Finish(sheet, row - 1, 5 + services.Count);
+        Finish(sheet, row - 1, 6 + services.Count);
     }
 
     private static void Lines(
@@ -148,7 +151,8 @@ public static class FinanceWorkbook
         var usesColumn = column++;
         var revenueColumn = column++;
         var shareColumn = column++;
-        var unpricedColumn = column;
+        var unpricedColumn = column++;
+        var cashColumn = column;
 
         Header(
             sheet,
@@ -159,6 +163,7 @@ public static class FinanceWorkbook
                 Revenue(localizer),
                 localizer[DashboardText.FinanceColShare],
                 localizer[DashboardText.FinanceColUnpriced],
+                Cash(localizer),
             ]);
 
         var row = 2;
@@ -175,10 +180,11 @@ public static class FinanceWorkbook
             sheet.Cell(row, shareColumn).Value = line.Share;
             sheet.Cell(row, shareColumn).Style.NumberFormat.Format = ShareFormat;
             Count(sheet.Cell(row, unpricedColumn), line.UnpricedUses);
+            Money(sheet.Cell(row, cashColumn), line.CashCollected);
             row++;
         }
 
-        Finish(sheet, row - 1, unpricedColumn);
+        Finish(sheet, row - 1, cashColumn);
     }
 
     private static void Detail(IXLWorksheet sheet, IReadOnlyList<FinanceDetailRowDto> rows, IStringLocalizer<DashboardResource> localizer)
@@ -194,6 +200,8 @@ public static class FinanceWorkbook
                 localizer[DashboardText.FinanceColUses],
                 $"{localizer[DashboardText.FieldPrice]} ({localizer[DashboardText.FinanceCurrency]})",
                 Revenue(localizer),
+                localizer[DashboardText.ExportDevicePricedUses],
+                Cash(localizer),
             ]);
 
         var row = 2;
@@ -211,13 +219,15 @@ public static class FinanceWorkbook
             }
 
             Money(sheet.Cell(row, 8), detail.Revenue);
+            Count(sheet.Cell(row, 9), detail.DevicePricedUses);
+            Money(sheet.Cell(row, 10), detail.CashCollected);
             row++;
         }
 
         // Fixed widths: measuring thousands of rows would make the download slow.
         sheet.SheetView.FreezeRows(1);
-        sheet.Range(1, 1, Math.Max(1, row - 1), 8).SetAutoFilter();
-        foreach (var (column, width) in new[] { (1, 12), (2, 24), (3, 22), (4, 20), (5, 14), (6, 10), (7, 14), (8, 14) })
+        sheet.Range(1, 1, Math.Max(1, row - 1), 10).SetAutoFilter();
+        foreach (var (column, width) in new[] { (1, 12), (2, 24), (3, 22), (4, 20), (5, 14), (6, 10), (7, 14), (8, 14), (9, 14), (10, 14) })
         {
             sheet.Column(column).Width = width;
         }
@@ -244,6 +254,9 @@ public static class FinanceWorkbook
 
     private static string Revenue(IStringLocalizer<DashboardResource> localizer) =>
         localizer[DashboardText.FinanceColRevenue, localizer[DashboardText.FinanceCurrency]];
+
+    private static string Cash(IStringLocalizer<DashboardResource> localizer) =>
+        localizer[DashboardText.FinanceColCash, localizer[DashboardText.FinanceCurrency]];
 
     private static void Money(IXLCell cell, decimal value)
     {

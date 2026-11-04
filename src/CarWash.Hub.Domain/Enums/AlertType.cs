@@ -19,8 +19,17 @@ public enum AlertType : byte
     /// <summary>The service is still being used after running empty.</summary>
     UsedAfterEmpty = 4,
 
-    /// <summary>The machine has sent nothing for longer than expected.</summary>
+    /// <summary>
+    /// The machine has been quiet for longer than expected: no message at all from firmware that
+    /// only reports uses, or no sale from firmware that also reports every 30 seconds.
+    /// </summary>
     NoActivity = 10,
+
+    /// <summary>A machine that reports every 30 seconds has sent nothing for minutes: it is offline.</summary>
+    Offline = 11,
+
+    /// <summary>The machine reports that no water is available.</summary>
+    WaterUnavailable = 12,
 }
 
 /// <summary>How urgent an alert is.</summary>
@@ -55,4 +64,7 @@ public enum AlertResolution : byte
 
     /// <summary>The machine was unassigned, taken out of service or deleted, or its station was.</summary>
     NotEligible = 5,
+
+    /// <summary>The machine reports water available again.</summary>
+    WaterRestored = 6,
 }

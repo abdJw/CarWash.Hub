@@ -753,6 +753,28 @@ body:has(.mud-layout) .cw-splash { display: none; }
 .cw-price-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
 @media (max-width: 599.98px) { .cw-price-fields { grid-template-columns: minmax(0, 1fr); } }
 .cw-price-list { list-style: none; margin: .5rem 0 0; padding: 0; display: grid; }
+
+/* A machine card's status chips, and the settings card on the machine page. */
+.cw-machine-chips { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: .25rem .375rem; }
+.cw-card-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
+.cw-device-status { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem .75rem; margin: .5rem 0; }
+.cw-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: .5rem 1rem; margin: .5rem 0 .75rem; }
+.cw-facts dt { font-size: .75rem; color: var(--text-secondary); }
+.cw-facts dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* Run times: one row per machine service - its name, a field per selector position, and a save. */
+.cw-duration-form { padding-block: 1rem; border-block-end: 1px solid var(--gridline); }
+.cw-duration-form .cw-card-title { margin: 0; }
+.cw-duration-row {
+    display: grid; grid-template-columns: minmax(8rem, 1fr) minmax(0, 3fr) auto; align-items: center; gap: .5rem .75rem;
+    padding-block: .375rem;
+}
+.cw-duration-name { flex-wrap: wrap; gap: .375rem; }
+.cw-duration-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
+@media (max-width: 599.98px) {
+    .cw-duration-row { grid-template-columns: minmax(0, 1fr); }
+    .cw-duration-row .mud-button-root { justify-self: start; }
+}
 .cw-price-item { padding-block: .75rem; border-block-end: 1px solid var(--gridline); }
 .cw-price-item:last-child { border-block-end: 0; }
 .cw-price-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .375rem .75rem; }

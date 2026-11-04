@@ -1,6 +1,6 @@
 @* One breakdown of the finance report - by station, service or machine - as a table: uses, revenue,
-   and a share bar so the biggest earners stand out at a glance. Unpriced uses get a column only
-   when there are any. *@
+   and a share bar so the biggest earners stand out at a glance. Cash collected and unpriced uses
+   get a column only when there are any. *@
 @using CarWash.Hub.Application.Features.Finance
 @inject IStringLocalizer<DashboardResource> L
 
@@ -11,6 +11,7 @@
 else
 {
     var anyUnpriced = Lines.Any(line => line.UnpricedUses > 0);
+    var anyCash = Lines.Any(line => line.CashCollected > 0);
     <div class="viz-table-wrap">
         <table class="viz-table cw-fin-table">
             <thead>
@@ -18,6 +19,10 @@ else
                     <th scope="col">@NameHeader</th>
                     <th scope="col">@L[DashboardText.FinanceColUses]</th>
                     <th scope="col">@L[DashboardText.FinanceColRevenue, L[DashboardText.FinanceCurrency]]</th>
+                    @if (anyCash)
+                    {
+                        <th scope="col">@L[DashboardText.FinanceColCash, L[DashboardText.FinanceCurrency]]</th>
+                    }
                     <th scope="col">@L[DashboardText.FinanceColShare]</th>
                     @if (anyUnpriced)
                     {
@@ -46,6 +51,10 @@ else
                         </th>
                         <td>@DashboardFormat.Number(line.Uses)</td>
                         <td><strong>@DashboardFormat.Amount(line.Revenue)</strong></td>
+                        @if (anyCash)
+                        {
+                            <td>@DashboardFormat.Amount(line.CashCollected)</td>
+                        }
                         <td>
                             <span class="cw-fin-share">
                                 <span class="cw-fin-share-track" aria-hidden="true">
@@ -68,6 +77,10 @@ else
                         <th scope="row">@L[DashboardText.ChartTotal]</th>
                         <td>@DashboardFormat.Number(Totals.Uses)</td>
                         <td><strong>@DashboardFormat.Amount(Totals.Revenue)</strong></td>
+                        @if (anyCash)
+                        {
+                            <td>@DashboardFormat.Amount(Totals.CashCollected)</td>
+                        }
                         <td></td>
                         @if (anyUnpriced)
                         {

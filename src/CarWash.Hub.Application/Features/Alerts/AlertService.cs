@@ -19,7 +19,7 @@ public enum AlertKind
     /// <summary>Alerts about a service's level.</summary>
     Refill,
 
-    /// <summary>Alerts about a machine gone silent.</summary>
+    /// <summary>Alerts about the machine as a whole: gone quiet, offline, or out of water.</summary>
     NoActivity,
 }
 
@@ -65,7 +65,9 @@ public sealed record AlertQuery
 /// <param name="Remaining">Uses left when raised.</param>
 /// <param name="Capacity">The capacity of the refill being used up.</param>
 /// <param name="ForecastEmptyAt">The forecast run-out time when raised.</param>
-/// <param name="LastSeenAt">When the machine was last heard from, for a no-activity alert.</param>
+/// <param name="LastSeenAt">When the machine was last heard from, for a no-activity or offline alert.</param>
+/// <param name="LastSaleAt">When it last sold, for a no-activity alert measured in sales.</param>
+/// <param name="WaterUnavailableSince">Since when it has reported no water.</param>
 /// <remarks>Layer: Application.</remarks>
 public sealed record AlertDto(
     long Id,
@@ -86,7 +88,9 @@ public sealed record AlertDto(
     int? Remaining,
     int? Capacity,
     DateTimeOffset? ForecastEmptyAt,
-    DateTimeOffset? LastSeenAt)
+    DateTimeOffset? LastSeenAt,
+    DateTimeOffset? LastSaleAt = null,
+    DateTimeOffset? WaterUnavailableSince = null)
 {
     /// <summary>Gets the machine's name to show: the owner's, or the MAC address.</summary>
     public string MachineTitle => string.IsNullOrWhiteSpace(MachineName) ? MachineCode : MachineName;
@@ -249,7 +253,9 @@ public sealed class AlertService(
                     alert.Remaining,
                     alert.Capacity,
                     alert.ForecastEmptyAt,
-                    alert.LastSeenAt),
+                    alert.LastSeenAt,
+                    alert.LastSaleAt,
+                    alert.WaterUnavailableSince),
                 cancellationToken)
             .ConfigureAwait(false);
 
@@ -293,7 +299,9 @@ public sealed class AlertService(
             row.Remaining,
             row.Capacity,
             row.ForecastEmptyAt,
-            row.LastSeenAt))];
+            row.LastSeenAt,
+            row.LastSaleAt,
+            row.WaterUnavailableSince))];
     }
 
     private sealed record AlertRow(
@@ -315,7 +323,9 @@ public sealed class AlertService(
         int? Remaining,
         int? Capacity,
         DateTimeOffset? ForecastEmptyAt,
-        DateTimeOffset? LastSeenAt);
+        DateTimeOffset? LastSeenAt,
+        DateTimeOffset? LastSaleAt,
+        DateTimeOffset? WaterUnavailableSince);
 }
 
 /// <summary>A page of the alerts a caller sees, newest first.</summary>
@@ -345,13 +355,15 @@ public sealed class AlertListSpecification : BaseSpecification<Alert>
             AddCriteria(alert => alert.MachineId == machineId);
         }
 
+        // By range: the level alerts are numbered below the machine alerts, so a new machine alert
+        // type is never filed as a refill.
         if (query.Kind == AlertKind.Refill)
         {
-            AddCriteria(alert => alert.Type != AlertType.NoActivity);
+            AddCriteria(alert => alert.Type < AlertType.NoActivity);
         }
         else if (query.Kind == AlertKind.NoActivity)
         {
-            AddCriteria(alert => alert.Type == AlertType.NoActivity);
+            AddCriteria(alert => alert.Type >= AlertType.NoActivity);
         }
 
         if (query.BeforeId is { } beforeId)

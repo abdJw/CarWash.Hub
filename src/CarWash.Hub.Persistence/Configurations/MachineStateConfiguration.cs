@@ -21,6 +21,7 @@ public sealed class MachineStateConfiguration : IEntityTypeConfiguration<Machine
         builder.Property(s => s.Id).ValueGeneratedNever();
 
         builder.Property(s => s.LastServiceCode).HasMaxLength(ServiceDefinition.CodeMaxLength).IsUnicode(false);
+        builder.Property(s => s.LastBootId).HasMaxLength(MachineState.BootIdMaxLength).IsUnicode(false);
 
         builder.HasOne(s => s.Machine)
             .WithOne(m => m.State)

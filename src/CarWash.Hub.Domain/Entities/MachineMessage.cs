@@ -26,6 +26,9 @@ public class MachineMessage : BaseEntity<long>
     /// <summary>The longest processing error kept.</summary>
     public const int ProcessingErrorMaxLength = 500;
 
+    /// <summary>The longest device event id kept; a longer one is stored without it, so is never deduplicated.</summary>
+    public const int DeviceEventIdMaxLength = 128;
+
     /// <summary>Gets or sets the machine that sent the message.</summary>
     public Guid MachineId { get; set; }
 
@@ -43,6 +46,13 @@ public class MachineMessage : BaseEntity<long>
 
     /// <summary>Gets or sets the size of <see cref="Payload"/> in UTF-8 bytes.</summary>
     public int PayloadSizeBytes { get; set; }
+
+    /// <summary>
+    /// Gets or sets the device's own id for the event, <c>data.event_id</c>, when it sent one. Unique
+    /// per machine: a retried event carries the same id and is answered with the original message
+    /// instead of being stored again. Null for the earlier firmware format, which has no such id.
+    /// </summary>
+    public string? DeviceEventId { get; set; }
 
     /// <summary>
     /// Gets or sets the id of the configured client key the request was sent with. Never the key

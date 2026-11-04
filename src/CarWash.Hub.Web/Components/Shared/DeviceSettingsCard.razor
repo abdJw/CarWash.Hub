@@ -1,0 +1,188 @@
+@* A machine's settings: what its station's prices and run times make it (the revision sent), what
+   the machine confirmed it runs, where that stands, and the values themselves. Plus its last
+   start-up and report, which say whether it is polling at all. *@
+@using CarWash.Hub.Application.Features.DeviceSettings
+@using CarWash.Hub.Domain.Enums
+@inject IStringLocalizer<DashboardResource> L
+@inject DashboardFormat Format
+
+<section class="cw-card @Class">
+    <div class="cw-card-head">
+        <h2 class="cw-card-title">@L[DashboardText.DeviceSettingsTitle]</h2>
+        @if (ShowEdit)
+        {
+            <MudButton Href="admin/stations" Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Rounded.Sell">
+                @L[DashboardText.DeviceSettingsEdit]
+            </MudButton>
+        }
+    </div>
+
+    <p class="cw-device-status">
+        <span class="cw-status cw-status--@StatusKind">
+            <MudIcon Icon="@StatusIcon" Size="Size.Small" />
+            <span>@StatusText</span>
+        </span>
+        @if (IssueText is { } issue)
+        {
+            <span class="cw-muted cw-small">@issue</span>
+        }
+    </p>
+
+    <dl class="cw-facts">
+        <div>
+            <dt>@L[DashboardText.DeviceSettingsSent]</dt>
+            <dd>
+                @if (Settings.DesiredRevision > 0)
+                {
+                    @L[DashboardText.DeviceSettingsRevision, Settings.DesiredRevision]
+                    @if (Settings.DesiredAt is { } desiredAt)
+                    {
+                        <span class="cw-muted"> · @Format.DateTime(desiredAt)</span>
+                    }
+                }
+                else
+                {
+                    <span class="cw-muted">@L[DashboardText.DeviceSettingsNone]</span>
+                }
+            </dd>
+        </div>
+        <div>
+            <dt>@L[DashboardText.DeviceSettingsConfirmed]</dt>
+            <dd>
+                @if (Settings.AppliedRevision > 0)
+                {
+                    @L[DashboardText.DeviceSettingsRevision, Settings.AppliedRevision]
+                    @if (Settings.AppliedAt is { } appliedAt)
+                    {
+                        <span class="cw-muted"> · @Format.DateTime(appliedAt)</span>
+                    }
+                }
+                else
+                {
+                    <span class="cw-muted">@L[DashboardText.DeviceSettingsNone]</span>
+                }
+            </dd>
+        </div>
+        <div>
+            <dt>@L[DashboardText.DeviceSettingsLastReport]</dt>
+            <dd>@(Settings.LastHeartbeatAt is { } report ? Format.Ago(report, Now) : "—")</dd>
+        </div>
+        <div>
+            <dt>@L[DashboardText.DeviceSettingsLastBoot]</dt>
+            <dd>@(Settings.LastBootAt is { } boot ? Format.DateTime(boot) : "—")</dd>
+        </div>
+    </dl>
+
+    @if (Settings.LastAckAt is { } ackAt)
+    {
+        <p class="cw-muted cw-small">@L[DashboardText.DeviceSettingsLastReply, AckText(Settings.LastAckStatus), Settings.LastAckRevision, Format.Ago(ackAt, Now)]</p>
+    }
+
+    @if (Settings.Services.Count > 0)
+    {
+        <div class="viz-table-wrap">
+            <table class="viz-table">
+                <thead>
+                    <tr>
+                        <th scope="col">@L[DashboardText.FieldService]</th>
+                        <th scope="col">@L[DashboardText.DeviceSettingsColPrice]</th>
+                        <th scope="col">@L[DashboardText.DeviceSettingsColRunTimes]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var service in Settings.Services)
+                    {
+                        <tr @key="service.Service">
+                            <th scope="row">
+                                <span class="cw-icon-option"><MudIcon Icon="@Services.Icon(service.Service)" Size="Size.Small" /> @Services.Name(service.Service)</span>
+                            </th>
+                            <td>@Format.Money(service.PriceQirsh / 100m)</td>
+                            <td class="cw-mono">@string.Join(" / ", service.Seconds.Select(seconds => DashboardFormat.Number(seconds)))</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    <p class="cw-muted cw-small">@L[DashboardText.DeviceSettingsHint]</p>
+</section>
+
+@code {
+    /// <summary>Gets or sets the machine's settings.</summary>
+    [Parameter, EditorRequired]
+    public MachineDeviceSettingsDto Settings { get; set; } = default!;
+
+    /// <summary>Gets or sets the service names and icons.</summary>
+    [Parameter, EditorRequired]
+    public ServiceLookup Services { get; set; } = ServiceLookup.Empty;
+
+    /// <summary>Gets or sets the current time.</summary>
+    [Parameter, EditorRequired]
+    public DateTimeOffset Now { get; set; }
+
+    /// <summary>Gets or sets whether to offer the link to the prices and run times.</summary>
+    [Parameter]
+    public bool ShowEdit { get; set; }
+
+    /// <summary>Gets or sets extra classes for the card.</summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    private string StatusKind => Settings.Status switch
+    {
+        DeviceSettingsStatus.Applied => "good",
+        DeviceSettingsStatus.Pending or DeviceSettingsStatus.Busy => "neutral",
+        DeviceSettingsStatus.Failed => "critical",
+        DeviceSettingsStatus.Blocked => "warning",
+        _ => "muted",
+    };
+
+    private string StatusIcon => Settings.Status switch
+    {
+        DeviceSettingsStatus.Applied => Icons.Material.Rounded.CheckCircle,
+        DeviceSettingsStatus.Pending => Icons.Material.Rounded.Schedule,
+        DeviceSettingsStatus.Busy => Icons.Material.Rounded.HourglassTop,
+        DeviceSettingsStatus.Failed => Icons.Material.Rounded.Error,
+        DeviceSettingsStatus.Blocked => Icons.Material.Rounded.Warning,
+        _ => Icons.Material.Rounded.HelpOutline,
+    };
+
+    private string StatusText => L[Settings.Status switch
+    {
+        DeviceSettingsStatus.Applied => DashboardText.DeviceSettingsStatusApplied,
+        DeviceSettingsStatus.Pending => DashboardText.DeviceSettingsStatusPending,
+        DeviceSettingsStatus.Busy => DashboardText.DeviceSettingsStatusBusy,
+        DeviceSettingsStatus.Failed => DashboardText.DeviceSettingsStatusFailed,
+        DeviceSettingsStatus.Blocked => DashboardText.DeviceSettingsStatusBlocked,
+        _ => DashboardText.DeviceSettingsStatusNone,
+    }];
+
+    private string? IssueText
+    {
+        get
+        {
+            var service = Settings.IssueService is { } code ? Services.Name(code) : string.Empty;
+            return Settings.Issue switch
+            {
+                DeviceSettingsIssue.Unassigned => L[DashboardText.DeviceSettingsIssueUnassigned].Value,
+                DeviceSettingsIssue.StationInactive => L[DashboardText.DeviceSettingsIssueStationInactive].Value,
+                DeviceSettingsIssue.MissingPrice => L[DashboardText.DeviceSettingsIssueMissingPrice, service].Value,
+                DeviceSettingsIssue.InvalidPrice => L[DashboardText.DeviceSettingsIssueInvalidPrice, service].Value,
+                DeviceSettingsIssue.MissingDurations => L[DashboardText.DeviceSettingsIssueMissingDurations, service].Value,
+                _ => null,
+            };
+        }
+    }
+
+    private string AckText(DeviceAckStatus status) => L[status switch
+    {
+        DeviceAckStatus.Saved => DashboardText.AckSaved,
+        DeviceAckStatus.Unchanged => DashboardText.AckUnchanged,
+        DeviceAckStatus.Busy => DashboardText.AckBusy,
+        DeviceAckStatus.StorageError => DashboardText.AckStorageError,
+        DeviceAckStatus.InvalidSettings => DashboardText.AckInvalidSettings,
+        DeviceAckStatus.InvalidCommand => DashboardText.AckInvalidCommand,
+        DeviceAckStatus.InvalidJson => DashboardText.AckInvalidJson,
+        _ => DashboardText.AckUnknown,
+    }];
+}

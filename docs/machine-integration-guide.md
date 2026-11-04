@@ -12,6 +12,13 @@ firmware's protected configuration, not in source code you share.
 Interactive documentation, with a "Try it out" button and ready-made examples, is at
 `https://<host>/swagger` (and `https://<host>/scalar`) on the test server.
 
+> **ESP32 + A7670G firmware (protocol baseline 2026-11-03).** That firmware sends typed events
+> (`device_boot`, `water_status`, `payment_success`, `settings_ack`) in `data` and polls
+> `GET /api/v1/settings` for its prices and run times. Its full contract - fields, deduplication by
+> `event_id`, the settings document and revisions - is in
+> [esp32-device-contract.md](esp32-device-contract.md). This guide covers the transport rules that
+> apply to every firmware.
+
 ---
 
 ## 1. Quick example
@@ -118,9 +125,11 @@ Errors are JSON problem documents (`application/problem+json`). They carry:
 - **Retry on:** network errors, 429 (after `Retry-After`) and 5xx, with exponential backoff.
 - **Don't retry on:** 400, 401, 413 and 415. These won't succeed until the request or
   configuration changes.
-- **Duplicates:** a retry after a timeout may store the same status twice. That is harmless for
-  status messages, and including your machine's own reading time inside `data` makes duplicates
-  easy to spot later.
+- **Duplicates:** send a unique string `event_id` inside `data` and keep it the same on every retry
+  of that event. A repeat of an `event_id` already stored for the machine is answered `201` with the
+  original message (`"duplicate": true` in the response) and is not stored again. Without an
+  `event_id`, a retry after a timeout may store the same status twice; the earlier service-event
+  format is then deduplicated by its `readAt`.
 
 **Language:** send `X-Lang: ar` to receive the messages in Arabic. The `code` values never change.
 

@@ -13,8 +13,17 @@ public sealed class ServiceUsageConfiguration : IEntityTypeConfiguration<Service
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        builder.ToTable("service_usages");
+        builder.ToTable("service_usages", table =>
+        {
+            table.HasCheckConstraint("ck_service_usages_sale_amount", "sale_amount IS NULL OR sale_amount >= 0");
+            table.HasCheckConstraint("ck_service_usages_paid_amount", "paid_amount IS NULL OR paid_amount >= 0");
+            table.HasCheckConstraint("ck_service_usages_duration_seconds", "duration_seconds IS NULL OR duration_seconds > 0");
+        });
         builder.HasKey(u => u.Id);
+
+        // The same precision as station prices: JOD to the fils.
+        builder.Property(u => u.SaleAmount).HasPrecision(9, 3);
+        builder.Property(u => u.PaidAmount).HasPrecision(9, 3);
 
         // Append-only and read by range, like the messages it comes from.
         builder.Property(u => u.Id).UseIdentityColumn();

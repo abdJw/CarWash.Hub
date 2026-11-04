@@ -1,6 +1,7 @@
 @* One machine at a glance: name, station, activity, each tracked service's level as a tag, today's
    uses and the last 12 hours. The card is one big link to the machine (a stretched link, so the
    Refill button beside it stays a real button). It pulses briefly when a use arrives. *@
+@using CarWash.Hub.Application.Features.DeviceSettings
 @inject IStringLocalizer<DashboardResource> L
 @inject DashboardFormat Format
 
@@ -14,7 +15,25 @@
                 <span class="cw-mono">@Machine.Code</span>
             }
         </div>
-        <ActivityChip Activity="Machine.Activity" LastSeenAt="Machine.LastSeenAt" Now="Now" />
+        <div class="cw-machine-chips">
+            <ActivityChip Activity="Machine.Activity" LastSeenAt="Machine.LastSeenAt" LastSaleAt="Machine.LastUsageAt ?? Machine.FirstSeenAt" Now="Now" />
+            <WaterBadge Available="Machine.WaterAvailable" ReportedAt="Machine.WaterReportedAt" Stale="Machine.WaterIsStale" />
+            @switch (Machine.SettingsStatus)
+            {
+                case DeviceSettingsStatus.Pending or DeviceSettingsStatus.Busy:
+                    <span class="cw-status cw-status--neutral">
+                        <MudIcon Icon="@Icons.Material.Rounded.Schedule" Size="Size.Small" />
+                        <span>@L[DashboardText.DeviceSettingsChipPending]</span>
+                    </span>
+                    break;
+                case DeviceSettingsStatus.Failed or DeviceSettingsStatus.Blocked:
+                    <span class="cw-status cw-status--warning">
+                        <MudIcon Icon="@Icons.Material.Rounded.Tune" Size="Size.Small" />
+                        <span>@L[DashboardText.DeviceSettingsChipAttention]</span>
+                    </span>
+                    break;
+            }
+        </div>
     </div>
 
     <div class="cw-machine-station">

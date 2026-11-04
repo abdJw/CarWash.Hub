@@ -5,6 +5,7 @@ using CarWash.Hub.Application.Common.Specifications;
 using CarWash.Hub.Application.Common.Validation;
 using CarWash.Hub.Application.Exceptions;
 using CarWash.Hub.Application.Features.Admin;
+using CarWash.Hub.Application.Features.DeviceSettings;
 using CarWash.Hub.Application.Features.Processing;
 using CarWash.Hub.Application.Features.Refills;
 using CarWash.Hub.Domain.Entities;
@@ -117,6 +118,7 @@ public interface IStationPriceService
 /// <param name="timeZone">The business day today is.</param>
 /// <param name="validator">Validates a price.</param>
 /// <param name="localizer">Messages and names.</param>
+/// <param name="settingsSignal">Tells the worker the machines' settings may have changed.</param>
 /// <param name="logger">Logger.</param>
 public sealed class StationPriceService(
     IUnitOfWork unitOfWork,
@@ -126,6 +128,7 @@ public sealed class StationPriceService(
     IBusinessTimeZone timeZone,
     IValidator<SetStationPriceRequest> validator,
     ILocalizationService localizer,
+    IDeviceSettingsSignal settingsSignal,
     ILogger<StationPriceService> logger) : IStationPriceService
 {
     /// <summary>How many years back a price may start - far enough to price the whole history.</summary>
@@ -271,6 +274,7 @@ public sealed class StationPriceService(
         price.Note = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim();
 
         await unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        settingsSignal.Request();
 
         logger.LogInformation(
             "Price of {Service} at station {StationId} set to {UnitPrice} JOD from {EffectiveFrom} by {UserName}",
@@ -290,6 +294,7 @@ public sealed class StationPriceService(
 
         repository.Remove(price);
         await unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        settingsSignal.Request();
 
         logger.LogInformation(
             "Price of {Service} at station {StationId} from {EffectiveFrom} removed by {UserName}",
@@ -329,6 +334,13 @@ public sealed class SetStationPriceRequestValidator : AbstractValidator<SetStati
             .WithMessage(_ => localizer.GetString(ResourceKeys.Validation.Range, localizer.GetString(ResourceKeys.Fields.Price), 0, StationServicePrice.MaxUnitPrice))
             .PrecisionScale(9, 3, ignoreTrailingZeros: true)
             .WithMessage(_ => localizer.GetString(ResourceKeys.Validation.PriceDecimals, localizer.GetString(ResourceKeys.Fields.Price)));
+
+        // A service the machines are configured for is sent to them as whole qirsh in 5-qirsh steps;
+        // a price they would refuse is refused here, where the person setting it can correct it.
+        RuleFor(request => request.UnitPrice)
+            .Must(DeviceServices.IsDevicePrice)
+            .When(request => DeviceServices.Find(request.Service) is not null)
+            .WithMessage(request => localizer.GetString(ResourceKeys.Validation.DevicePrice, request.Service.Trim().ToLowerInvariant()));
 
         RuleFor(request => request.EffectiveFrom)
             .NotEmpty().WithMessage(_ => localizer.GetString(ResourceKeys.Validation.Required, localizer.GetString(ResourceKeys.Fields.EffectiveFrom)));

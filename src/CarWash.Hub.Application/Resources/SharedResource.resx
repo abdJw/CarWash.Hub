@@ -114,4 +114,9 @@
   <data name="Validation_PriceDate" xml:space="preserve"><value>The start date must be within the last {0} years and at most {1} days ahead.</value></data>
   <data name="Field_Price" xml:space="preserve"><value>Price</value></data>
   <data name="Field_EffectiveFrom" xml:space="preserve"><value>Effective from</value></data>
+  <data name="Validation_DevicePrice" xml:space="preserve"><value>The price of {0} is sent to the machines, so it must be from 0.05 to 9.95 dinars, in steps of 0.05.</value></data>
+  <data name="Validation_DurationRange" xml:space="preserve"><value>Each run time must be a whole number of seconds from {0} to {1}.</value></data>
+  <data name="Validation_DurationCount" xml:space="preserve"><value>{0} needs exactly {1} run time(s), one per selector position.</value></data>
+  <data name="Validation_NotDeviceService" xml:space="preserve"><value>{0} has no run times on the machines.</value></data>
+  <data name="Field_Durations" xml:space="preserve"><value>Run times</value></data>
 </root>

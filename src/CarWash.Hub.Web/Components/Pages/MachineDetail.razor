@@ -46,7 +46,8 @@ else
                     <MudIcon Icon="@Icons.Material.Rounded.LocalGasStation" Size="Size.Small" />
                     @(card.StationName ?? L[DashboardText.MachineUnassigned])
                 </span>
-                <ActivityChip Activity="card.Activity" LastSeenAt="card.LastSeenAt" Now="Now" />
+                <ActivityChip Activity="card.Activity" LastSeenAt="card.LastSeenAt" LastSaleAt="card.LastUsageAt ?? card.FirstSeenAt" Now="Now" />
+                <WaterBadge Available="card.WaterAvailable" ReportedAt="card.WaterReportedAt" Stale="card.WaterIsStale" />
                 @if (!card.IsActive)
                 {
                     <span class="cw-status cw-status--muted">@L[DashboardText.MachineInactive]</span>
@@ -114,6 +115,11 @@ else
 
     <div class="cw-grid">
         <UsageChart Class="cw-span-2" Title="@L[DashboardText.ChartUsageTitle]" Series="_detail.Usage" Services="_services" Dimmed="IsRefreshing" />
+
+        @if (_detail.DeviceSettings is { } deviceSettings)
+        {
+            <DeviceSettingsCard Class="cw-span-2" Settings="deviceSettings" Services="_services" Now="Now" ShowEdit="_isSuperAdmin" />
+        }
 
         <section class="cw-card cw-span-2">
             <h2 class="cw-card-title">@L[DashboardText.MachineAlerts]</h2>

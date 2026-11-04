@@ -78,7 +78,8 @@ docker compose up --build # API on http://localhost:8080, Swagger at /swagger (S
 
 | Method and path | Header required | Purpose |
 |---|---|---|
-| `POST /api/v1/machine-messages` | `client-secret-key` | Store a message: JSON `{ machineId, data }`. 201 + `Location` |
+| `POST /api/v1/machine-messages` | `client-secret-key` | Store a message: JSON `{ machineId, data }`. 201 + `Location`; a repeated `data.event_id` is answered 201 with the original (`duplicate: true`) |
+| `GET /api/v1/settings?machineId=` | `client-secret-key` | A machine's settings poll: its station's prices and run times as one minified document with a `revision`, or `{"revision":0}`. Raw body (no envelope), exact `Content-Length`, `no-store`. See [docs/esp32-device-contract.md](docs/esp32-device-contract.md) |
 | `GET /api/v1/machine-messages/{id}` | `client-read-key` | One stored message: `payload` (the stored data) and `payloadJson` when it is JSON |
 | `GET /api/v1/machines` | `client-read-key` | Known machines, with first- and last-seen times (search, sort, page) |
 | `GET /api/v1/machines/{machineId}` | `client-read-key` | One machine |
@@ -86,7 +87,7 @@ docker compose up --build # API on http://localhost:8080, Swagger at /swagger (S
 | `GET /api/v1/machines/{machineId}/messages?from&to&pageNumber&pageSize` | `client-read-key` | History, newest first |
 | `GET /api/v1/machines/{machineId}/usage?from&to` | `client-read-key` | Uses per service, in total and per UTC hour (default last 24 h, at most 31 days) |
 | `GET /api/v1/processing/status` | `client-read-key` | Processing backlog (pending and failed messages) and the worker's state |
-| `GET /api/v1/reports/finance?from&to&stationIds&services&machineId&grain&includeDetail` | `client-read-key` | Revenue: each use valued at its station's price that day. Totals and the period before, a timeline (`Auto`, `Day`, `Week`, `Month`) and breakdowns by station, service and machine. `from`/`to` are business days in Asia/Amman, at most 366 days apart; repeat `stationIds` and `services` for several. Amounts in JOD |
+| `GET /api/v1/reports/finance?from&to&stationIds&services&machineId&grain&includeDetail` | `client-read-key` | Revenue: each use valued at the price the machine reported, or else at its station's price that day; cash collected kept apart. Totals and the period before, a timeline (`Auto`, `Day`, `Week`, `Month`) and breakdowns by station, service and machine. `from`/`to` are business days in Asia/Amman, at most 366 days apart; repeat `stationIds` and `services` for several. Amounts in JOD |
 | `GET /health`, `GET /health/ready` | none | Liveness, and readiness (which also checks the database) |
 
 **Dashboard routes** (signed-in user; the cookie never opens an API endpoint):
@@ -251,8 +252,24 @@ The cyberani code these parts were copied from has five defects, fixed here:
 
 ### Message processing
 
-Each ESP32 message is one use of one service:
-`{"service":"soap","macAddress":"B0:CB:D8:D0:64:2C","readAt":"2026-10-31T13:03:45Z"}`.
+Two firmware formats are understood, chosen by content (`MachineMessageParser`):
+
+- **The event firmware** (ESP32 + A7670G, protocol baseline 2026-11-03): `data` is an object with a
+  string `event` - `payment_success` (one sale, with `price_qirsh`, `paid_qirsh` and
+  `duration_seconds`), `device_boot`, `water_status` (every ~30 s, which is also the heartbeat) or
+  `settings_ack`. Read by `Esp32DeviceEventParser`; the full contract, settings polling and revisions
+  are in [docs/esp32-device-contract.md](docs/esp32-device-contract.md).
+  - Deduplicated **at ingest** by `(machine, data.event_id)`, a filtered unique index on
+    `machine_messages.device_event_id`.
+  - Semantic problems (a bad price, a `device_mac` that is not the `machineId`) never return 400 -
+    the firmware stops posting on a 400. The message is stored, then marked `Failed` with no sale.
+  - Sales carry their amounts: `service_usages.sale_amount` / `paid_amount`, summed per day in
+    `service_usage_daily.device_sales_amount` / `cash_collected_amount`. Finance values such a use at
+    the machine's price; only the rest at the station's price list.
+  - Water, heartbeat and start-up go to `machine_states` (`water_available`, `last_heartbeat_at`,
+    `last_boot_at`).
+- **The earlier format**, one use of one service:
+  `{"service":"soap","macAddress":"B0:CB:D8:D0:64:2C","readAt":"2026-10-31T13:03:45Z"}`.
 
 - **Ingest is unchanged.** The message is stored with `processing_status = Pending`, the 201 goes
   back, and an in-process signal wakes `MachineStateWorker`. The worker also sweeps every

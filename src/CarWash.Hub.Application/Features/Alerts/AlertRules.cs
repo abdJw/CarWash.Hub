@@ -44,11 +44,21 @@ public static class AlertRules
         _ => null,
     };
 
+    /// <summary>Returns whether an alert type is about the machine as a whole rather than one service's level.</summary>
+    /// <param name="type">The alert type.</param>
+    /// <returns><see langword="true"/> for no activity, offline and no water.</returns>
+    public static bool IsMachineAlert(AlertType type) =>
+        type is AlertType.NoActivity or AlertType.Offline or AlertType.WaterUnavailable;
+
     /// <summary>Returns how urgent an alert type is.</summary>
     /// <param name="type">The alert type.</param>
     /// <returns>Critical once customers are affected, otherwise a warning.</returns>
+    /// <remarks>
+    /// Offline is a warning: the firmware keeps washing on its saved settings and buffers its sales,
+    /// so customers are served while it is out of touch. No water stops every wash.
+    /// </remarks>
     public static AlertSeverity SeverityOf(AlertType type) =>
-        type is AlertType.Empty or AlertType.UsedAfterEmpty ? AlertSeverity.Critical : AlertSeverity.Warning;
+        type is AlertType.Empty or AlertType.UsedAfterEmpty or AlertType.WaterUnavailable ? AlertSeverity.Critical : AlertSeverity.Warning;
 
     /// <summary>
     /// Returns whether raising an alert should notify people: on a first alert, when it gets more
@@ -59,7 +69,7 @@ public static class AlertRules
     /// <param name="raised">The alert being raised.</param>
     /// <returns><see langword="true"/> to notify.</returns>
     public static bool ShouldNotify(AlertType? replaced, AlertType raised) =>
-        raised is AlertType.UsedAfterEmpty or AlertType.NoActivity
+        raised is AlertType.UsedAfterEmpty || IsMachineAlert(raised)
         || replaced is null
         || SeverityOf(raised) > SeverityOf(replaced.Value);
 
@@ -118,6 +128,24 @@ public static class AlertRules
         }
 
         return older + (now - from) - quiet;
+    }
+
+    /// <summary>Returns whether a moment falls in a station's quiet hours.</summary>
+    /// <param name="now">The moment.</param>
+    /// <param name="quietStart">When quiet hours start, in local time; null when there are none.</param>
+    /// <param name="quietEnd">When quiet hours end, in local time; may be the next day.</param>
+    /// <param name="zone">The station's time zone.</param>
+    /// <returns><see langword="true"/> inside quiet hours.</returns>
+    public static bool IsQuietNow(DateTimeOffset now, TimeOnly? quietStart, TimeOnly? quietEnd, TimeZoneInfo zone)
+    {
+        ArgumentNullException.ThrowIfNull(zone);
+        if (quietStart is not { } start || quietEnd is not { } end || start == end)
+        {
+            return false;
+        }
+
+        var time = TimeOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, zone).DateTime);
+        return start < end ? time >= start && time < end : time >= start || time < end;
     }
 
     private static DateTimeOffset AtLocal(DateOnly day, TimeOnly time, TimeZoneInfo zone)

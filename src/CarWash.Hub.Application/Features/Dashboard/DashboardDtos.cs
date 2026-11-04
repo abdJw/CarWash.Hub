@@ -25,11 +25,26 @@ public sealed class ActivityOptions
     public const string SectionName = "Alerts";
 
     /// <summary>
-    /// Gets or sets how many hours without any message make a machine "silent". Machines send only
-    /// when used, so this is the only sign of a machine that is off, offline or broken.
+    /// Gets or sets how many hours without activity make a machine "silent": without any message
+    /// for firmware that only reports uses - the only sign such a machine is off - and without a sale
+    /// for firmware that also reports every 30 seconds.
     /// </summary>
     [Range(1, 168)]
     public int NoActivityAfterHours { get; set; } = 6;
+
+    /// <summary>
+    /// Gets or sets how many minutes without any message make a machine that reports every 30
+    /// seconds count as offline. Long enough to ride out the firmware's retry back-off (5, 15, 60 s).
+    /// </summary>
+    [Range(1, 1440)]
+    public int OfflineAfterMinutes { get; set; } = 3;
+
+    /// <summary>
+    /// Gets or sets how many minutes a machine must keep reporting no water before it is an alert,
+    /// so a pressure blip does not raise and clear one.
+    /// </summary>
+    [Range(0, 1440)]
+    public int WaterUnavailableAfterMinutes { get; set; } = 1;
 
     /// <summary>Gets or sets how recent a use must be, in minutes, for a machine to count as busy now.</summary>
     [Range(1, 240)]
@@ -51,6 +66,18 @@ public enum MachineActivity
 
     /// <summary>Nothing received for <see cref="ActivityOptions.NoActivityAfterHours"/> or more.</summary>
     Silent,
+
+    /// <summary>
+    /// A machine that reports every 30 seconds has sent nothing for
+    /// <see cref="ActivityOptions.OfflineAfterMinutes"/> or more.
+    /// </summary>
+    Offline,
+
+    /// <summary>
+    /// A machine that reports every 30 seconds is online but has sold nothing for
+    /// <see cref="ActivityOptions.NoActivityAfterHours"/> or more.
+    /// </summary>
+    NoSales,
 }
 
 /// <summary>A service as the dashboard shows it.</summary>
@@ -100,6 +127,7 @@ public sealed record UsageSeriesDto(DashboardRange Range, TimeSpan BucketSize, I
 /// <param name="Last12Hours">Uses per hour over the last 12 hours, oldest first.</param>
 /// <param name="Usage">Usage over the requested window.</param>
 /// <param name="GeneratedAt">When the numbers were read, in UTC.</param>
+/// <param name="OfflineCount">Machines in service that report every 30 seconds and have gone quiet: offline.</param>
 /// <remarks>Layer: Application.</remarks>
 public sealed record FleetOverviewDto(
     int MachineCount,
@@ -111,7 +139,8 @@ public sealed record FleetOverviewDto(
     IReadOnlyList<ServiceCountDto> TodayByService,
     IReadOnlyList<int> Last12Hours,
     UsageSeriesDto Usage,
-    DateTimeOffset GeneratedAt);
+    DateTimeOffset GeneratedAt,
+    int OfflineCount = 0);
 
 /// <summary>How much of a tracked service's last refill is left on one machine.</summary>
 /// <param name="Service">The service code.</param>
@@ -142,6 +171,10 @@ public sealed record ServiceLevelDto(
 /// <param name="UsesToday">Uses since local midnight, per service.</param>
 /// <param name="Last12Hours">Uses per hour over the last 12 hours, oldest first.</param>
 /// <param name="Levels">The refill level of each tracked service, in no particular order.</param>
+/// <param name="ReportsHeartbeat">Whether it runs firmware that reports every 30 seconds, so silence means offline.</param>
+/// <param name="WaterAvailable">Whether it last reported water as available; null until it reports it.</param>
+/// <param name="WaterReportedAt">When it last reported its water.</param>
+/// <param name="SettingsStatus">Where its prices and run times stand on the machine.</param>
 /// <remarks>Layer: Application.</remarks>
 public sealed record MachineCardDto(
     Guid Id,
@@ -158,8 +191,18 @@ public sealed record MachineCardDto(
     MachineActivity Activity,
     IReadOnlyList<ServiceCountDto> UsesToday,
     IReadOnlyList<int> Last12Hours,
-    IReadOnlyList<ServiceLevelDto> Levels)
+    IReadOnlyList<ServiceLevelDto> Levels,
+    bool ReportsHeartbeat = false,
+    bool? WaterAvailable = null,
+    DateTimeOffset? WaterReportedAt = null,
+    DeviceSettings.DeviceSettingsStatus SettingsStatus = DeviceSettings.DeviceSettingsStatus.NotConfigured)
 {
+    /// <summary>
+    /// Gets a value indicating whether <see cref="WaterAvailable"/> is out of date: the machine is
+    /// offline, so the last report may no longer hold.
+    /// </summary>
+    public bool WaterIsStale => Activity == MachineActivity.Offline;
+
     /// <summary>Gets the name to show: the owner's, or the MAC address.</summary>
     public string Title => string.IsNullOrWhiteSpace(DisplayName) ? Code : DisplayName;
 
@@ -187,9 +230,41 @@ public sealed record MessageSummaryDto(long Id, DateTimeOffset ReceivedAt, strin
 /// <param name="Usage">Usage over the requested window.</param>
 /// <param name="RecentUses">The latest uses, newest first.</param>
 /// <param name="RecentMessages">The latest messages, newest first.</param>
+/// <param name="DeviceSettings">Its settings and start-up, for firmware that has them; null otherwise.</param>
 /// <remarks>Layer: Application.</remarks>
 public sealed record MachineDetailDto(
     MachineCardDto Card,
     UsageSeriesDto Usage,
     IReadOnlyList<UsageEventDto> RecentUses,
-    IReadOnlyList<MessageSummaryDto> RecentMessages);
+    IReadOnlyList<MessageSummaryDto> RecentMessages,
+    MachineDeviceSettingsDto? DeviceSettings = null);
+
+/// <summary>A machine's settings - what it should run and what it confirmed - and its last start-up.</summary>
+/// <param name="Status">Where the settings stand.</param>
+/// <param name="DesiredRevision">The revision it should run; 0 for none.</param>
+/// <param name="DesiredAt">When that revision was issued.</param>
+/// <param name="AppliedRevision">The newest revision it confirmed; 0 for none.</param>
+/// <param name="AppliedAt">When it confirmed it.</param>
+/// <param name="Issue">Why the station's current values are not being sent, if they are not.</param>
+/// <param name="IssueService">The service the issue is about.</param>
+/// <param name="LastAckStatus">What its newest reply said.</param>
+/// <param name="LastAckRevision">The revision its newest reply was about.</param>
+/// <param name="LastAckAt">When its newest reply arrived.</param>
+/// <param name="Services">The settings of <paramref name="DesiredRevision"/>, in document order; empty for none.</param>
+/// <param name="LastBootAt">When it last started up.</param>
+/// <param name="LastHeartbeatAt">When it last reported on its own.</param>
+/// <remarks>Layer: Application.</remarks>
+public sealed record MachineDeviceSettingsDto(
+    DeviceSettings.DeviceSettingsStatus Status,
+    long DesiredRevision,
+    DateTimeOffset? DesiredAt,
+    long AppliedRevision,
+    DateTimeOffset? AppliedAt,
+    Domain.Enums.DeviceSettingsIssue Issue,
+    string? IssueService,
+    Domain.Enums.DeviceAckStatus LastAckStatus,
+    long LastAckRevision,
+    DateTimeOffset? LastAckAt,
+    IReadOnlyList<DeviceSettings.DeviceServiceSettings> Services,
+    DateTimeOffset? LastBootAt,
+    DateTimeOffset? LastHeartbeatAt);

@@ -108,6 +108,18 @@ else
                   DeltaLabel="@deltaLabel"
                   SameLabel="@L[DashboardText.FinanceSameAsPrevious]" />
 
+        @if (totals.CashCollected > 0 || previous.CashCollected > 0)
+        {
+            <StatTile Label="@L[DashboardText.FinanceKpiCash]"
+                      Icon="@Icons.Material.Rounded.Savings"
+                      Value="@Format.Money(totals.CashCollected)"
+                      Delta="Direction(totals.CashCollected, previous.CashCollected)"
+                      DeltaText="@DashboardFormat.Change(totals.CashCollected, previous.CashCollected)"
+                      DeltaLabel="@deltaLabel"
+                      SameLabel="@L[DashboardText.FinanceSameAsPrevious]"
+                      Hint="@L[DashboardText.FinanceKpiCashHint]" />
+        }
+
         <StatTile Label="@L[DashboardText.FinanceKpiUses]"
                   Icon="@Icons.Material.Rounded.TouchApp"
                   Value="@DashboardFormat.Number(totals.Uses)"
@@ -474,7 +486,7 @@ else
     private async Task EditPricesAsync(Guid stationId, string stationName)
     {
         var dialog = await Dialogs.ShowAsync<StationPricesDialog>(
-            L[DashboardText.PricesTitle, stationName],
+            L[DashboardText.PricesAndDurationsTitle, stationName],
             new DialogParameters<StationPricesDialog>
             {
                 { prices => prices.StationId, stationId },

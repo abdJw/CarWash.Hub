@@ -1,5 +1,8 @@
-@* A station's price list: set a price for a service from a day on, and see each service's current,
-   upcoming and past prices. Stays open across saves - prices are usually set several at a time. *@
+@* A station's price list and run times: set a price for a service from a day on, and see each
+   service's current, upcoming and past prices; set the run times the machines offer per selector
+   position. Both are sent to the station's machines as their settings. Stays open across saves -
+   prices are usually set several at a time. *@
+@using CarWash.Hub.Application.Features.DeviceSettings
 @using CarWash.Hub.Application.Features.Pricing
 @inherits AdminDialogBase
 @inject IDialogService DialogService
@@ -39,6 +42,7 @@
                 <MudTextField @bind-Value="_note" Label="@L[DashboardText.FieldPriceNote]" Variant="Variant.Outlined" MaxLength="Domain.Entities.StationServicePrice.NoteMaxLength"
                               Error="@HasError(nameof(SetStationPriceRequest.Note))" ErrorText="@ErrorOf(nameof(SetStationPriceRequest.Note))" />
                 <p class="cw-muted cw-small">@L[DashboardText.PricesHint]</p>
+                <p class="cw-muted cw-small">@L[DashboardText.PricesDeviceRule]</p>
                 <div>
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.Sell"
                                Disabled="@(Saving || _service is null || _price is null || _from is null)" OnClick="SetAsync">
@@ -46,6 +50,43 @@
                     </MudButton>
                 </div>
             </section>
+
+            @if (_durations is not null)
+            {
+                <section class="cw-form cw-duration-form">
+                    <h3 class="cw-card-title">@L[DashboardText.DurationsTitle]</h3>
+                    <p class="cw-muted cw-small">@L[DashboardText.DurationsHint]</p>
+                    @foreach (var service in _durations.Services)
+                    {
+                        var edit = _edits[service.Service];
+                        <div class="cw-duration-row" @key="service.Service">
+                            <span class="cw-icon-option cw-duration-name">
+                                <MudIcon Icon="@Services.Icon(service.Service)" Size="Size.Small" />
+                                <strong>@Services.Name(service.Service)</strong>
+                                @if (service.IsSuggested)
+                                {
+                                    <span class="cw-status cw-status--warning cw-small">@L[DashboardText.DurationsSuggested]</span>
+                                }
+                            </span>
+                            <div class="cw-duration-fields">
+                                @for (var position = 0; position < service.Positions; position++)
+                                {
+                                    var index = position;
+                                    <MudNumericField T="int?" Value="edit[index]" ValueChanged="value => edit[index] = value"
+                                                     Label="@(service.Positions == 1 ? L[DashboardText.DurationsSingle] : L[DashboardText.DurationsPosition, index + 1])"
+                                                     Min="Domain.Entities.StationServiceDuration.MinSeconds" Max="Domain.Entities.StationServiceDuration.MaxSeconds"
+                                                     Variant="Variant.Outlined" Margin="Margin.Dense" Culture="CultureInfo.InvariantCulture"
+                                                     Adornment="Adornment.End" AdornmentText="@L[DashboardText.DurationsSecondsUnit]" Class="cw-ltr-input" />
+                                }
+                            </div>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Rounded.Timer"
+                                       Disabled="@(Saving || edit.Any(value => value is null))" OnClick="() => SetDurationsAsync(service.Service)">
+                                @L[DashboardText.DurationsSave]
+                            </MudButton>
+                        </div>
+                    }
+                </section>
+            }
 
             <ul class="cw-price-list">
                 @foreach (var service in _prices.Services)
@@ -134,6 +175,8 @@
 
 @code {
     private StationPricesDto? _prices;
+    private StationDurationsDto? _durations;
+    private readonly Dictionary<string, int?[]> _edits = new(StringComparer.OrdinalIgnoreCase);
     private string? _service;
     private decimal? _price;
     private DateTime? _from;
@@ -158,8 +201,47 @@
         _from = _prices?.Today.ToDateTime(TimeOnly.MinValue);
     }
 
-    private async Task LoadAsync() =>
+    private async Task LoadAsync()
+    {
         _prices = await Runner.QueryAsync<IStationPriceService, StationPricesDto>((service, token) => service.GetAsync(StationId, token));
+        await LoadDurationsAsync();
+    }
+
+    // The fields start from what is saved, or from the suggestions; an unsaved edit of another
+    // service survives a save of this one.
+    private async Task LoadDurationsAsync(string? reset = null)
+    {
+        _durations = await Runner.QueryAsync<IStationDurationService, StationDurationsDto>((service, token) => service.GetAsync(StationId, token));
+        foreach (var service in _durations.Services)
+        {
+            if (reset is null || !_edits.ContainsKey(service.Service) || string.Equals(reset, service.Service, StringComparison.OrdinalIgnoreCase))
+            {
+                _edits[service.Service] = [.. service.Seconds.Select(seconds => (int?)seconds)];
+            }
+        }
+    }
+
+    private async Task SetDurationsAsync(string code)
+    {
+        var edit = _edits[code];
+        if (edit.Any(value => value is null))
+        {
+            return;
+        }
+
+        var saved = await SaveAsync<IStationDurationService>(
+            (service, token) => service.SetAsync(
+                new SetStationDurationsRequest { StationId = StationId, Service = code, Seconds = [.. edit.Select(value => value!.Value)] },
+                token),
+            L[DashboardText.DurationsSaved],
+            close: false);
+
+        if (saved)
+        {
+            _changed = true;
+            await LoadDurationsAsync(reset: code);
+        }
+    }
 
     private async Task SetAsync()
     {

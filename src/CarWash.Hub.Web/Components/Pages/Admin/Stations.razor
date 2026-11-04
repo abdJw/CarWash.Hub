@@ -117,7 +117,7 @@ else
     private async Task PricesAsync(StationDto station)
     {
         var dialog = await Dialogs.ShowAsync<StationPricesDialog>(
-            L[DashboardText.PricesTitle, IsArabic ? station.NameAr : station.Name],
+            L[DashboardText.PricesAndDurationsTitle, IsArabic ? station.NameAr : station.Name],
             new DialogParameters<StationPricesDialog>
             {
                 { prices => prices.StationId, station.Id },

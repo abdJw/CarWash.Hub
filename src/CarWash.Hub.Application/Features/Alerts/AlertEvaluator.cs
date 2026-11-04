@@ -63,7 +63,19 @@ public sealed record AlertEvaluation(int Raised, int Resolved, IReadOnlyCollecti
 /// </para>
 /// <para>
 /// <b>No activity.</b> Raised when a machine's silence outside its station's quiet hours reaches its
-/// threshold; resolved by its next message.
+/// threshold; resolved by its next message. For a machine that reports every 30 seconds, silence is
+/// measured from its last sale instead - its heartbeat would otherwise never let it go silent - and
+/// being out of touch is its own alert:
+/// </para>
+/// <para>
+/// <b>Offline.</b> A machine that reports every 30 seconds and has sent nothing for
+/// <see cref="ActivityOptions.OfflineAfterMinutes"/> outside quiet hours. No-activity is not raised
+/// on top of it: an offline machine cannot report its sales.
+/// </para>
+/// <para>
+/// <b>No water.</b> Raised when the machine has reported no water for
+/// <see cref="ActivityOptions.WaterUnavailableAfterMinutes"/>, outside quiet hours and while it is
+/// online (an old report from an offline machine is not news); resolved when it reports water again.
 /// </para>
 /// <para>
 /// Only machines assigned to an active station and in service raise alerts - an unassigned id may be
@@ -84,6 +96,8 @@ public sealed class AlertEvaluator(
     ILogger<AlertEvaluator> logger) : IAlertEvaluator
 {
     private readonly int _defaultNoActivityHours = activityOptions.Value.NoActivityAfterHours;
+    private readonly TimeSpan _offlineAfter = TimeSpan.FromMinutes(activityOptions.Value.OfflineAfterMinutes);
+    private readonly TimeSpan _waterUnavailableAfter = TimeSpan.FromMinutes(activityOptions.Value.WaterUnavailableAfterMinutes);
 
     /// <inheritdoc />
     public async Task<AlertEvaluation> EvaluateAsync(
@@ -108,7 +122,12 @@ public sealed class AlertEvaluator(
                     machine.NoActivityAfterHours,
                     machine.GasStation!.QuietHoursStart,
                     machine.GasStation.QuietHoursEnd,
-                    machine.State != null ? (DateTimeOffset?)machine.State.LastSeenAt : null),
+                    machine.State != null ? (DateTimeOffset?)machine.State.LastSeenAt : null,
+                    machine.CreatedAt,
+                    machine.State != null ? machine.State.LastUsageAt : null,
+                    machine.State != null ? machine.State.LastHeartbeatAt : null,
+                    machine.State != null ? machine.State.WaterAvailable : null,
+                    machine.State != null ? machine.State.WaterChangedAt : null),
                 cancellationToken)
             .ConfigureAwait(false);
 
@@ -135,7 +154,9 @@ public sealed class AlertEvaluator(
         {
             var machineAlerts = openByMachine[machine.Id].ToList();
             EvaluateLevels(run, machine.Id, levelsByMachine[machine.Id], machineAlerts.Where(alert => AlertRules.IsLevelAlert(alert.Type)));
-            EvaluateActivity(run, machine, machineAlerts.Where(alert => alert.Type == AlertType.NoActivity), allowNoActivityRaise);
+            var offline = EvaluateOffline(run, machine, machineAlerts.Where(alert => alert.Type == AlertType.Offline), allowNoActivityRaise);
+            EvaluateActivity(run, machine, machineAlerts.Where(alert => alert.Type == AlertType.NoActivity), allowNoActivityRaise && !offline);
+            EvaluateWater(run, machine, machineAlerts.Where(alert => alert.Type == AlertType.WaterUnavailable), offline);
         }
 
         if (!run.HasChanges)
@@ -220,39 +241,120 @@ public sealed class AlertEvaluator(
         }
     }
 
+    // Returns whether the machine is offline now, open alert or not.
+    private bool EvaluateOffline(Run run, EligibleMachine machine, IEnumerable<Alert> openOfflineAlerts, bool allowRaise)
+    {
+        var openAlert = Single(run, openOfflineAlerts);
+        var offline = machine.ReportsHeartbeat
+                      && machine.LastSeenAt is { } lastSeen
+                      && AlertRules.ActiveSilence(lastSeen, run.Now, machine.QuietHoursStart, machine.QuietHoursEnd, timeZone.Zone) >= _offlineAfter;
+
+        if (openAlert is not null && !offline)
+        {
+            run.Resolve(openAlert, machine.LastSeenAt > openAlert.LastSeenAt ? AlertResolution.ActivityResumed : AlertResolution.Cleared);
+        }
+        else if (openAlert is null && offline && allowRaise)
+        {
+            run.Raise(MachineAlert(run, machine, AlertType.Offline, alert => alert.LastSeenAt = machine.LastSeenAt));
+        }
+
+        return offline;
+    }
+
     private void EvaluateActivity(Run run, EligibleMachine machine, IEnumerable<Alert> openActivityAlerts, bool allowRaise)
     {
-        var current = openActivityAlerts.OrderBy(alert => alert.Id).ToList();
+        var openAlert = Single(run, openActivityAlerts);
+        var threshold = TimeSpan.FromHours(machine.NoActivityAfterHours ?? _defaultNoActivityHours);
+
+        // A heartbeat proves the machine is on, so for such a machine "quiet" means no sales: since
+        // its last use, or since it first appeared if it has never been used.
+        var since = machine.ReportsHeartbeat ? machine.LastUsageAt ?? machine.CreatedAt : machine.LastSeenAt;
+        var silent = since is { } from
+                     && AlertRules.ActiveSilence(from, run.Now, machine.QuietHoursStart, machine.QuietHoursEnd, timeZone.Zone) >= threshold;
+
+        if (openAlert is not null && !silent)
+        {
+            // Heard from (or sold) again - or, with nothing new, the threshold or quiet hours changed.
+            var resumed = openAlert.LastSaleAt is { } lastSale
+                ? machine.LastUsageAt > lastSale
+                : machine.LastSeenAt > openAlert.LastSeenAt;
+            run.Resolve(openAlert, resumed ? AlertResolution.ActivityResumed : AlertResolution.Cleared);
+        }
+        else if (openAlert is null && silent && allowRaise)
+        {
+            run.Raise(MachineAlert(run, machine, AlertType.NoActivity, alert =>
+            {
+                alert.LastSeenAt = machine.LastSeenAt;
+                alert.LastSaleAt = machine.ReportsHeartbeat ? since : null;
+            }));
+        }
+    }
+
+    private void EvaluateWater(Run run, EligibleMachine machine, IEnumerable<Alert> openWaterAlerts, bool offline)
+    {
+        var openAlert = Single(run, openWaterAlerts);
+        var dry = machine.WaterAvailable == false && machine.WaterChangedAt is not null;
+
+        if (openAlert is not null && !dry)
+        {
+            run.Resolve(openAlert, machine.WaterAvailable == true ? AlertResolution.WaterRestored : AlertResolution.Cleared);
+        }
+        else if (openAlert is null
+                 && dry
+                 && !offline
+                 && run.Now - machine.WaterChangedAt!.Value >= _waterUnavailableAfter
+                 && !AlertRules.IsQuietNow(run.Now, machine.QuietHoursStart, machine.QuietHoursEnd, timeZone.Zone))
+        {
+            run.Raise(MachineAlert(run, machine, AlertType.WaterUnavailable, alert =>
+            {
+                alert.WaterUnavailableSince = machine.WaterChangedAt;
+                alert.LastSeenAt = machine.LastSeenAt;
+            }));
+        }
+    }
+
+    // One open alert of a kind per machine; anything beyond the oldest is left over from a bug.
+    private static Alert? Single(Run run, IEnumerable<Alert> open)
+    {
+        var current = open.OrderBy(alert => alert.Id).ToList();
         foreach (var extra in current.Skip(1))
         {
             run.Resolve(extra, AlertResolution.Cleared);
         }
 
-        var openAlert = current.FirstOrDefault();
-        var threshold = TimeSpan.FromHours(machine.NoActivityAfterHours ?? _defaultNoActivityHours);
-        var silent = machine.LastSeenAt is { } lastSeen
-                     && AlertRules.ActiveSilence(lastSeen, run.Now, machine.QuietHoursStart, machine.QuietHoursEnd, timeZone.Zone) >= threshold;
-
-        if (openAlert is not null && !silent)
-        {
-            // Heard from again - or, with no new message, the threshold or quiet hours were changed.
-            run.Resolve(openAlert, machine.LastSeenAt > openAlert.LastSeenAt ? AlertResolution.ActivityResumed : AlertResolution.Cleared);
-        }
-        else if (openAlert is null && silent && allowRaise)
-        {
-            run.Raise(new Alert
-            {
-                MachineId = machine.Id,
-                Type = AlertType.NoActivity,
-                Severity = AlertRules.SeverityOf(AlertType.NoActivity),
-                Notify = AlertRules.ShouldNotify(null, AlertType.NoActivity),
-                RaisedAt = run.Now,
-                LastSeenAt = machine.LastSeenAt,
-            });
-        }
+        return current.FirstOrDefault();
     }
 
-    private sealed record EligibleMachine(Guid Id, int? NoActivityAfterHours, TimeOnly? QuietHoursStart, TimeOnly? QuietHoursEnd, DateTimeOffset? LastSeenAt);
+    private static Alert MachineAlert(Run run, EligibleMachine machine, AlertType type, Action<Alert> details)
+    {
+        var alert = new Alert
+        {
+            MachineId = machine.Id,
+            Type = type,
+            Severity = AlertRules.SeverityOf(type),
+            Notify = AlertRules.ShouldNotify(null, type),
+            RaisedAt = run.Now,
+        };
+
+        details(alert);
+        return alert;
+    }
+
+    private sealed record EligibleMachine(
+        Guid Id,
+        int? NoActivityAfterHours,
+        TimeOnly? QuietHoursStart,
+        TimeOnly? QuietHoursEnd,
+        DateTimeOffset? LastSeenAt,
+        DateTimeOffset CreatedAt,
+        DateTimeOffset? LastUsageAt,
+        DateTimeOffset? LastHeartbeatAt,
+        bool? WaterAvailable,
+        DateTimeOffset? WaterChangedAt)
+    {
+        // Firmware that reports every 30 seconds, so its silence means offline rather than idle.
+        public bool ReportsHeartbeat => LastHeartbeatAt is not null;
+    }
 
     private sealed record LevelRow(
         Guid MachineId,

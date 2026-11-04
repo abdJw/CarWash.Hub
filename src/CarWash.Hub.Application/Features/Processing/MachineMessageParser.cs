@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using CarWash.Hub.Domain.Entities;
+using CarWash.Hub.Domain.Enums;
 
 namespace CarWash.Hub.Application.Features.Processing;
 
@@ -32,6 +33,12 @@ public enum MessageParseOutcome
 
     /// <summary>A payload that claims to report usage but cannot be read.</summary>
     Failed,
+
+    /// <summary>
+    /// A device report with no use in it - a boot, a water status or a settings acknowledgement -
+    /// applied to the machine's state. Recorded as processed.
+    /// </summary>
+    Report,
 }
 
 /// <summary>The result of parsing one payload.</summary>
@@ -41,6 +48,12 @@ public enum MessageParseOutcome
 /// <remarks>Layer: Application.</remarks>
 public sealed record MessageParseResult(MessageParseOutcome Outcome, IReadOnlyList<ParsedUsageEvent> Events, string? Reason)
 {
+    /// <summary>
+    /// Gets what the machine reported about itself, for the firmware that sends event messages;
+    /// null for the earlier format, which reports uses only.
+    /// </summary>
+    public DeviceReport? Device { get; init; }
+
     /// <summary>A payload carrying usage.</summary>
     /// <param name="events">The events, at least one.</param>
     /// <returns>The result.</returns>
@@ -55,14 +68,66 @@ public sealed record MessageParseResult(MessageParseOutcome Outcome, IReadOnlyLi
     /// <param name="reason">Why.</param>
     /// <returns>The result.</returns>
     public static MessageParseResult Failed(string reason) => new(MessageParseOutcome.Failed, [], reason);
+
+    /// <summary>A device report with no use in it.</summary>
+    /// <param name="device">What the machine reported.</param>
+    /// <returns>The result.</returns>
+    public static MessageParseResult Report(DeviceReport device) => new(MessageParseOutcome.Report, [], null) { Device = device };
 }
 
 /// <summary>One usage event read from a payload.</summary>
 /// <param name="ServiceCode">The service, normalised to lower case.</param>
 /// <param name="DeviceTime">The machine's reading time, in UTC, if it sent a readable one.</param>
 /// <param name="ItemIndex">0 for a single event; its position for an event in an array.</param>
+/// <param name="SaleAmount">The price the machine charged, in JOD; null when it does not report one.</param>
+/// <param name="PaidAmount">The cash inserted, in JOD; null when not reported.</param>
+/// <param name="DurationSeconds">The selected run time, in seconds; null when not reported.</param>
 /// <remarks>Layer: Application.</remarks>
-public sealed record ParsedUsageEvent(string ServiceCode, DateTimeOffset? DeviceTime, short ItemIndex);
+public sealed record ParsedUsageEvent(
+    string ServiceCode,
+    DateTimeOffset? DeviceTime,
+    short ItemIndex,
+    decimal? SaleAmount = null,
+    decimal? PaidAmount = null,
+    int? DurationSeconds = null);
+
+/// <summary>What a machine running the event firmware reported about itself in one message.</summary>
+/// <param name="Event">The event name, for example <c>water_status</c>.</param>
+/// <param name="DeviceMac">The <c>device_mac</c> it claims; checked against the machine id by the processor.</param>
+/// <param name="BootId">The id of the current start-up, if it sent a usable one.</param>
+/// <param name="WaterAvailable">Whether water is available, if the message says.</param>
+/// <param name="IsBoot">Whether this is the start-up report, <c>device_boot</c>.</param>
+/// <param name="Ack">The settings acknowledgement, for <c>settings_ack</c>.</param>
+/// <remarks>Layer: Application.</remarks>
+public sealed record DeviceReport(
+    string Event,
+    string? DeviceMac,
+    string? BootId,
+    bool? WaterAvailable,
+    bool IsBoot,
+    SettingsAckReport? Ack);
+
+/// <summary>A machine's answer to a settings revision.</summary>
+/// <param name="Revision">The revision it answers.</param>
+/// <param name="Status">What it did with it.</param>
+/// <remarks>Layer: Application.</remarks>
+public sealed record SettingsAckReport(long Revision, DeviceAckStatus Status);
+
+/// <summary>
+/// Chooses the parser by content: an object with a string <c>event</c> is the event firmware's
+/// message; anything else is read as the earlier service-event format.
+/// </summary>
+/// <remarks>
+/// Layer: Application. The event check comes first because a <c>payment_success</c> also carries a
+/// <c>service</c> field, which the earlier parser would happily count - without its price.
+/// </remarks>
+/// <param name="legacy">The earlier format's parser.</param>
+public sealed class MachineMessageParser(Esp32ServiceEventParser legacy) : IMachineMessageParser
+{
+    /// <inheritdoc />
+    public MessageParseResult Parse(string payload) =>
+        Esp32DeviceEventParser.TryParse(payload, out var result) ? result : legacy.Parse(payload);
+}
 
 /// <summary>
 /// Parses the ESP32 controller's service event: <c>{"service":"soap","macAddress":"…","readAt":"2026-10-31T13:03:45Z"}</c>.
@@ -122,6 +187,11 @@ public sealed partial class Esp32ServiceEventParser : IMachineMessageParser
                 : ParseSingle(document.RootElement);
         }
     }
+
+    /// <summary>Whether a text is a valid service code as it stands - lower case, no padding.</summary>
+    /// <param name="code">The text.</param>
+    /// <returns><see langword="true"/> for a valid code.</returns>
+    public static bool IsServiceCode(string code) => ServiceCodePattern().IsMatch(code);
 
     [GeneratedRegex("^[a-z0-9][a-z0-9_-]{0,31}$", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 100)]
     private static partial Regex ServiceCodePattern();

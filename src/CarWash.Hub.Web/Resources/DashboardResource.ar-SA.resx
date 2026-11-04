@@ -384,4 +384,67 @@
   <data name="Export_PreviousPeriod" xml:space="preserve"><value>الفترة السابقة</value></data>
   <data name="Export_RevenueChange" xml:space="preserve"><value>التغير في الإيرادات</value></data>
   <data name="Export_UnassignedUses" xml:space="preserve"><value>استخدامات على أجهزة غير مخصصة</value></data>
+  <data name="Finance_KpiCash" xml:space="preserve"><value>النقد المحصّل</value></data>
+  <data name="Finance_KpiCashHint" xml:space="preserve"><value>النقد الذي تُبلغ الأجهزة أن العملاء أدخلوه؛ يزيد على الإيرادات عند الدفع الزائد.</value></data>
+  <data name="Finance_ColCash" xml:space="preserve"><value>النقد ({0})</value></data>
+  <data name="Export_DevicePricedUses" xml:space="preserve"><value>استخدامات سعّرها الجهاز</value></data>
+  <data name="Prices_AndDurationsTitle" xml:space="preserve"><value>الأسعار ومدد التشغيل · {0}</value></data>
+  <data name="Prices_DeviceRule" xml:space="preserve"><value>تُرسَل أسعار خدمات الأجهزة إلى الأجهزة: من 0.05 إلى 9.95 دينار، بزيادات قدرها 0.05.</value></data>
+  <data name="Durations_Title" xml:space="preserve"><value>مدد التشغيل</value></data>
+  <data name="Durations_Hint" xml:space="preserve"><value>تُرسَل إلى أجهزة هذه المحطة مع أسعار اليوم. يطبّقها الجهاز عندما يكون غير مشغول ثم يؤكّدها؛ وحتى ذلك الحين تظهر قيد الانتظار.</value></data>
+  <data name="Durations_Suggested" xml:space="preserve"><value>مقترحة، غير محفوظة</value></data>
+  <data name="Durations_Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Durations_Saved" xml:space="preserve"><value>تم حفظ مدد التشغيل</value></data>
+  <data name="Durations_Position" xml:space="preserve"><value>الموضع {0}</value></data>
+  <data name="Durations_Single" xml:space="preserve"><value>مدة التشغيل</value></data>
+  <data name="Durations_SecondsUnit" xml:space="preserve"><value>ث</value></data>
+  <data name="Alerts_KindMachine" xml:space="preserve"><value>حالة الجهاز</value></data>
+  <data name="AlertType_Offline" xml:space="preserve"><value>غير متصل</value></data>
+  <data name="AlertType_WaterUnavailable" xml:space="preserve"><value>لا يوجد ماء</value></data>
+  <data name="AlertText_Offline" xml:space="preserve"><value>{0} غير متصل: لم يصل منه شيء منذ {1}.</value></data>
+  <data name="AlertText_WaterUnavailable" xml:space="preserve"><value>يُبلغ {0} بعدم توفر الماء منذ {1}.</value></data>
+  <data name="AlertText_NoSales" xml:space="preserve"><value>{0} متصل لكن لم تُسجَّل عليه مبيعات منذ {1}.</value></data>
+  <data name="AlertResolution_WaterRestored" xml:space="preserve"><value>أُغلق: عاد الماء متوفرًا</value></data>
+  <data name="Activity_Offline" xml:space="preserve"><value>غير متصل · {0}</value></data>
+  <data name="Activity_NoSales" xml:space="preserve"><value>بلا مبيعات · {0}</value></data>
+  <data name="Water_Available" xml:space="preserve"><value>الماء متوفر</value></data>
+  <data name="Water_Unavailable" xml:space="preserve"><value>لا يوجد ماء</value></data>
+  <data name="Water_Stale" xml:space="preserve"><value>آخر بلاغ {0}؛ الجهاز غير متصل، فقد تكون الحالة تغيّرت.</value></data>
+  <data name="Water_Reported" xml:space="preserve"><value>أُبلغ {0}</value></data>
+  <data name="Kpi_Offline" xml:space="preserve"><value>غير متصلة</value></data>
+  <data name="Kpi_OfflineHint" xml:space="preserve"><value>لم يصل منها شيء منذ {0} دقائق أو أكثر</value></data>
+  <data name="DeviceSettings_Title" xml:space="preserve"><value>إعدادات الجهاز</value></data>
+  <data name="DeviceSettings_Hint" xml:space="preserve"><value>أسعار المحطة ومدد التشغيل، تُرسَل إلى الجهاز عند استعلامه. يبقى التغيير قيد الانتظار حتى يؤكّده الجهاز.</value></data>
+  <data name="DeviceSettings_StatusApplied" xml:space="preserve"><value>مطبّقة على الجهاز</value></data>
+  <data name="DeviceSettings_StatusPending" xml:space="preserve"><value>بانتظار الجهاز</value></data>
+  <data name="DeviceSettings_StatusBusy" xml:space="preserve"><value>الجهاز مشغول؛ سيطبّقها عند التوقف</value></data>
+  <data name="DeviceSettings_StatusFailed" xml:space="preserve"><value>رفضها الجهاز</value></data>
+  <data name="DeviceSettings_StatusBlocked" xml:space="preserve"><value>لم تُرسَل</value></data>
+  <data name="DeviceSettings_StatusNone" xml:space="preserve"><value>غير مُعدّة</value></data>
+  <data name="DeviceSettings_ChipApplied" xml:space="preserve"><value>الإعدادات مطبّقة</value></data>
+  <data name="DeviceSettings_ChipPending" xml:space="preserve"><value>الإعدادات بالانتظار</value></data>
+  <data name="DeviceSettings_ChipAttention" xml:space="preserve"><value>الإعدادات تحتاج إلى متابعة</value></data>
+  <data name="DeviceSettings_IssueUnassigned" xml:space="preserve"><value>الجهاز غير مخصص لمحطة، فلا أسعار له.</value></data>
+  <data name="DeviceSettings_IssueStationInactive" xml:space="preserve"><value>المحطة خارج الخدمة.</value></data>
+  <data name="DeviceSettings_IssueMissingPrice" xml:space="preserve"><value>لا يوجد سعر اليوم لـ {0}. يحتفظ الجهاز بآخر إعداداته.</value></data>
+  <data name="DeviceSettings_IssueInvalidPrice" xml:space="preserve"><value>سعر {0} اليوم لا يقبله الجهاز (من 0.05 إلى 9.95 دينار، بزيادات قدرها 0.05).</value></data>
+  <data name="DeviceSettings_IssueMissingDurations" xml:space="preserve"><value>لم تُحفظ مدد تشغيل لـ {0}.</value></data>
+  <data name="DeviceSettings_Revision" xml:space="preserve"><value>المراجعة {0}</value></data>
+  <data name="DeviceSettings_Sent" xml:space="preserve"><value>المُرسَلة</value></data>
+  <data name="DeviceSettings_Confirmed" xml:space="preserve"><value>المؤكَّدة</value></data>
+  <data name="DeviceSettings_None" xml:space="preserve"><value>لا شيء بعد</value></data>
+  <data name="DeviceSettings_LastReply" xml:space="preserve"><value>آخر رد: {0} (المراجعة {1})، {2}</value></data>
+  <data name="DeviceSettings_LastBoot" xml:space="preserve"><value>آخر تشغيل</value></data>
+  <data name="DeviceSettings_LastReport" xml:space="preserve"><value>آخر بلاغ</value></data>
+  <data name="DeviceSettings_ColPrice" xml:space="preserve"><value>السعر</value></data>
+  <data name="DeviceSettings_ColRunTimes" xml:space="preserve"><value>مدد التشغيل (ث)</value></data>
+  <data name="DeviceSettings_Edit" xml:space="preserve"><value>الأسعار ومدد التشغيل</value></data>
+  <data name="Ack_Saved" xml:space="preserve"><value>حُفظت</value></data>
+  <data name="Ack_Unchanged" xml:space="preserve"><value>مطابقة مسبقًا</value></data>
+  <data name="Ack_Busy" xml:space="preserve"><value>مشغول، سيعيد المحاولة</value></data>
+  <data name="Ack_StorageError" xml:space="preserve"><value>تعذّر الحفظ</value></data>
+  <data name="Ack_InvalidSettings" xml:space="preserve"><value>قيم مرفوضة</value></data>
+  <data name="Ack_InvalidCommand" xml:space="preserve"><value>أمر غير مفهوم</value></data>
+  <data name="Ack_InvalidJson" xml:space="preserve"><value>رد غير مقروء</value></data>
+  <data name="Ack_Unknown" xml:space="preserve"><value>رد غير معروف</value></data>
 </root>

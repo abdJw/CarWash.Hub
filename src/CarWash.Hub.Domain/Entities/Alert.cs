@@ -68,8 +68,17 @@ public class Alert : BaseEntity<long>
     /// <summary>Gets or sets the forecast run-out time when raised.</summary>
     public DateTimeOffset? ForecastEmptyAt { get; set; }
 
-    /// <summary>Gets or sets when the machine was last heard from, for <see cref="AlertType.NoActivity"/>.</summary>
+    /// <summary>Gets or sets when the machine was last heard from, for <see cref="AlertType.NoActivity"/> and <see cref="AlertType.Offline"/>.</summary>
     public DateTimeOffset? LastSeenAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets when the machine last sold - or, if it never has, was first registered - for a
+    /// <see cref="AlertType.NoActivity"/> measured in sales. Null when it is measured in messages.
+    /// </summary>
+    public DateTimeOffset? LastSaleAt { get; set; }
+
+    /// <summary>Gets or sets since when the machine has reported no water, for <see cref="AlertType.WaterUnavailable"/>.</summary>
+    public DateTimeOffset? WaterUnavailableSince { get; set; }
 
     /// <summary>Gets or sets when someone said they are handling it, in UTC.</summary>
     public DateTimeOffset? AcknowledgedAt { get; set; }

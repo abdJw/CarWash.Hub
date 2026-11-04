@@ -125,4 +125,19 @@ public sealed class RateLimitingOptions
     /// <summary>Gets or sets the window length, in seconds.</summary>
     [Range(1, 3600)]
     public int IngestWindowSeconds { get; set; } = 60;
+
+    /// <summary>The name of the policy applied to the machines' settings poll.</summary>
+    public const string SettingsPolicyName = "device-settings";
+
+    /// <summary>
+    /// Gets or sets how many settings polls one address may make per window. Each machine polls
+    /// about every 15 seconds - 4 a minute - so the default leaves room for some 300 machines
+    /// behind one shared cellular address.
+    /// </summary>
+    [Range(1, 100_000)]
+    public int SettingsPermitLimit { get; set; } = 1200;
+
+    /// <summary>Gets or sets the settings poll window length, in seconds.</summary>
+    [Range(1, 3600)]
+    public int SettingsWindowSeconds { get; set; } = 60;
 }

@@ -39,6 +39,23 @@ public sealed class IngestRequestExamplesOperationFilter : IOperationFilter
 
         json.Examples = new Dictionary<string, IOpenApiExample>
         {
+            // The ESP32 event firmware's messages (protocol baseline 2026-11-03): a sale, a water
+            // report and a settings acknowledgement. Illustrative ids, not a real machine.
+            ["paymentSuccess"] = new OpenApiExample
+            {
+                Summary = "ESP32: payment accepted, service started",
+                Value = JsonNode.Parse("""{"machineId":"AA:BB:CC:DD:EE:FF","data":{"event":"payment_success","device_mac":"AA:BB:CC:DD:EE:FF","boot_id":"0123456789ABCDEF","event_id":"AA:BB:CC:DD:EE:FF-0123456789ABCDEF-payment_success-1","service":"water","price_qirsh":50,"paid_qirsh":50,"duration_seconds":180,"uptime_ms":120000,"water_available":true}}"""),
+            },
+            ["waterStatus"] = new OpenApiExample
+            {
+                Summary = "ESP32: water status (also the heartbeat)",
+                Value = JsonNode.Parse("""{"machineId":"AA:BB:CC:DD:EE:FF","data":{"event":"water_status","device_mac":"AA:BB:CC:DD:EE:FF","boot_id":"0123456789ABCDEF","event_id":"AA:BB:CC:DD:EE:FF-0123456789ABCDEF-water_status-2","water_available":true,"uptime_ms":150000}}"""),
+            },
+            ["settingsAck"] = new OpenApiExample
+            {
+                Summary = "ESP32: settings revision saved",
+                Value = JsonNode.Parse("""{"machineId":"AA:BB:CC:DD:EE:FF","data":{"event":"settings_ack","device_mac":"AA:BB:CC:DD:EE:FF","boot_id":"0123456789ABCDEF","event_id":"AA:BB:CC:DD:EE:FF-0123456789ABCDEF-settings_ack-3","revision":1,"status":"saved","water_available":true}}"""),
+            },
             ["objectData"] = new OpenApiExample
             {
                 Summary = "data as a JSON object",

@@ -136,6 +136,18 @@ public static class ResourceKeys
 
         /// <summary>The start date must be within the last {0} years and at most {1} days ahead.</summary>
         public const string PriceDate = "Validation_PriceDate";
+
+        /// <summary>The price of {0} is sent to the machines, so it must be from 0.05 to 9.95 dinars, in steps of 0.05.</summary>
+        public const string DevicePrice = "Validation_DevicePrice";
+
+        /// <summary>Each run time must be a whole number of seconds from {0} to {1}.</summary>
+        public const string DurationRange = "Validation_DurationRange";
+
+        /// <summary>{0} needs exactly {1} run time(s), one per selector position.</summary>
+        public const string DurationCount = "Validation_DurationCount";
+
+        /// <summary>{0} has no run times on the machines.</summary>
+        public const string NotDeviceService = "Validation_NotDeviceService";
     }
 
     /// <summary>Localized names of fields and things, substituted into other messages.</summary>
@@ -194,6 +206,9 @@ public static class ResourceKeys
 
         /// <summary>Service</summary>
         public const string Service = "Field_Service";
+
+        /// <summary>Run times</summary>
+        public const string Durations = "Field_Durations";
 
         /// <summary>Default capacity</summary>
         public const string DefaultCapacity = "Field_DefaultCapacity";

@@ -2,6 +2,7 @@ using CarWash.Hub.Application.Abstractions.Persistence;
 using CarWash.Hub.Application.Abstractions.Services;
 using CarWash.Hub.Application.Exceptions;
 using CarWash.Hub.Application.Features.Alerts;
+using CarWash.Hub.Application.Features.DeviceSettings;
 using CarWash.Hub.Application.Features.Levels;
 using CarWash.Hub.Domain.Entities;
 using CarWash.Hub.Domain.Enums;
@@ -122,7 +123,7 @@ public sealed class MachineStateProcessor(
         var pending = await unitOfWork.MachineMessages
             .ListAsync(
                 new PendingMessagesSpecification(_options.BatchSize),
-                message => new PendingMessage(message.Id, message.MachineId, message.ReceivedAt, message.Payload),
+                message => new PendingMessage(message.Id, message.MachineId, message.Machine.Code, message.ReceivedAt, message.Payload),
                 cancellationToken)
             .ConfigureAwait(false);
 
@@ -135,7 +136,11 @@ public sealed class MachineStateProcessor(
         }
 
         // Parsing is pure, so it happens once, outside the transaction that may be retried.
-        var items = pending.Select(message => new ParsedMessage(message, parser.Parse(message.Payload))).ToList();
+        var items = pending
+            .Select(message => new ParsedMessage(
+                message,
+                DeviceEventRules.CheckIdentity(parser.Parse(message.Payload), message.MachineCode)))
+            .ToList();
 
         await RegisterUnknownServicesAsync(items, cancellationToken).ConfigureAwait(false);
 
@@ -366,6 +371,7 @@ public sealed class MachineStateProcessor(
         await IncrementHourlyAsync(accepted, cancellationToken).ConfigureAwait(false);
         await IncrementDailyAsync(accepted, cancellationToken).ConfigureAwait(false);
         await UpdateMachineStatesAsync(live, accepted, now, cancellationToken).ConfigureAwait(false);
+        await ApplySettingsAcksAsync(live, now, cancellationToken).ConfigureAwait(false);
         await levels.ApplyUsageAsync(accepted, now, cancellationToken).ConfigureAwait(false);
 
         var processed = 0;
@@ -379,7 +385,7 @@ public sealed class MachineStateProcessor(
             message.ProcessingError = Truncate(item.Result.Reason);
             message.ProcessingStatus = item.Result.Outcome switch
             {
-                MessageParseOutcome.Usage => ProcessingStatus.Processed,
+                MessageParseOutcome.Usage or MessageParseOutcome.Report => ProcessingStatus.Processed,
                 MessageParseOutcome.Ignored => ProcessingStatus.Ignored,
                 _ => ProcessingStatus.Failed,
             };
@@ -440,6 +446,9 @@ public sealed class MachineStateProcessor(
             ReceivedAt = message.ReceivedAt,
             MachineMessageId = message.Id,
             ItemIndex = usage.ItemIndex,
+            SaleAmount = usage.SaleAmount,
+            PaidAmount = usage.PaidAmount,
+            DurationSeconds = usage.DurationSeconds,
         };
     }
 
@@ -559,7 +568,7 @@ public sealed class MachineStateProcessor(
 
         var buckets = accepted
             .GroupBy(usage => new DayKey(timeZone.DateOf(usage.OccurredAt), usage.GasStationId, usage.MachineId, usage.ServiceCode))
-            .ToDictionary(group => group.Key, group => group.Count());
+            .ToDictionary(group => group.Key, DayTotals.Of);
 
         var repository = unitOfWork.Repository<ServiceUsageDaily, long>();
         var rows = await repository
@@ -573,25 +582,24 @@ public sealed class MachineStateProcessor(
 
         var existing = rows.ToDictionary(row => new DayKey(row.BusinessDate, row.GasStationId, row.MachineId, row.ServiceCode));
 
-        foreach (var (key, count) in buckets)
+        foreach (var (key, totals) in buckets)
         {
-            if (existing.TryGetValue(key, out var row))
+            if (!existing.TryGetValue(key, out var row))
             {
-                row.UsageCount += count;
+                row = new ServiceUsageDaily
+                {
+                    BusinessDate = key.BusinessDate,
+                    GasStationId = key.GasStationId,
+                    MachineId = key.MachineId,
+                    ServiceCode = key.ServiceCode,
+                };
+                await repository.AddAsync(row, cancellationToken).ConfigureAwait(false);
             }
-            else
-            {
-                await repository.AddAsync(
-                    new ServiceUsageDaily
-                    {
-                        BusinessDate = key.BusinessDate,
-                        GasStationId = key.GasStationId,
-                        MachineId = key.MachineId,
-                        ServiceCode = key.ServiceCode,
-                        UsageCount = count,
-                    },
-                    cancellationToken).ConfigureAwait(false);
-            }
+
+            row.UsageCount += totals.Uses;
+            row.DevicePricedUses += totals.DevicePricedUses;
+            row.DeviceSalesAmount += totals.Sales;
+            row.CashCollectedAmount += totals.Cash;
         }
     }
 
@@ -638,7 +646,85 @@ public sealed class MachineStateProcessor(
             }
 
             state.TotalUses += uses.Count;
+            ApplyDeviceReports(state, live.Where(item => item.Message.MachineId == machineId));
             state.UpdatedAt = now;
+        }
+    }
+
+    // Each machine's answers to its settings revisions, oldest first, in the batch's transaction: an
+    // acknowledgement is as much a record of what the machine runs as a use is of what it sold.
+    private async Task ApplySettingsAcksAsync(List<ParsedMessage> live, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var acks = live
+            .Where(item => item.Result.Outcome == MessageParseOutcome.Report && item.Result.Device?.Ack is not null)
+            .OrderBy(item => item.Message.Id)
+            .ToList();
+
+        if (acks.Count == 0)
+        {
+            return;
+        }
+
+        var repository = unitOfWork.Repository<MachineDeviceSettings, Guid>();
+        var rows = (await repository
+                .ListAsync(new DeviceSettingsRowsSpecification([.. acks.Select(item => item.Message.MachineId).Distinct()]), cancellationToken)
+                .ConfigureAwait(false))
+            .ToDictionary(row => row.Id);
+
+        foreach (var item in acks)
+        {
+            if (!rows.TryGetValue(item.Message.MachineId, out var row))
+            {
+                // A machine answering before this server issued it anything - a revision left over
+                // from before a restore, or another server. Recorded, so the next revision goes above it.
+                row = new MachineDeviceSettings { Id = item.Message.MachineId };
+                await repository.AddAsync(row, cancellationToken).ConfigureAwait(false);
+                rows[row.Id] = row;
+            }
+
+            DeviceSettingsRules.ApplyAck(row, item.Result.Device!.Ack!, item.Message.Id, item.Message.ReceivedAt);
+            row.UpdatedAt = now;
+        }
+    }
+
+    // What the event firmware said about itself. A failed message's claims are not trusted - its
+    // device_mac may not even be this machine's.
+    private static void ApplyDeviceReports(MachineState state, IEnumerable<ParsedMessage> items)
+    {
+        var reports = items
+            .Where(item => item.Result.Device is not null && item.Result.Outcome != MessageParseOutcome.Failed)
+            .OrderBy(item => item.Message.Id)
+            .ToList();
+
+        foreach (var item in reports)
+        {
+            var message = item.Message;
+            var device = item.Result.Device!;
+
+            if (state.LastHeartbeatAt is null || message.ReceivedAt > state.LastHeartbeatAt)
+            {
+                state.LastHeartbeatAt = message.ReceivedAt;
+            }
+
+            if (device.IsBoot && (state.LastBootAt is null || message.ReceivedAt >= state.LastBootAt))
+            {
+                state.LastBootAt = message.ReceivedAt;
+                state.LastBootId = device.BootId;
+            }
+
+            // Newest message wins: ids are arrival order, and a backfill must not roll the water
+            // state back to an older report.
+            if (device.WaterAvailable is { } water && (state.WaterMessageId is null || message.Id > state.WaterMessageId))
+            {
+                if (state.WaterAvailable != water)
+                {
+                    state.WaterChangedAt = message.ReceivedAt;
+                }
+
+                state.WaterAvailable = water;
+                state.WaterReportedAt = message.ReceivedAt;
+                state.WaterMessageId = message.Id;
+            }
         }
     }
 
@@ -647,9 +733,26 @@ public sealed class MachineStateProcessor(
             ? value
             : value[..MachineMessage.ProcessingErrorMaxLength];
 
-    private sealed record PendingMessage(long Id, Guid MachineId, DateTimeOffset ReceivedAt, string Payload);
+    private sealed record PendingMessage(long Id, Guid MachineId, string MachineCode, DateTimeOffset ReceivedAt, string Payload);
 
     private sealed record ParsedMessage(PendingMessage Message, MessageParseResult Result);
+
+    // One day's increment for one daily row: all uses, and the money of those that carried it.
+    private readonly record struct DayTotals(int Uses, int DevicePricedUses, decimal Sales, decimal Cash)
+    {
+        public static DayTotals Of(IEnumerable<ServiceUsage> uses)
+        {
+            var totals = default(DayTotals);
+            foreach (var usage in uses)
+            {
+                totals = usage.SaleAmount is { } sale
+                    ? new DayTotals(totals.Uses + 1, totals.DevicePricedUses + 1, totals.Sales + sale, totals.Cash + (usage.PaidAmount ?? sale))
+                    : totals with { Uses = totals.Uses + 1 };
+            }
+
+            return totals;
+        }
+    }
 
     private readonly record struct UsageKey(Guid MachineId, string ServiceCode, DateTimeOffset OccurredAt)
     {

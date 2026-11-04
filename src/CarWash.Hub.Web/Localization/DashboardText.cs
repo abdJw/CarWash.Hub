@@ -1148,4 +1148,193 @@ public static class DashboardText
 
     /// <summary>Uses on unassigned machines</summary>
     public const string ExportUnassignedUses = "Export_UnassignedUses";
+
+    /// <summary>Cash collected</summary>
+    public const string FinanceKpiCash = "Finance_KpiCash";
+
+    /// <summary>Cash the machines report customers inserted; more than revenue when someone overpays.</summary>
+    public const string FinanceKpiCashHint = "Finance_KpiCashHint";
+
+    /// <summary>Cash ({0})</summary>
+    public const string FinanceColCash = "Finance_ColCash";
+
+    /// <summary>Uses priced by the machine</summary>
+    public const string ExportDevicePricedUses = "Export_DevicePricedUses";
+
+    /// <summary>Prices &amp; run times · {0}</summary>
+    public const string PricesAndDurationsTitle = "Prices_AndDurationsTitle";
+
+    /// <summary>Prices of machine services are sent to the machines: 0.05 to 9.95 JOD, in steps of 0.05.</summary>
+    public const string PricesDeviceRule = "Prices_DeviceRule";
+
+    /// <summary>Run times</summary>
+    public const string DurationsTitle = "Durations_Title";
+
+    /// <summary>Sent to this station's machines with today's prices. A machine applies them when idle and confirms; until then it shows as pending.</summary>
+    public const string DurationsHint = "Durations_Hint";
+
+    /// <summary>Suggested, not saved</summary>
+    public const string DurationsSuggested = "Durations_Suggested";
+
+    /// <summary>Save</summary>
+    public const string DurationsSave = "Durations_Save";
+
+    /// <summary>Run times saved</summary>
+    public const string DurationsSaved = "Durations_Saved";
+
+    /// <summary>Position {0}</summary>
+    public const string DurationsPosition = "Durations_Position";
+
+    /// <summary>Run time</summary>
+    public const string DurationsSingle = "Durations_Single";
+
+    /// <summary>s</summary>
+    public const string DurationsSecondsUnit = "Durations_SecondsUnit";
+
+    /// <summary>Machine status</summary>
+    public const string AlertsKindMachine = "Alerts_KindMachine";
+
+    /// <summary>Offline</summary>
+    public const string AlertTypeOffline = "AlertType_Offline";
+
+    /// <summary>No water</summary>
+    public const string AlertTypeWaterUnavailable = "AlertType_WaterUnavailable";
+
+    /// <summary>{0} is offline: nothing received since {1}.</summary>
+    public const string AlertTextOffline = "AlertText_Offline";
+
+    /// <summary>{0} reports no water since {1}.</summary>
+    public const string AlertTextWaterUnavailable = "AlertText_WaterUnavailable";
+
+    /// <summary>{0} is online but has had no sales since {1}.</summary>
+    public const string AlertTextNoSales = "AlertText_NoSales";
+
+    /// <summary>Closed: water is available again</summary>
+    public const string AlertResolutionWaterRestored = "AlertResolution_WaterRestored";
+
+    /// <summary>Offline · {0}</summary>
+    public const string ActivityOffline = "Activity_Offline";
+
+    /// <summary>No sales · {0}</summary>
+    public const string ActivityNoSales = "Activity_NoSales";
+
+    /// <summary>Water</summary>
+    public const string WaterAvailable = "Water_Available";
+
+    /// <summary>No water</summary>
+    public const string WaterUnavailable = "Water_Unavailable";
+
+    /// <summary>Last reported {0}; the machine is offline, so this may have changed.</summary>
+    public const string WaterStale = "Water_Stale";
+
+    /// <summary>Reported {0}</summary>
+    public const string WaterReported = "Water_Reported";
+
+    /// <summary>Offline</summary>
+    public const string KpiOffline = "Kpi_Offline";
+
+    /// <summary>Nothing received for {0} minutes or more</summary>
+    public const string KpiOfflineHint = "Kpi_OfflineHint";
+
+    /// <summary>Machine settings</summary>
+    public const string DeviceSettingsTitle = "DeviceSettings_Title";
+
+    /// <summary>The station's prices and run times, sent to the machine when it polls. A change is pending until the machine confirms it.</summary>
+    public const string DeviceSettingsHint = "DeviceSettings_Hint";
+
+    /// <summary>Applied on the machine</summary>
+    public const string DeviceSettingsStatusApplied = "DeviceSettings_StatusApplied";
+
+    /// <summary>Waiting for the machine</summary>
+    public const string DeviceSettingsStatusPending = "DeviceSettings_StatusPending";
+
+    /// <summary>Machine busy; it will apply them when idle</summary>
+    public const string DeviceSettingsStatusBusy = "DeviceSettings_StatusBusy";
+
+    /// <summary>Refused by the machine</summary>
+    public const string DeviceSettingsStatusFailed = "DeviceSettings_StatusFailed";
+
+    /// <summary>Not sent</summary>
+    public const string DeviceSettingsStatusBlocked = "DeviceSettings_StatusBlocked";
+
+    /// <summary>Not configured</summary>
+    public const string DeviceSettingsStatusNone = "DeviceSettings_StatusNone";
+
+    /// <summary>Settings applied</summary>
+    public const string DeviceSettingsChipApplied = "DeviceSettings_ChipApplied";
+
+    /// <summary>Settings pending</summary>
+    public const string DeviceSettingsChipPending = "DeviceSettings_ChipPending";
+
+    /// <summary>Settings need attention</summary>
+    public const string DeviceSettingsChipAttention = "DeviceSettings_ChipAttention";
+
+    /// <summary>The machine has no station, so it has no prices.</summary>
+    public const string DeviceSettingsIssueUnassigned = "DeviceSettings_IssueUnassigned";
+
+    /// <summary>The station is out of service.</summary>
+    public const string DeviceSettingsIssueStationInactive = "DeviceSettings_IssueStationInactive";
+
+    /// <summary>No price today for {0}. The machine keeps its last settings.</summary>
+    public const string DeviceSettingsIssueMissingPrice = "DeviceSettings_IssueMissingPrice";
+
+    /// <summary>Today's price of {0} is not one the machine accepts (0.05 to 9.95 JOD, in steps of 0.05).</summary>
+    public const string DeviceSettingsIssueInvalidPrice = "DeviceSettings_IssueInvalidPrice";
+
+    /// <summary>No run times saved for {0}.</summary>
+    public const string DeviceSettingsIssueMissingDurations = "DeviceSettings_IssueMissingDurations";
+
+    /// <summary>Revision {0}</summary>
+    public const string DeviceSettingsRevision = "DeviceSettings_Revision";
+
+    /// <summary>Sent</summary>
+    public const string DeviceSettingsSent = "DeviceSettings_Sent";
+
+    /// <summary>Confirmed</summary>
+    public const string DeviceSettingsConfirmed = "DeviceSettings_Confirmed";
+
+    /// <summary>None yet</summary>
+    public const string DeviceSettingsNone = "DeviceSettings_None";
+
+    /// <summary>Last reply: {0} (revision {1}), {2}</summary>
+    public const string DeviceSettingsLastReply = "DeviceSettings_LastReply";
+
+    /// <summary>Last start-up</summary>
+    public const string DeviceSettingsLastBoot = "DeviceSettings_LastBoot";
+
+    /// <summary>Last report</summary>
+    public const string DeviceSettingsLastReport = "DeviceSettings_LastReport";
+
+    /// <summary>Price</summary>
+    public const string DeviceSettingsColPrice = "DeviceSettings_ColPrice";
+
+    /// <summary>Run times (s)</summary>
+    public const string DeviceSettingsColRunTimes = "DeviceSettings_ColRunTimes";
+
+    /// <summary>Prices &amp; run times</summary>
+    public const string DeviceSettingsEdit = "DeviceSettings_Edit";
+
+    /// <summary>saved</summary>
+    public const string AckSaved = "Ack_Saved";
+
+    /// <summary>already current</summary>
+    public const string AckUnchanged = "Ack_Unchanged";
+
+    /// <summary>busy, will retry</summary>
+    public const string AckBusy = "Ack_Busy";
+
+    /// <summary>could not save</summary>
+    public const string AckStorageError = "Ack_StorageError";
+
+    /// <summary>values refused</summary>
+    public const string AckInvalidSettings = "Ack_InvalidSettings";
+
+    /// <summary>command not understood</summary>
+    public const string AckInvalidCommand = "Ack_InvalidCommand";
+
+    /// <summary>response unreadable</summary>
+    public const string AckInvalidJson = "Ack_InvalidJson";
+
+    /// <summary>unknown reply</summary>
+    public const string AckUnknown = "Ack_Unknown";
 }

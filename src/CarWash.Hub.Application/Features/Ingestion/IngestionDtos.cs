@@ -22,5 +22,9 @@ public sealed record IngestMessageRequest(string? MachineId, JsonElement? Data);
 /// <param name="MessageId">The stored message's identifier; read it back from <c>GET /api/v1/machine-messages/{id}</c>.</param>
 /// <param name="MachineId">The machine it was stored against, spelled as first registered.</param>
 /// <param name="ReceivedAt">When the API received it, in UTC.</param>
+/// <param name="Duplicate">
+/// Whether this was a retry of an event already stored - same machine, same <c>data.event_id</c>.
+/// The original message is returned and nothing new is stored.
+/// </param>
 /// <remarks>Layer: Application.</remarks>
-public sealed record IngestMessageResult(long MessageId, string MachineId, DateTimeOffset ReceivedAt);
+public sealed record IngestMessageResult(long MessageId, string MachineId, DateTimeOffset ReceivedAt, bool Duplicate = false);

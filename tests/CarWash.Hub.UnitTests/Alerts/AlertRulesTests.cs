@@ -153,4 +153,39 @@ public class AlertRulesTests
         var options = new AlertOptions { CheckIntervalSeconds = checkInterval, StartupGraceMinutes = grace };
         Validator.TryValidateObject(options, new ValidationContext(options), null, validateAllProperties: true).ShouldBe(valid);
     }
+
+    [Theory]
+    [InlineData(AlertType.WaterUnavailable, AlertSeverity.Critical)]
+    [InlineData(AlertType.Offline, AlertSeverity.Warning)]
+    [InlineData(AlertType.NoActivity, AlertSeverity.Warning)]
+    public void Machine_alerts_have_their_urgency(AlertType type, AlertSeverity expected) =>
+        AlertRules.SeverityOf(type).ShouldBe(expected);
+
+    [Theory]
+    [InlineData(AlertType.Offline)]
+    [InlineData(AlertType.WaterUnavailable)]
+    [InlineData(AlertType.NoActivity)]
+    public void Machine_alerts_always_notify(AlertType type)
+    {
+        AlertRules.IsMachineAlert(type).ShouldBeTrue();
+        AlertRules.IsLevelAlert(type).ShouldBeFalse();
+        AlertRules.ShouldNotify(null, type).ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData(3, 23, 30, true)]
+    [InlineData(4, 6, 59, true)]
+    [InlineData(4, 7, 0, false)]
+    [InlineData(4, 12, 0, false)]
+    [InlineData(3, 22, 59, false)]
+    public void Quiet_hours_that_cross_midnight_are_recognised(int day, int hour, int minute, bool expected) =>
+        AlertRules.IsQuietNow(Local(day, hour, minute), Eleven, Seven, Amman).ShouldBe(expected);
+
+    [Fact]
+    public void Quiet_hours_within_a_day_and_none_at_all_are_recognised()
+    {
+        AlertRules.IsQuietNow(Local(4, 13), new TimeOnly(12, 0), new TimeOnly(14, 0), Amman).ShouldBeTrue();
+        AlertRules.IsQuietNow(Local(4, 15), new TimeOnly(12, 0), new TimeOnly(14, 0), Amman).ShouldBeFalse();
+        AlertRules.IsQuietNow(Local(4, 13), null, null, Amman).ShouldBeFalse();
+    }
 }

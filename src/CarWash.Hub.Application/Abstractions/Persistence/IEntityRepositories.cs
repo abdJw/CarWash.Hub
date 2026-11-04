@@ -31,6 +31,20 @@ public interface IMachineRepository : IGenericRepository<Machine, Guid>
     /// </para>
     /// </remarks>
     Task<MachineRegistration> GetOrRegisterAsync(string code, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns the machine with the given identifier if it is registered, without ever registering it.
+    /// </summary>
+    /// <param name="code">The machine identifier, already validated and trimmed.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The machine's key and its identifier as first registered; null for an unknown machine.</returns>
+    /// <remarks>
+    /// For reads a machine makes on its own behalf, such as its settings poll: a poll is not evidence
+    /// of anything, so an unknown identifier must not appear in the inbox because of it. Shares the
+    /// registration cache, so a fleet polling every 15 seconds costs no lookups. Unknown identifiers
+    /// are not cached: the machine registers with its first message, and is found from then on.
+    /// </remarks>
+    Task<MachineRegistration?> FindRegistrationAsync(string code, CancellationToken cancellationToken = default);
 }
 
 /// <summary>A machine's key and its identifier as first registered.</summary>

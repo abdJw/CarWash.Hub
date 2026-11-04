@@ -39,6 +39,8 @@ public static class FinanceCsv
                 localizer[DashboardText.FinanceColUses],
                 $"{localizer[DashboardText.FieldPrice]} ({report.Currency})",
                 $"{localizer[DashboardText.FinanceKpiRevenue]} ({report.Currency})",
+                localizer[DashboardText.ExportDevicePricedUses],
+                $"{localizer[DashboardText.FinanceKpiCash]} ({report.Currency})",
             ]);
 
         foreach (var detail in report.Detail ?? [])
@@ -54,6 +56,8 @@ public static class FinanceCsv
                     detail.Uses.ToString(CultureInfo.InvariantCulture),
                     detail.UnitPrice?.ToString("0.000", CultureInfo.InvariantCulture) ?? string.Empty,
                     detail.Revenue.ToString("0.000", CultureInfo.InvariantCulture),
+                    detail.DevicePricedUses.ToString(CultureInfo.InvariantCulture),
+                    detail.CashCollected.ToString("0.000", CultureInfo.InvariantCulture),
                 ]);
         }
 

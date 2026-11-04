@@ -3,6 +3,7 @@ using CarWash.Hub.Application.Common.Options;
 using CarWash.Hub.Application.Features.Alerts;
 using CarWash.Hub.Application.Features.Auth;
 using CarWash.Hub.Application.Features.Dashboard;
+using CarWash.Hub.Application.Features.DeviceSettings;
 using CarWash.Hub.Application.Features.Processing;
 using CarWash.Hub.Infrastructure.Auth;
 using CarWash.Hub.Infrastructure.Localization;
@@ -107,9 +108,15 @@ public static class DependencyInjection
         services.AddOptions<BackgroundWorkerOptions>()
             .Bind(configuration.GetSection(BackgroundWorkerOptions.SectionName));
 
+        services.AddOptions<DeviceSettingsOptions>()
+            .Bind(configuration.GetSection(DeviceSettingsOptions.SectionName))
+            .Validate(options => options.ReconcileIntervalSeconds is >= 5 and <= 3600, "DeviceSettings:ReconcileIntervalSeconds must be from 5 to 3600.")
+            .ValidateOnStart();
+
         // Singletons shared by ingestion (which signals) and the worker (which waits and reports).
         services.AddSingleton<ChannelProcessingTrigger>();
         services.AddSingleton<IMessageProcessingTrigger>(provider => provider.GetRequiredService<ChannelProcessingTrigger>());
+        services.AddSingleton<IDeviceSettingsSignal, DeviceSettingsSignal>();
         services.AddSingleton<ProcessingMonitor>();
         services.AddSingleton<IProcessingMonitor>(provider => provider.GetRequiredService<ProcessingMonitor>());
 

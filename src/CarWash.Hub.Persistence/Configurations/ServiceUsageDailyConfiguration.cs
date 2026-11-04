@@ -14,7 +14,20 @@ public sealed class ServiceUsageDailyConfiguration : IEntityTypeConfiguration<Se
         ArgumentNullException.ThrowIfNull(builder);
 
         builder.ToTable("service_usage_daily", table =>
-            table.HasCheckConstraint("ck_service_usage_daily_usage_count", "usage_count >= 0"));
+        {
+            table.HasCheckConstraint("ck_service_usage_daily_usage_count", "usage_count >= 0");
+            table.HasCheckConstraint(
+                "ck_service_usage_daily_device_priced_uses",
+                "device_priced_uses >= 0 AND device_priced_uses <= usage_count");
+            table.HasCheckConstraint("ck_service_usage_daily_device_sales_amount", "device_sales_amount >= 0");
+            table.HasCheckConstraint("ck_service_usage_daily_cash_collected_amount", "cash_collected_amount >= 0");
+        });
+
+        // Defaults of zero, so the rows written before machines reported amounts read as "none
+        // device-priced" - exactly what they were.
+        builder.Property(d => d.DevicePricedUses).HasDefaultValue(0);
+        builder.Property(d => d.DeviceSalesAmount).HasPrecision(12, 3).HasDefaultValue(0m);
+        builder.Property(d => d.CashCollectedAmount).HasPrecision(12, 3).HasDefaultValue(0m);
 
         // As for the hourly rollup: the surrogate key is for the repository, and the natural key -
         // read as "these days" - is clustered.
