@@ -3,7 +3,8 @@
 
   Colour roles first, as custom properties, in one place: the chart chrome, the eight categorical
   slots and the four reserved status colours, each stepped separately for the light and the dark
-  surface (validated with the dataviz palette validator against exactly these surfaces). Everything
+  surface (validated with the dataviz palette validator against the earlier warm surfaces; the
+  white surface is lighter and the navy one has the same luminance, so contrast holds). Everything
   below is written against roles, never raw hex.
 
   Logical properties throughout (inline-start / inline-end, inset-inline), so the Arabic
@@ -15,21 +16,23 @@
 .cw-light,
 .cw-auth {
     color-scheme: light;
-    --surface-1: #fcfcfb;
-    --page-plane: #f9f9f7;
-    --text-primary: #0b0b0b;
-    --text-secondary: #52514e;
-    --text-muted: #898781;
-    --gridline: #e1e0d9;
-    --baseline: #c3c2b7;
-    --border: rgba(11, 11, 11, 0.10);
-    --hover-wash: rgba(11, 11, 11, 0.04);
-    --accent: #2a78d6;
-    --accent-strong: #1c5cab;
+    --surface-1: #ffffff;
+    --page-plane: #f4f7fb;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --gridline: #e2e8f0;
+    --baseline: #cbd5e1;
+    --border: rgba(15, 23, 42, 0.08);
+    --hover-wash: rgba(15, 23, 42, 0.04);
+    --accent: #3b82f6;
+    --accent-strong: #2563eb;
+    --accent-2: #06b6d4;
     --delta-good: #006300;
     --delta-bad: #b42828;
-    --track: #e1e0d9;
-    --shadow: 0 1px 2px rgba(11, 11, 11, 0.06), 0 4px 16px rgba(11, 11, 11, 0.05);
+    --track: #eef2f7;
+    --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 24px -6px rgba(15, 23, 42, 0.10);
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.05);
 
     --series-1: #2a78d6;
     --series-2: #eb6834;
@@ -52,21 +55,23 @@
 
 .cw-dark {
     color-scheme: dark;
-    --surface-1: #1a1a19;
-    --page-plane: #0d0d0d;
-    --text-primary: #ffffff;
-    --text-secondary: #c3c2b7;
-    --text-muted: #898781;
-    --gridline: #2c2c2a;
-    --baseline: #383835;
-    --border: rgba(255, 255, 255, 0.10);
-    --hover-wash: rgba(255, 255, 255, 0.05);
-    --accent: #3987e5;
-    --accent-strong: #5598e7;
+    --surface-1: #121a2b;
+    --page-plane: #0b1220;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #8494ab;
+    --gridline: #1f2a3d;
+    --baseline: #334155;
+    --border: rgba(148, 163, 184, 0.14);
+    --hover-wash: rgba(148, 163, 184, 0.08);
+    --accent: #3b82f6;
+    --accent-strong: #60a5fa;
+    --accent-2: #22d3ee;
     --delta-good: #0ca30c;
     --delta-bad: #e66767;
-    --track: #2c2c2a;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --track: #1c2638;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -6px rgba(0, 0, 0, 0.35);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
 
     --series-1: #3987e5;
     --series-2: #d95926;
@@ -92,14 +97,15 @@
 @media (prefers-color-scheme: dark) {
     .cw-auth {
         color-scheme: dark;
-        --surface-1: #1a1a19;
-        --page-plane: #0d0d0d;
-        --text-primary: #ffffff;
-        --text-secondary: #c3c2b7;
-        --gridline: #2c2c2a;
-        --border: rgba(255, 255, 255, 0.10);
-        --accent: #3987e5;
-        --accent-strong: #5598e7;
+        --surface-1: #121a2b;
+        --page-plane: #0b1220;
+        --text-primary: #f1f5f9;
+        --text-secondary: #94a3b8;
+        --gridline: #1f2a3d;
+        --border: rgba(148, 163, 184, 0.14);
+        --accent: #3b82f6;
+        --accent-strong: #60a5fa;
+        --accent-2: #22d3ee;
         --status-critical-ink: #e66767;
     }
 }
@@ -141,11 +147,11 @@ html, body {
 /* Shown until the circuit has rendered the layout; no script needed to hide it. */
 .cw-splash {
     position: fixed; inset: 0; display: grid; place-content: center; gap: 1rem; justify-items: center;
-    background: #f9f9f7; color: #52514e; z-index: 2000; font-size: .9375rem;
+    background: #f4f7fb; color: #475569; z-index: 2000; font-size: .9375rem;
 }
-.cw-splash-mark { width: 64px; height: 64px; color: #1c5cab; animation: cw-breathe 1.6s ease-in-out infinite; }
+.cw-splash-mark { width: 64px; height: 64px; color: #2563eb; animation: cw-breathe 1.6s ease-in-out infinite; }
 body:has(.mud-layout) .cw-splash { display: none; }
-@media (prefers-color-scheme: dark) { .cw-splash { background: #0d0d0d; color: #c3c2b7; } .cw-splash-mark { color: #5598e7; } }
+@media (prefers-color-scheme: dark) { .cw-splash { background: #0b1220; color: #94a3b8; } .cw-splash-mark { color: #60a5fa; } }
 @keyframes cw-breathe { 50% { transform: scale(.92); opacity: .7; } }
 
 /* ---------------------------------------------------------------- shell */
@@ -154,7 +160,7 @@ body:has(.mud-layout) .cw-splash { display: none; }
 .cw-brand { display: inline-flex; align-items: center; gap: .5rem; color: inherit; text-decoration: none; font-weight: 650; font-size: 1.0625rem; white-space: nowrap; flex: none; }
 .cw-brand-mark { width: 30px; height: 30px; color: var(--accent-strong); }
 .cw-lang { font-weight: 600; }
-.cw-avatar { background: var(--accent-strong) !important; color: #fff !important; font-size: .8125rem !important; font-weight: 650; margin-inline-start: .25rem; }
+.cw-avatar { background: linear-gradient(135deg, #2563eb, #06b6d4) !important; color: #fff !important; font-size: .8125rem !important; font-weight: 650; margin-inline-start: .25rem; }
 .cw-drawer { border-inline-end: 1px solid var(--gridline); }
 .cw-menu-user { display: grid; padding: .75rem 1rem; gap: .125rem; min-width: 200px; }
 .cw-menu-user span { color: var(--text-secondary); font-size: .8125rem; }
@@ -222,7 +228,7 @@ body:has(.mud-layout) .cw-splash { display: none; }
     background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 1.125rem 1.25rem;
     min-width: 0;
 }
-.cw-card-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-block-end: .5rem; }
+.cw-card-head { margin-block-end: .5rem; }
 .cw-card-title, .viz-title { font-size: 1rem; font-weight: 650; margin: 0 0 .75rem; }
 .cw-card-head .cw-card-title { margin: 0; }
 
@@ -425,7 +431,7 @@ body:has(.mud-layout) .cw-splash { display: none; }
     min-height: 100vh; display: grid; place-content: center; gap: 1.25rem; padding: 1.5rem 1rem;
     background:
         radial-gradient(1200px 600px at 10% -10%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%),
-        radial-gradient(900px 500px at 110% 110%, color-mix(in srgb, var(--series-3) 12%, transparent), transparent 60%),
+        radial-gradient(900px 500px at 110% 110%, color-mix(in srgb, var(--accent-2) 14%, transparent), transparent 60%),
         var(--page-plane);
     color: var(--text-primary);
 }
@@ -498,7 +504,8 @@ body:has(.mud-layout) .cw-splash { display: none; }
 }
 .cw-code-chip { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: .75rem; font-weight: 650; padding: .125rem .5rem; border-radius: 6px; background: var(--track); direction: ltr; unicode-bidi: isolate; }
 
-.cw-form { display: grid; gap: 1rem; padding-block: .25rem; }
+/* One column that may shrink: a field's intrinsic width must never push the form past its dialog. */
+.cw-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; padding-block: .25rem; }
 .cw-form-fact { display: flex; justify-content: space-between; gap: 1rem; padding: .625rem .75rem; border-radius: 10px; background: var(--track); font-size: .875rem; }
 .cw-ltr-input input { direction: ltr; text-align: start; }
 [dir="rtl"] .cw-ltr-input input { text-align: right; }
@@ -615,7 +622,7 @@ body:has(.mud-layout) .cw-splash { display: none; }
     border-radius: 16px; background: #ffffff; color: #0b0b0b; border: 1px solid #c3c2b7;
 }
 .cw-sticker-brand { display: flex; align-items: center; gap: .5rem; font-weight: 700; font-size: 1.0625rem; }
-.cw-sticker-brand svg { width: 30px; height: 30px; color: #1c5cab; }
+.cw-sticker-brand svg { width: 30px; height: 30px; color: #2563eb; }
 .cw-sticker-qr { inline-size: 100%; max-inline-size: 260px; }
 .cw-sticker-qr svg { display: block; inline-size: 100%; height: auto; }
 .cw-sticker-scan { font-size: 1.125rem; }
@@ -787,3 +794,58 @@ body:has(.mud-layout) .cw-splash { display: none; }
 .cw-price-history .viz-table th[scope="row"] { white-space: normal; }
 .cw-price-history tr.is-current th, .cw-price-history tr.is-current td { font-weight: 650; color: var(--text-primary); }
 .cw-price-note { display: block; font-size: .75rem; font-weight: 400; }
+
+/* ---------------------------------------------------------------- buttons */
+
+/* A button keeps its label on one line and is never squeezed below it: the rows that hold buttons
+   wrap instead. Normal letter spacing, because any tracking pulls joined Arabic letters apart. */
+.cw-root .mud-button:not(.mud-icon-button) { flex-shrink: 0; white-space: nowrap; letter-spacing: normal; max-inline-size: 100%; }
+.cw-root .mud-dialog-actions { flex-wrap: wrap; padding: .75rem 1rem 1rem; }
+.cw-admin-item > .mud-button-root, .cw-history li > .mud-button-root { flex: none; }
+.cw-segmented button { white-space: nowrap; }
+.cw-fin-export { flex-wrap: wrap; }
+
+/* Flat buttons: a soft shadow tinted with the button's own colour instead of Material's grey stack. */
+.cw-root .mud-button-filled { box-shadow: none; }
+.cw-root .mud-button-filled-primary:not(:disabled) {
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .10), 0 4px 12px -4px color-mix(in srgb, var(--mud-palette-primary) 65%, transparent);
+}
+.cw-root .mud-button-filled-primary:not(:disabled):hover {
+    box-shadow: 0 2px 4px rgba(15, 23, 42, .12), 0 8px 18px -6px color-mix(in srgb, var(--mud-palette-primary) 75%, transparent);
+}
+.cw-root .mud-button-outlined-default { border-color: var(--baseline); }
+.cw-auth-submit { box-shadow: 0 4px 14px -4px color-mix(in srgb, var(--accent-strong) 70%, transparent); }
+
+/* ---------------------------------------------------------------- surfaces */
+
+/* A frosted app bar the page scrolls under. */
+.cw-root .cw-appbar {
+    background-color: color-mix(in srgb, var(--surface-1) 82%, transparent) !important;
+    -webkit-backdrop-filter: saturate(1.6) blur(12px); backdrop-filter: saturate(1.6) blur(12px);
+}
+
+/* Navigation: rounded pills, the current page tinted in the accent. */
+.cw-drawer .mud-nav-link { margin: 2px 8px; inline-size: calc(100% - 16px); border-radius: 10px; padding-block: 8px; transition: background-color .15s ease, color .15s ease; }
+.cw-drawer .mud-nav-link:hover { background-color: var(--hover-wash); }
+.cw-drawer .mud-nav-link.active:not(.mud-nav-link-disabled) {
+    border-inline-end-width: 0; color: var(--accent-strong); font-weight: 650;
+    background-color: color-mix(in srgb, var(--accent-strong) 12%, transparent);
+}
+.cw-drawer .mud-nav-link.active:not(.mud-nav-link-disabled) .mud-nav-link-icon { color: var(--accent-strong); }
+@media (max-width: 599.98px) {
+    .cw-bottom-nav {
+        background: color-mix(in srgb, var(--surface-1) 88%, transparent);
+        -webkit-backdrop-filter: saturate(1.6) blur(12px); backdrop-filter: saturate(1.6) blur(12px);
+    }
+    .cw-bottom-nav a .mud-icon-root { box-sizing: content-box; padding: 2px 16px; border-radius: 999px; transition: background-color .15s ease; }
+    .cw-bottom-nav a.active .mud-icon-root { background: color-mix(in srgb, var(--accent-strong) 14%, transparent); }
+}
+
+/* Cards: a hairline plus a soft lift. */
+.cw-card, .viz-card, .cw-tile, .cw-machine, .cw-admin-item, .cw-admin-tile, .cw-alert { box-shadow: var(--shadow-sm); }
+.cw-card, .viz-card, .cw-tile, .cw-tile-link, .cw-machine, .cw-admin-tile { border-radius: 16px; }
+.cw-alerts--flat .cw-alert { box-shadow: none; }
+.cw-tile { transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease; }
+.cw-tile-link:hover .cw-tile { box-shadow: var(--shadow); transform: translateY(-1px); }
+.cw-segmented button.is-selected { color: var(--accent-strong); box-shadow: var(--shadow-sm); }
+.cw-root .mud-dialog { border-radius: 16px; }

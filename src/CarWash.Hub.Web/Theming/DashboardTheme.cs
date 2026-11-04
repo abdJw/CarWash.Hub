@@ -8,8 +8,9 @@ namespace CarWash.Hub.Web.Theming;
 /// <remarks>
 /// Layer: Web.
 /// <para>
-/// Surfaces, ink and hairlines are the reference data-viz palette's chart chrome, so chart colours -
-/// validated against exactly these surfaces - keep their contrast. The status colours are the
+/// Cool slate surfaces, ink and hairlines with an ocean-blue primary and a cyan accent; the chart
+/// colours were validated against the earlier, warmer surfaces and keep their contrast on these
+/// (white is lighter; the dark navy has the same luminance as the old dark grey). The status colours are the
 /// reserved good / warning / critical steps, used only for states and always with an icon and a
 /// label, never for a service.
 /// </para>
@@ -28,57 +29,59 @@ public static class DashboardTheme
     {
         PaletteLight = new PaletteLight
         {
-            Primary = "#1c5cab",
+            Primary = "#2563eb",
             PrimaryContrastText = "#ffffff",
-            Secondary = "#52514e",
-            Background = "#f9f9f7",
-            Surface = "#fcfcfb",
-            AppbarBackground = "#fcfcfb",
-            AppbarText = "#0b0b0b",
-            DrawerBackground = "#fcfcfb",
-            DrawerText = "#0b0b0b",
-            DrawerIcon = "#52514e",
-            TextPrimary = "#0b0b0b",
-            TextSecondary = "#52514e",
-            TextDisabled = "#898781",
-            ActionDefault = "#52514e",
-            Divider = "#e1e0d9",
-            DividerLight = "#e1e0d9",
-            LinesDefault = "#e1e0d9",
-            LinesInputs = "#c3c2b7",
-            TableLines = "#e1e0d9",
+            Secondary = "#475569",
+            Tertiary = "#06b6d4",
+            Background = "#f4f7fb",
+            Surface = "#ffffff",
+            AppbarBackground = "#ffffff",
+            AppbarText = "#0f172a",
+            DrawerBackground = "#ffffff",
+            DrawerText = "#0f172a",
+            DrawerIcon = "#475569",
+            TextPrimary = "#0f172a",
+            TextSecondary = "#475569",
+            TextDisabled = "#94a3b8",
+            ActionDefault = "#475569",
+            Divider = "#e2e8f0",
+            DividerLight = "#e2e8f0",
+            LinesDefault = "#e2e8f0",
+            LinesInputs = "#cbd5e1",
+            TableLines = "#e2e8f0",
             Success = "#0ca30c",
             Warning = "#fab219",
             WarningContrastText = "#0b0b0b",
             Error = "#d03b3b",
-            Info = "#2a78d6",
+            Info = "#3b82f6",
         },
         PaletteDark = new PaletteDark
         {
-            Primary = "#5598e7",
-            PrimaryContrastText = "#0b0b0b",
-            Secondary = "#c3c2b7",
-            Background = "#0d0d0d",
-            Surface = "#1a1a19",
-            AppbarBackground = "#1a1a19",
-            AppbarText = "#ffffff",
-            DrawerBackground = "#1a1a19",
-            DrawerText = "#ffffff",
-            DrawerIcon = "#c3c2b7",
-            TextPrimary = "#ffffff",
-            TextSecondary = "#c3c2b7",
-            TextDisabled = "#898781",
-            ActionDefault = "#c3c2b7",
-            Divider = "#2c2c2a",
-            DividerLight = "#2c2c2a",
-            LinesDefault = "#2c2c2a",
-            LinesInputs = "#383835",
-            TableLines = "#2c2c2a",
+            Primary = "#60a5fa",
+            PrimaryContrastText = "#0b1220",
+            Secondary = "#94a3b8",
+            Tertiary = "#22d3ee",
+            Background = "#0b1220",
+            Surface = "#121a2b",
+            AppbarBackground = "#121a2b",
+            AppbarText = "#f1f5f9",
+            DrawerBackground = "#121a2b",
+            DrawerText = "#f1f5f9",
+            DrawerIcon = "#94a3b8",
+            TextPrimary = "#f1f5f9",
+            TextSecondary = "#94a3b8",
+            TextDisabled = "#64748b",
+            ActionDefault = "#94a3b8",
+            Divider = "#1f2a3d",
+            DividerLight = "#1f2a3d",
+            LinesDefault = "#1f2a3d",
+            LinesInputs = "#334155",
+            TableLines = "#1f2a3d",
             Success = "#0ca30c",
             Warning = "#fab219",
             WarningContrastText = "#0b0b0b",
             Error = "#d03b3b",
-            Info = "#3987e5",
+            Info = "#60a5fa",
         },
         Typography = new Typography
         {
@@ -89,11 +92,12 @@ public static class DashboardTheme
             H4 = new H4Typography { FontFamily = FontStack },
             H5 = new H5Typography { FontFamily = FontStack },
             H6 = new H6Typography { FontFamily = FontStack },
-            Button = new ButtonTypography { FontFamily = FontStack, TextTransform = "none" },
+            // Normal letter spacing: any tracking pulls joined Arabic letters apart.
+            Button = new ButtonTypography { FontFamily = FontStack, TextTransform = "none", LetterSpacing = "normal", FontWeight = "600" },
         },
         LayoutProperties = new LayoutProperties
         {
-            DefaultBorderRadius = "10px",
+            DefaultBorderRadius = "12px",
             AppbarHeight = "60px",
         },
     };
