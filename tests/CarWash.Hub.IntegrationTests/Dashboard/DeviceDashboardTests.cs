@@ -135,6 +135,10 @@ public sealed class DeviceDashboardTests(DatabaseFixture database) : IAsyncLifet
         await using var context = database.CreateContext();
         var machine = await context.Machines.SingleAsync(m => m.Code == mac, Token);
         machine.GasStationId = stationId;
+
+        // Open around the clock, so silence counts the same whatever time the test runs.
+        var station = await context.GasStations.SingleAsync(s => s.Id == stationId, Token);
+        (station.QuietHoursStart, station.QuietHoursEnd) = (null, null);
         await context.SaveChangesAsync(Token);
         return machine.Id;
     }

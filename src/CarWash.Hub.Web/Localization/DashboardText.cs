@@ -1337,4 +1337,52 @@ public static class DashboardText
 
     /// <summary>unknown reply</summary>
     public const string AckUnknown = "Ack_Unknown";
+
+    /// <summary>Delete machine</summary>
+    public const string MachineDelete = "Machine_Delete";
+
+    /// <summary>Delete {0}?</summary>
+    public const string MachineDeleteTitle = "Machine_DeleteTitle";
+
+    /// <summary>The machine moves to the archive. Its history and the money it earned stay in the reports, messages it still sends are kept, and you can restore it at any time.</summary>
+    public const string MachineDeleteText = "Machine_DeleteText";
+
+    /// <summary>Machine moved to the archive</summary>
+    public const string MachineDeleted = "Machine_Deleted";
+
+    /// <summary>Archive</summary>
+    public const string NavArchive = "Nav_Archive";
+
+    /// <summary>Archived machines</summary>
+    public const string ArchiveTitle = "Archive_Title";
+
+    /// <summary>Deleted machines are kept here with their history. Restoring one puts it back where it was.</summary>
+    public const string ArchiveIntro = "Archive_Intro";
+
+    /// <summary>No archived machines.</summary>
+    public const string ArchiveEmpty = "Archive_Empty";
+
+    /// <summary>Deleted {0} by {1}</summary>
+    public const string ArchiveDeletedBy = "Archive_DeletedBy";
+
+    /// <summary>Deleted {0}</summary>
+    public const string ArchiveDeletedAt = "Archive_DeletedAt";
+
+    /// <summary>Still sending messages</summary>
+    public const string ArchiveStillReporting = "Archive_StillReporting";
+
+    /// <summary>Restore</summary>
+    public const string ArchiveRestore = "Archive_Restore";
+
+    /// <summary>Restore {0}?</summary>
+    public const string ArchiveRestoreTitle = "Archive_RestoreTitle";
+
+    /// <summary>The machine returns to its station with its history - or to New machines if that station no longer exists.</summary>
+    public const string ArchiveRestoreText = "Archive_RestoreText";
+
+    /// <summary>Machine restored</summary>
+    public const string ArchiveRestored = "Archive_Restored";
+
+    /// <summary>Deleted machines, which you can restore</summary>
+    public const string AdminArchiveHint = "Admin_ArchiveHint";
 }

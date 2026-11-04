@@ -5,6 +5,7 @@
 @using CarWash.Hub.Domain.Enums
 @using CarWash.Hub.Web.Components.Admin
 @inherits LivePageBase
+@inject NavigationManager Navigation
 
 <PageTitle>@(_detail?.Card.Title ?? L[DashboardText.MachinesTitle]) · @L[DashboardText.AppName]</PageTitle>
 
@@ -282,8 +283,15 @@ else
             new DialogParameters<MachineDialog> { { dialog => dialog.Machine, machine } },
             AdminDialogs.Options);
 
-        if (await dialog.Result is { Canceled: false })
+        if (await dialog.Result is { Canceled: false } result)
         {
+            // Deleted: the machine is in the archive now, and this page no longer shows it.
+            if (result.Data is MachineDialog.DeletedResult)
+            {
+                Navigation.NavigateTo("machines");
+                return;
+            }
+
             await RefreshAsync();
         }
     }

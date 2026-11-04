@@ -447,4 +447,20 @@
   <data name="Ack_InvalidCommand" xml:space="preserve"><value>command not understood</value></data>
   <data name="Ack_InvalidJson" xml:space="preserve"><value>response unreadable</value></data>
   <data name="Ack_Unknown" xml:space="preserve"><value>unknown reply</value></data>
+  <data name="Machine_Delete" xml:space="preserve"><value>Delete machine</value></data>
+  <data name="Machine_DeleteTitle" xml:space="preserve"><value>Delete {0}?</value></data>
+  <data name="Machine_DeleteText" xml:space="preserve"><value>The machine moves to the archive. Its history and the money it earned stay in the reports, messages it still sends are kept, and you can restore it at any time.</value></data>
+  <data name="Machine_Deleted" xml:space="preserve"><value>Machine moved to the archive</value></data>
+  <data name="Nav_Archive" xml:space="preserve"><value>Archive</value></data>
+  <data name="Archive_Title" xml:space="preserve"><value>Archived machines</value></data>
+  <data name="Archive_Intro" xml:space="preserve"><value>Deleted machines are kept here with their history. Restoring one puts it back where it was.</value></data>
+  <data name="Archive_Empty" xml:space="preserve"><value>No archived machines.</value></data>
+  <data name="Archive_DeletedBy" xml:space="preserve"><value>Deleted {0} by {1}</value></data>
+  <data name="Archive_DeletedAt" xml:space="preserve"><value>Deleted {0}</value></data>
+  <data name="Archive_StillReporting" xml:space="preserve"><value>Still sending messages</value></data>
+  <data name="Archive_Restore" xml:space="preserve"><value>Restore</value></data>
+  <data name="Archive_RestoreTitle" xml:space="preserve"><value>Restore {0}?</value></data>
+  <data name="Archive_RestoreText" xml:space="preserve"><value>The machine returns to its station with its history - or to New machines if that station no longer exists.</value></data>
+  <data name="Archive_Restored" xml:space="preserve"><value>Machine restored</value></data>
+  <data name="Admin_ArchiveHint" xml:space="preserve"><value>Deleted machines, which you can restore</value></data>
 </root>

@@ -105,6 +105,7 @@ docker compose up --build # API on http://localhost:8080, Swagger at /swagger (S
 | `/account/password` | Change your own password; required after an admin sets a temporary one |
 | `/admin` and `/admin/inbox`, `/admin/stations`, `/admin/users`, `/admin/services` | Super Admins only: name and assign new machines, stations and each station's service prices, users (temporary password, reset, deactivate), service catalog |
 | `/admin/sticker/{id}` | Super Admins only: a printable sticker with the machine's name and a QR code to its refill page |
+| `/admin/archive` | Super Admins only: deleted machines. Deleting a machine (from its settings dialog) is a soft delete: it leaves every list, page and alert, but its messages, uses, refills and revenue stay, messages it still sends are stored, and **Restore** puts it back at its station - or in the inbox if that station is gone |
 
 **Response shapes:**
 - Success: an `ApiResponse<T>` envelope, `{ success, message, data, errors, correlationId }`.

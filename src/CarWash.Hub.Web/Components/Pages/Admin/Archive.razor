@@ -1,0 +1,117 @@
+@page "/admin/archive"
+@using CarWash.Hub.Application.Features.Machines
+@inherits LivePageBase
+
+<PageTitle>@L[DashboardText.ArchiveTitle] · @L[DashboardText.AppName]</PageTitle>
+
+<header class="cw-page-head">
+    <h1 class="cw-h1">@L[DashboardText.ArchiveTitle]</h1>
+    <LiveBadge At="LastRefreshedAt" Now="Now" />
+</header>
+<p class="cw-muted cw-intro">@L[DashboardText.ArchiveIntro]</p>
+
+@if (_machines is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_machines.Count == 0)
+{
+    <div class="cw-empty">
+        <MudIcon Icon="@Icons.Material.Rounded.Inventory2" Size="Size.Large" />
+        <p>@L[DashboardText.ArchiveEmpty]</p>
+    </div>
+}
+else
+{
+    <div class="cw-admin-list">
+        @foreach (var machine in _machines)
+        {
+            <article class="cw-admin-item" @key="machine.Id">
+                <div class="cw-admin-item-main">
+                    <div class="cw-admin-item-title">
+                        <strong class="cw-mono">@machine.Code</strong>
+                        @if (machine.DisplayName is { } name)
+                        {
+                            <span><bdi>@name</bdi></span>
+                        }
+                        @if (machine.StillReporting)
+                        {
+                            <span class="cw-status cw-status--warning">
+                                <MudIcon Icon="@Icons.Material.Rounded.Sensors" Size="Size.Small" />
+                                <span>@L[DashboardText.ArchiveStillReporting]</span>
+                            </span>
+                        }
+                    </div>
+                    <div class="cw-admin-item-meta">
+                        <span>
+                            <MudIcon Icon="@Icons.Material.Rounded.LocalGasStation" Size="Size.Small" />
+                            @(machine.StationName ?? L[DashboardText.MachineUnassigned])
+                        </span>
+                        <span>
+                            @(machine.DeletedBy is { } by
+                                ? L[DashboardText.ArchiveDeletedBy, Format.DateTime(machine.DeletedAt), by]
+                                : L[DashboardText.ArchiveDeletedAt, Format.DateTime(machine.DeletedAt)])
+                        </span>
+                        @if (machine.LastSeenAt is { } seen)
+                        {
+                            <span><MudIcon Icon="@Icons.Material.Rounded.Sensors" Size="Size.Small" /> @Format.Ago(seen, Now)</span>
+                        }
+                        <span><MudIcon Icon="@Icons.Material.Rounded.TouchApp" Size="Size.Small" /> @L[DashboardText.ChartUses, DashboardFormat.Number(machine.TotalUses)]</span>
+                    </div>
+                </div>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Rounded.RestoreFromTrash"
+                           Disabled="_busy.Contains(machine.Id)" OnClick="() => RestoreAsync(machine)">
+                    @L[DashboardText.ArchiveRestore]
+                </MudButton>
+            </article>
+        }
+    </div>
+}
+
+@code {
+    private IReadOnlyList<ArchivedMachineDto>? _machines;
+    private readonly HashSet<Guid> _busy = [];
+
+    [Inject]
+    private ISnackbar Snackbar { get; set; } = default!;
+
+    protected override async Task LoadAsync(CancellationToken cancellationToken) =>
+        _machines = await Runner.QueryAsync<IMachineAdminService, IReadOnlyList<ArchivedMachineDto>>(
+            (service, token) => service.ListArchivedAsync(token), cancellationToken);
+
+    private async Task RestoreAsync(ArchivedMachineDto machine)
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            L[DashboardText.ArchiveRestoreTitle, machine.Title],
+            L[DashboardText.ArchiveRestoreText],
+            yesText: L[DashboardText.ArchiveRestore],
+            cancelText: L[DashboardText.CommonCancel]);
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        _busy.Add(machine.Id);
+        try
+        {
+            var result = await Runner.CommandAsync<IMachineAdminService>(
+                (service, token) => service.RestoreAsync(new MachineArchiveRequest { Id = machine.Id, RowVersion = machine.RowVersion }, token));
+
+            if (result.Succeeded)
+            {
+                Snackbar.Add(L[DashboardText.ArchiveRestored], Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add(result.Message ?? L[DashboardText.ErrorText], Severity.Error);
+            }
+        }
+        finally
+        {
+            _busy.Remove(machine.Id);
+        }
+
+        await RefreshAsync();
+    }
+}

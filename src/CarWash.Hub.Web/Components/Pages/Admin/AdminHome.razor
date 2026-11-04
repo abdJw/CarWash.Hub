@@ -33,6 +33,7 @@
     private int? _stations;
     private int? _users;
     private int? _servicesToReview;
+    private int? _archived;
 
     private IEnumerable<(string Href, string Icon, string Title, string Hint, int? Count, bool Attention)> Sections =>
     [
@@ -40,6 +41,7 @@
         ("admin/stations", Icons.Material.Rounded.LocalGasStation, L[DashboardText.NavStations], L[DashboardText.AdminStationsHint], _stations, false),
         ("admin/users", Icons.Material.Rounded.Group, L[DashboardText.NavUsers], L[DashboardText.AdminUsersHint], _users, false),
         ("admin/services", Icons.Material.Rounded.Tune, L[DashboardText.NavServices], L[DashboardText.AdminServicesHint], _servicesToReview, _servicesToReview > 0),
+        ("admin/archive", Icons.Material.Rounded.Inventory2, L[DashboardText.NavArchive], L[DashboardText.AdminArchiveHint], _archived, false),
     ];
 
     protected override async Task LoadAsync(CancellationToken cancellationToken)
@@ -49,5 +51,6 @@
         _users = (await Runner.QueryAsync<IUserService, IReadOnlyList<UserDto>>((service, token) => service.ListAsync(token), cancellationToken)).Count;
         _servicesToReview = (await Runner.QueryAsync<IServiceCatalogService, IReadOnlyList<ServiceDefinitionDto>>((service, token) => service.ListAsync(token), cancellationToken))
             .Count(service => !service.IsConfigured);
+        _archived = (await Runner.QueryAsync<IMachineAdminService, IReadOnlyList<ArchivedMachineDto>>((service, token) => service.ListArchivedAsync(token), cancellationToken)).Count;
     }
 }

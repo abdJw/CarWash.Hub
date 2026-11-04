@@ -1,9 +1,11 @@
-@* Name a machine, assign it to a station, or take it out of service. *@
+@* Name a machine, assign it to a station, take it out of service - or delete it, which moves it to
+   the archive (a soft delete: its history stays, and it can be restored). *@
 @using CarWash.Hub.Application.Features.Machines
 @using CarWash.Hub.Application.Features.Stations
 @using Microsoft.Extensions.Options
 @inherits AdminDialogBase
 @inject IOptions<ActivityOptions> Activity
+@inject IDialogService DialogService
 
 <MudDialog>
     <DialogContent>
@@ -36,12 +38,19 @@
         </div>
     </DialogContent>
     <DialogActions>
+        <MudButton Variant="Variant.Text" Color="Color.Error" StartIcon="@Icons.Material.Rounded.DeleteOutline" Class="me-auto"
+                   Disabled="Saving" OnClick="DeleteAsync">
+            @L[DashboardText.MachineDelete]
+        </MudButton>
         <MudButton OnClick="Cancel">@L[DashboardText.CommonCancel]</MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="Saving" OnClick="SubmitAsync">@L[DashboardText.CommonSave]</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
+    /// <summary>The dialog's result data when the machine was deleted rather than saved.</summary>
+    public const string DeletedResult = "deleted";
+
     /// <summary>Gets or sets the machine.</summary>
     [Parameter, EditorRequired]
     public MachineSettingsDto Machine { get; set; } = default!;
@@ -60,6 +69,31 @@
 
     private static string StationLabel(StationDto station) =>
         $"{station.Code} · {(CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft ? station.NameAr : station.Name)}";
+
+    private async Task DeleteAsync()
+    {
+        var title = string.IsNullOrWhiteSpace(Machine.DisplayName) ? Machine.Code : Machine.DisplayName;
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            L[DashboardText.MachineDeleteTitle, title],
+            L[DashboardText.MachineDeleteText],
+            yesText: L[DashboardText.MachineDelete],
+            cancelText: L[DashboardText.CommonCancel]);
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        var deleted = await SaveAsync<IMachineAdminService>(
+            (service, token) => service.DeleteAsync(new MachineArchiveRequest { Id = Machine.Id, RowVersion = Machine.RowVersion }, token),
+            L[DashboardText.MachineDeleted],
+            close: false);
+
+        if (deleted)
+        {
+            Dialog.Close(DialogResult.Ok(DeletedResult));
+        }
+    }
 
     private Task SubmitAsync() => SaveAsync<IMachineAdminService>((service, token) => service.UpdateAsync(
         new UpdateMachineRequest
